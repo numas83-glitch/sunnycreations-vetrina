@@ -622,6 +622,12 @@
               </div>
 
               <div class="field">
+                <label for="pcoll">Collezione</label>
+                <input id="pcoll" class="input" type="text" placeholder="WKSF 2026, Natale 2026…" value="{{ productForm.collection }}" onChange="{{ onProductCollection }}">
+                <div class="text-muted" style="font-size:11px;margin-top:4px;">Serve a spegnere un gruppo intero quando l'occasione è passata. Lasciala vuota per un articolo che tieni sempre in vetrina.</div>
+              </div>
+
+              <div class="field">
                 <label for="pdesc">Descrizione</label>
                 <textarea id="pdesc" class="input" value="{{ productForm.desc }}" onChange="{{ onProductDesc }}"></textarea>
               </div>
@@ -669,8 +675,25 @@
             </div>
           </sc-if>
 
+          <h4 style="margin-top:var(--space-6);">Collezioni</h4>
+          <p class="text-muted" style="margin-top:-6px;font-size:13px;">Finita un'occasione spegni il gruppo in un colpo: gli articoli restano qui con foto, prezzi e giacenze, e li riaccendi l'anno dopo.</p>
+          <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-6);">
+            <sc-for list="{{ collectionRows }}" as="cl" hint-placeholder-count="2">
+              <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;{{ cl.style }}">
+                <div>
+                  <div style="font-weight:600;">{{ cl.name }}</div>
+                  <div class="text-muted" style="font-size:12px;">{{ cl.countLabel }}</div>
+                </div>
+                <div style="display:flex;gap:var(--space-2);">
+                  <button type="button" class="btn btn-secondary" onClick="{{ cl.show }}">Mostra tutti</button>
+                  <button type="button" class="btn btn-ghost" onClick="{{ cl.hide }}">Nascondi tutti</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
           <table class="table">
-            <thead><tr><th></th><th>Articolo</th><th>Prezzo</th><th>Taglie</th><th>Ordine</th><th>Stato</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Articolo</th><th>Collezione</th><th>Prezzo</th><th>Taglie</th><th>Ordine</th><th>Stato</th><th></th></tr></thead>
             <tbody>
               <sc-for list="{{ productRows }}" as="p" hint-placeholder-count="5">
                 <tr>
@@ -683,6 +706,7 @@
                     {{ p.name }}
                     <div class="text-muted" style="font-size:11px;">{{ p.kicker }}</div>
                   </td>
+                  <td class="text-muted" style="font-size:12px;">{{ p.collectionLabel }}</td>
                   <td>€ {{ p.priceLabel }}</td>
                   <td>{{ p.sizesLabel }}</td>
                   <td>{{ p.sortOrder }}</td>
@@ -1369,7 +1393,7 @@ class Component extends DCLogic {
   async loadCatalogFromDb() {
     try {
       const { data, error } = await window.__sb.from('products')
-        .select('id, name, kicker, description, photo, price, sizes, active, sort_order')
+        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection')
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       if (error || !Array.isArray(data) || !data.length) return;
       this.setState({
@@ -1384,6 +1408,7 @@ class Component extends DCLogic {
           sizes: Array.isArray(r.sizes) && r.sizes.length ? r.sizes : null,
           active: r.active !== false,
           sortOrder: Number(r.sort_order) || 0,
+          collection: r.collection || '',
         })),
       });
     } catch (e) {}
@@ -1642,15 +1667,21 @@ class Component extends DCLogic {
     while (taken.has(base + '-' + i)) i++;
     return base + '-' + i;
   }
+  // Un articolo nuovo eredita la collezione di quello aggiunto per ultimo:
+  // quando se ne inseriscono cinque di fila, si scrive una volta sola.
+  lastCollection() {
+    const c = this.getCatalog();
+    return c.length ? (c[c.length - 1].collection || '') : '';
+  }
   nextSortOrder() {
     return this.getCatalog().reduce((m, p) => Math.max(m, p.sortOrder || 0), 0) + 10;
   }
   openProductForm(product) {
     this.setState({
       productForm: product
-        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '' }
+        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '' }
         : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0,
-            sizesText: '', active: true, sortOrder: this.nextSortOrder(), isNew: true },
+            sizesText: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(), isNew: true },
       productError: '', productBusy: false,
     });
   }
@@ -1735,6 +1766,7 @@ class Component extends DCLogic {
       id: f.isNew ? this.newProductId(name) : f.id,
       name,
       kicker: String(f.kicker || '').trim(),
+      collection: String(f.collection || '').trim(),
       desc: String(f.desc || '').trim(),
       photo: f.photoSaved || '',
       price,
@@ -1749,6 +1781,7 @@ class Component extends DCLogic {
         id: product.id, name: product.name, kicker: product.kicker,
         description: product.desc, photo: product.photo, price: product.price,
         sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
+        collection: product.collection,
       });
       if (error) throw error;
       await this.loadCatalogFromDb();
@@ -1769,6 +1802,24 @@ class Component extends DCLogic {
       base.sort((a, b) => ((a.sortOrder || 0) - (b.sortOrder || 0)) || String(a.name).localeCompare(String(b.name)));
       return { catalog: base };
     });
+  }
+  // Il senso di tutto questo: a evento finito si spegne il gruppo in un
+  // colpo, e resta acceso solo quello che vuoi mostrare adesso.
+  async setCollectionActive(collection, active) {
+    const nomi = this.getCatalog().filter(p => (p.collection || '') === collection);
+    if (!nomi.length) return;
+    const verbo = active ? 'Rimettere in catalogo' : 'Togliere dal catalogo';
+    if (!window.confirm(`${verbo} tutti i ${nomi.length} articoli di "${collection || 'senza collezione'}"?`)) return;
+    try {
+      const q = window.__sb.from('products').update({ active });
+      const { error } = collection
+        ? await q.eq('collection', collection)
+        : await q.or('collection.is.null,collection.eq.');
+      if (error) throw error;
+      await this.loadCatalogFromDb();
+      return;
+    } catch (e) {}
+    nomi.forEach(p => this.applyCatalogLocally({ ...p, active }));
   }
   async toggleProductActive(id) {
     const p = this.getProduct(id);
@@ -2538,10 +2589,28 @@ class Component extends DCLogic {
       adminOrderCount: this.activeOrders().length,
       printAdmin: () => window.print(),
       printOrderDetail: () => this.printOrderDetail(),
+      collectionRows: (() => {
+        const gruppi = [];
+        this.getCatalog().forEach(p => {
+          const c = p.collection || '';
+          let g = gruppi.find(x => x.key === c);
+          if (!g) { g = { key: c, name: c || 'Senza collezione', tot: 0, attivi: 0 }; gruppi.push(g); }
+          g.tot++; if (p.active !== false) g.attivi++;
+        });
+        return gruppi.map(g => ({
+          name: g.name,
+          countLabel: g.attivi + ' su ' + g.tot + ' in catalogo',
+          allOff: g.attivi === 0,
+          style: g.attivi === 0 ? 'opacity:.55;' : '',
+          show: () => this.setCollectionActive(g.key, true),
+          hide: () => this.setCollectionActive(g.key, false),
+        }));
+      })(),
       productRows: this.getCatalog().map(p => ({
         ...p,
         priceLabel: this.money(p.price),
         sizesLabel: (p.sizes || []).join(' · ') || 'Taglia unica',
+        collectionLabel: p.collection || '—',
         hasPhoto: !!p.photo,
         statusLabel: p.active === false ? 'Ritirato' : 'In catalogo',
         statusStyle: p.active === false
@@ -2561,6 +2630,7 @@ class Component extends DCLogic {
       productSaveLabel: this.state.productBusy ? 'Attendi…' : 'Salva',
       onProductName: (e) => this.updateProductForm('name', e.target.value),
       onProductKicker: (e) => this.updateProductForm('kicker', e.target.value),
+      onProductCollection: (e) => this.updateProductForm('collection', e.target.value),
       onProductDesc: (e) => this.updateProductForm('desc', e.target.value),
       onProductPrice: (e) => this.updateProductForm('price', e.target.value),
       onProductSizes: (e) => this.updateProductForm('sizesText', e.target.value),
