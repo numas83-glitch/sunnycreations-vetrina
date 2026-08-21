@@ -845,13 +845,22 @@
           </sc-if>
 
           <h3 style="margin-top:var(--space-8);">Eventi</h3>
-          <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. Finita una manifestazione non si cancella niente: apri l'evento nuovo, e la vista si svuota da sé. L'anno dopo ritrovi tutto.</p>
+          <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. Finita una manifestazione non si cancella niente: apri l'evento nuovo, e la vista si svuota da sé. L'anno dopo ritrovi tutto. Il <strong>logo</strong> che carichi qui compare in testata finché quell'evento è in corso; senza logo si usa quello del marchio.</p>
 
           <table class="table">
-            <thead><tr><th>Evento</th><th>Ordini</th><th></th><th></th></tr></thead>
+            <thead><tr><th>Logo</th><th>Evento</th><th>Ordini</th><th></th><th></th></tr></thead>
             <tbody>
               <sc-for list="{{ eventRows }}" as="ev" hint-placeholder-count="2">
                 <tr>
+                  <td>
+                    <sc-if value="{{ ev.hasLogo }}" hint-placeholder-val="{{ true }}">
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <img src="{{ ev.logo }}" alt="" style="width:44px;height:44px;object-fit:contain;">
+                        <button type="button" class="btn btn-ghost" style="font-size:11px;padding:2px 6px;" onClick="{{ ev.removeLogo }}">togli</button>
+                      </span>
+                    </sc-if>
+                    <input class="input" type="file" accept="image/*" style="max-width:150px;font-size:11px;margin-top:4px;" onChange="{{ ev.onLogo }}">
+                  </td>
                   <td>{{ ev.name }} <span style="{{ ev.currentStyle }}">· {{ ev.currentLabel }}</span></td>
                   <td>{{ ev.orderCount }}</td>
                   <td>
@@ -1347,9 +1356,9 @@ class Component extends DCLogic {
   async loadEventsFromDb() {
     try {
       const { data, error } = await window.__sb.from('events')
-        .select('id, name, is_current').order('created_at', { ascending: false });
+        .select('id, name, is_current, logo').order('created_at', { ascending: false });
       if (error || !Array.isArray(data) || !data.length) return;
-      const events = data.map(e => ({ id: e.id, name: e.name, isCurrent: !!e.is_current }));
+      const events = data.map(e => ({ id: e.id, name: e.name, isCurrent: !!e.is_current, logo: e.logo || '' }));
       const current = events.find(e => e.isCurrent);
       this.setState(s => ({ events, adminEvent: s.adminEvent || (current ? current.id : 'tutti') }));
     } catch (e) {}
@@ -1849,6 +1858,41 @@ class Component extends DCLogic {
       this.setState({ settingsBusy: false, settingsMsg: 'Non salvate sul server: valgono solo su questo dispositivo.' });
     }
   }
+  // Stesso trattamento delle foto prodotto: rimpicciolita nel browser prima
+  // di partire, e se il caricamento fallisce resta solo l'anteprima locale.
+  async onEventLogo(eventId, e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    let resized;
+    try {
+      resized = await this.resizePhoto(file, 600);
+    } catch (err) {
+      window.alert('Non riesco a leggere questa immagine.');
+      return;
+    }
+    const path = 'evento-' + eventId + '-' + Date.now() + '.jpg';
+    try {
+      const { error } = await window.__sb.storage.from('product-photos')
+        .upload(path, resized.blob, { contentType: 'image/jpeg', upsert: true });
+      if (error) throw error;
+      const { data } = window.__sb.storage.from('product-photos').getPublicUrl(path);
+      const { error: e2 } = await window.__sb.from('events').update({ logo: data.publicUrl }).eq('id', eventId);
+      if (e2) throw e2;
+      await this.loadEventsFromDb();
+      return;
+    } catch (err) {}
+    this.setState(st => ({ events: st.events.map(ev => ev.id === eventId ? { ...ev, logo: resized.dataUrl } : ev) }));
+    window.alert('Logo non caricato sul server: lo vedi solo su questo dispositivo.');
+  }
+  async removeEventLogo(eventId) {
+    try {
+      const { error } = await window.__sb.from('events').update({ logo: null }).eq('id', eventId);
+      if (error) throw error;
+      await this.loadEventsFromDb();
+      return;
+    } catch (e) {}
+    this.setState(st => ({ events: st.events.map(ev => ev.id === eventId ? { ...ev, logo: '' } : ev) }));
+  }
   async createEvent() {
     const name = String(this.state.newEventName || '').trim();
     if (!name) return;
@@ -2300,7 +2344,8 @@ class Component extends DCLogic {
       // Sui preordini l'evento c'è sempre, quindi la lumaca resta. Sulla
       // vetrina segue il titolo: se ne scrivi uno tuo, l'evento non c'entra più.
       headerLogo: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
-        ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
+        ? 'assets/logo-sunnycreations.png'
+        : (((this.state.events.find(e => e.isCurrent) || {}).logo) || 'assets/logo-sunnycreations.png'),
       headerLogoStyle: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
         ? 'width:112px;height:112px;border-radius:50%;object-fit:cover;flex-shrink:0;'
         : 'width:110px;height:auto;flex-shrink:0;',
@@ -2509,6 +2554,10 @@ class Component extends DCLogic {
       eventRows: this.state.events.map(ev => ({
         id: ev.id,
         name: ev.name,
+        logo: ev.logo || '',
+        hasLogo: !!ev.logo,
+        onLogo: (e) => this.onEventLogo(ev.id, e),
+        removeLogo: () => this.removeEventLogo(ev.id),
         orderCount: this.state.orders.filter(o => (o.eventId || '') === ev.id && !o.cancelledAt).length,
         currentLabel: ev.isCurrent ? 'In corso' : '',
         currentStyle: ev.isCurrent ? 'color:var(--color-brand-green);' : 'display:none;',
