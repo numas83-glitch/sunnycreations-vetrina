@@ -33,6 +33,10 @@
   /* Corsivo del marchio: somiglia alla firma del logo. Se salta fuori il
      nome del carattere originale, si cambia qui e basta. */
   --font-script: "Sacramento", "Snell Roundhand", cursive;
+  /* Il lilla del logo (#c8a0c8) come testo darebbe 1,4:1 di contrasto:
+     illeggibile su un telefono al sole. Stessa tinta (300°), stessa
+     saturazione, luminosità abbassata fino a 5:1. */
+  --color-brand-lilla: #915491;
 
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
   --space-4: 16px; --space-6: 24px; --space-8: 36px;
@@ -171,8 +175,14 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   box-shadow: 0 1px 3px rgba(20, 20, 30, .06);
 }
 .nav-brand { font-family: var(--font-heading); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; margin-right: auto; }
-/* Il nome accanto al logo, nel corsivo del marchio: più grande perché un
-   corsivo alla stessa misura di un bastone risulta minuto. */
+/* Il corsivo del marchio: più grande di un bastone alla stessa misura,
+   perché un corsivo alla pari risulta minuto. */
+.script-line {
+  font-family: var(--font-script); font-weight: 400;
+  font-size: 24px; line-height: 1.1; letter-spacing: 0;
+  text-transform: none; color: var(--color-brand-lilla);
+  margin: 0 0 2px;
+}
 .brand-script {
   font-family: var(--font-script); font-weight: 400;
   font-size: 30px; line-height: 1; letter-spacing: .01em;
