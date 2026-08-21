@@ -748,6 +748,13 @@
 
       <sc-if value="{{ isTabImpostazioni }}" hint-placeholder-val="{{ false }}">
         <div>
+          <sc-if value="{{ settingsDirty }}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;border-left:4px solid var(--color-brand-red);margin-bottom:var(--space-4);">
+              <span>Hai modifiche non salvate: finché non salvi, il sito continua come prima.</span>
+              <button type="button" class="btn btn-primary" onClick="{{ saveSettings }}" disabled="{{ settingsBusy }}">{{ settingsSaveLabel }}</button>
+            </div>
+          </sc-if>
+
           <h3 style="margin-top:0;">Vetrina</h3>
           <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Lasciando il titolo vuoto, in evidenza compare <strong>l'evento in corso</strong> con il suo logo — è quello che la gente cerca. Quando l'occasione è passata scrivi un titolo tuo (per esempio "Creazioni di Natale") e la testata cambia, logo compreso.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
@@ -823,7 +830,10 @@
           </div>
 
           <div style="display:flex;align-items:center;gap:var(--space-3);">
-            <button type="button" class="btn btn-primary" onClick="{{ saveSettings }}" disabled="{{ settingsBusy }}">{{ settingsSaveLabel }}</button>
+            <button type="button" class="btn btn-primary" style="{{ settingsSaveStyle }}" onClick="{{ saveSettings }}" disabled="{{ settingsBusy }}">{{ settingsSaveLabel }}</button>
+            <sc-if value="{{ settingsDirty }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:13px;color:var(--color-brand-red);font-weight:600;">Modifiche non salvate</span>
+            </sc-if>
             <sc-if value="{{ settingsMsg }}" hint-placeholder-val="{{ false }}">
               <span class="text-muted" style="font-size:13px;">{{ settingsMsg }}</span>
             </sc-if>
@@ -1052,6 +1062,7 @@ class Component extends DCLogic {
     settings: {},
     settingsBusy: false,
     settingsMsg: '',
+    settingsDirty: false,   // c'è qualcosa da salvare
     events: [],
     adminEvent: '',       // '' finché non si conosce l'evento corrente, 'tutti' = nessun filtro
     newEventName: '',
@@ -1378,7 +1389,7 @@ class Component extends DCLogic {
       if (error || !Array.isArray(data)) return;
       const settings = {};
       data.forEach(r => { settings[r.key] = r.value || ''; });
-      this.setState({ settings });
+      this.setState({ settings, settingsDirty: false });
     } catch (e) {}
   }
   async loadEventsFromDb() {
@@ -1881,7 +1892,7 @@ class Component extends DCLogic {
   }
 
   setSetting(key, value) {
-    this.setState(s => ({ settings: { ...s.settings, [key]: value }, settingsMsg: '' }));
+    this.setState(s => ({ settings: { ...s.settings, [key]: value }, settingsMsg: '', settingsDirty: true }));
   }
   async saveSettings() {
     this.setState({ settingsBusy: true, settingsMsg: '' });
@@ -1889,7 +1900,7 @@ class Component extends DCLogic {
     try {
       const { error } = await window.__sb.from('settings').upsert(rows);
       if (error) throw error;
-      this.setState({ settingsBusy: false, settingsMsg: 'Impostazioni salvate.' });
+      this.setState({ settingsBusy: false, settingsMsg: 'Impostazioni salvate.', settingsDirty: false });
     } catch (e) {
       this.setState({ settingsBusy: false, settingsMsg: 'Non salvate sul server: valgono solo su questo dispositivo.' });
     }
@@ -2649,6 +2660,10 @@ class Component extends DCLogic {
       settingsBusy: this.state.settingsBusy,
       settingsSaveLabel: this.state.settingsBusy ? 'Salvo…' : 'Salva impostazioni',
       settingsMsg: this.state.settingsMsg,
+      settingsDirty: this.state.settingsDirty,
+      settingsSaveStyle: this.state.settingsDirty
+        ? 'box-shadow:0 0 0 3px color-mix(in srgb, var(--color-brand-red) 30%, transparent);'
+        : '',
       summaryOrderCount: this.activeOrders().length,
       summaryToCollect: this.money(this.amountToCollect()),
       summaryCollected: this.money(this.amountCollected()),
