@@ -128,7 +128,7 @@
             <sc-if value="{{ showcaseOnly }}" hint-placeholder-val="{{ false }}">
               <div>
                 <sc-if value="{{ product.hasSizes }}" hint-placeholder-val="{{ true }}">
-                  <div style="font-size:12px;color:var(--color-neutral-700);">{{ t.availableSizes }}: {{ product.sizesText }}</div>
+                  <div style="font-size:12px;color:var(--color-neutral-700);">{{ product.variantName }}: {{ product.sizesText }}</div>
                 </sc-if>
                 <div style="font-size:12px;margin-top:2px;{{ product.availabilityStyle }}">{{ product.availabilityLabel }}</div>
               </div>
@@ -138,7 +138,7 @@
               <div>
                 <sc-if value="{{ product.isSized }}" hint-placeholder-val="{{ true }}">
                   <div>
-                    <label style="font-size:12px;color:var(--color-neutral-700);display:block;margin-bottom:4px;">{{ t.size }}</label>
+                    <label style="font-size:12px;color:var(--color-neutral-700);display:block;margin-bottom:4px;">{{ product.variantName }}</label>
                     <div class="seg">
                       <sc-for list="{{ product.sizeOptions }}" as="opt" hint-placeholder-count="6">
                         <button type="button" class="seg-opt" style="{{ opt.style }}" disabled="{{ opt.disabled }}" onClick="{{ opt.select }}">{{ opt.label }}</button>
@@ -593,8 +593,14 @@
               <sc-if value="{{ g.unlimited }}" hint-placeholder-val="{{ false }}">
                 <div class="text-muted" style="font-size:12px;">Nessuna giacenza impostata — sempre disponibile. Scrivi un numero per iniziare a tracciarlo.</div>
               </sc-if>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:var(--space-2) 0;">
+                <span class="text-muted" style="font-size:12px;">Tutte insieme:</span>
+                <input class="input" type="number" min="0" step="1" style="max-width:90px;" placeholder="quantità" value="{{ g.bulkValue }}" onChange="{{ g.onBulk }}">
+                <button type="button" class="btn btn-secondary" onClick="{{ g.setAll }}">Imposta</button>
+                <button type="button" class="btn btn-ghost" onClick="{{ g.addAll }}">Aggiungi</button>
+              </div>
               <table class="table">
-                <thead><tr><th>Taglia</th><th>Disponibili</th><th>Stato</th><th>Aggiungi</th></tr></thead>
+                <thead><tr><th>{{ g.variantName }}</th><th>Disponibili</th><th>Stato</th><th>Aggiungi</th></tr></thead>
                 <tbody>
                   <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="6">
                     <tr>
@@ -660,7 +666,18 @@
               </div>
 
               <div class="field">
-                <label for="psizes">Taglie</label>
+                <label for="pvariant">Come si chiama la scelta</label>
+                <div class="seg" style="margin-bottom:6px;">
+                  <sc-for list="{{ variantPresets }}" as="vp" hint-placeholder-count="4">
+                    <button type="button" class="seg-opt" onClick="{{ vp.select }}">{{ vp.label }}</button>
+                  </sc-for>
+                </div>
+                <input id="pvariant" class="input" type="text" placeholder="Taglia" value="{{ productForm.variantLabel }}" onChange="{{ onProductVariant }}">
+                <div class="text-muted" style="font-size:11px;margin-top:4px;">È la parola che il cliente legge sopra i bottoni: Taglia per i vestiti, Colore per un asciugamano in più tinte, Modello per un portachiavi. Le giacenze restano separate per ogni valore.</div>
+              </div>
+
+              <div class="field">
+                <label for="psizes">Valori fra cui scegliere</label>
                 <div class="seg" style="margin-bottom:6px;">
                   <sc-for list="{{ sizePresets }}" as="sp" hint-placeholder-count="3">
                     <button type="button" class="seg-opt" onClick="{{ sp.select }}">{{ sp.label }}</button>
@@ -775,12 +792,14 @@
 
           <h4>Magazzino</h4>
           <p>Le giacenze sono <strong>per taglia</strong>: la M e la XL hanno numeri diversi. Un articolo senza nessun numero impostato è considerato illimitato — è così che parte tutto finché non scrivi le quantità.</p>
-          <p>Il campo <strong>"+"</strong> accanto a ogni taglia <em>aggiunge</em> le unità appena prodotte senza sovrascrivere quelle che ci sono già. Se invece scrivi il numero nella colonna a sinistra, quello sostituisce.</p>
+          <p>Il campo <strong>"+"</strong> accanto a ogni riga <em>aggiunge</em> le unità appena prodotte senza sovrascrivere quelle che ci sono già. Se invece scrivi il numero nella colonna a sinistra, quello sostituisce.</p>
+          <p>Sopra la tabella c'è <strong>"Tutte insieme"</strong>: scrivi una quantità e con <em>Imposta</em> la applichi a ogni taglia o colore del prodotto in un colpo, con <em>Aggiungi</em> la sommi a quelle esistenti. Serve quando arriva una fornitura uguale per tutte le misure.</p>
           <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa.</p>
 
           <h4>Prodotti e collezioni</h4>
           <p>Qui aggiungi e modifichi gli articoli, prezzi compresi. La <strong>foto si carica dal telefono</strong> e viene rimpicciolita da sola prima di partire.</p>
           <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. Non c'è un pulsante per cancellare davvero, ed è voluto.</p>
+          <p><strong>La scelta non deve per forza essere una taglia.</strong> Nel modulo dell'articolo decidi come si chiama: Taglia per i vestiti, <em>Colore</em> per un asciugamano in più tinte, <em>Modello</em> per un portachiavi. I valori li scrivi tu separati da virgola, e le giacenze restano separate per ognuno. Così un asciugamano in cinque colori resta <strong>un solo prodotto</strong>, con una foto e un prezzo, invece di cinque schede da tenere allineate.</p>
           <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
 
           <h4>Eventi</h4>
@@ -1133,7 +1152,8 @@ class Component extends DCLogic {
     productForm: null,   // null = nessuna scheda aperta
     productError: '',
     productBusy: false,
-    restock: {},      // { 'id::size': '3' } — contenuto dei campi "+"
+    restock: {},
+    bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
     adminPassInput: '',
     adminPassError: '',
@@ -1505,7 +1525,7 @@ class Component extends DCLogic {
   async loadCatalogFromDb() {
     try {
       const { data, error } = await window.__sb.from('products')
-        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection')
+        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label')
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       if (error || !Array.isArray(data) || !data.length) return;
       this.setState({
@@ -1521,6 +1541,7 @@ class Component extends DCLogic {
           active: r.active !== false,
           sortOrder: Number(r.sort_order) || 0,
           collection: r.collection || '',
+          variantLabel: (r.variant_label || '').trim(),
         })),
       });
     } catch (e) {}
@@ -1799,9 +1820,9 @@ class Component extends DCLogic {
   openProductForm(product) {
     this.setState({
       productForm: product
-        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '' }
+        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '', variantLabel: product.variantLabel || '' }
         : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0,
-            sizesText: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(), isNew: true },
+            sizesText: '', variantLabel: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(), isNew: true },
       productError: '', productBusy: false,
     });
   }
@@ -1887,6 +1908,7 @@ class Component extends DCLogic {
       name,
       kicker: String(f.kicker || '').trim(),
       collection: String(f.collection || '').trim(),
+      variantLabel: String(f.variantLabel || '').trim(),
       desc: String(f.desc || '').trim(),
       photo: f.photoSaved || '',
       price,
@@ -1902,6 +1924,7 @@ class Component extends DCLogic {
         description: product.desc, photo: product.photo, price: product.price,
         sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
         collection: product.collection,
+        variant_label: product.variantLabel || null,
       });
       if (error) throw error;
       await this.loadCatalogFromDb();
@@ -2053,6 +2076,30 @@ class Component extends DCLogic {
     this.setState({ orders });
   }
 
+  setBulkStock(id, value) {
+    this.setState(st => ({ bulkStock: { ...st.bulkStock, [id]: value } }));
+  }
+  // Impostare venti taglie una per una è il modo più veloce per sbagliarne una.
+  async applyBulkStock(id, modo) {
+    const grezzo = this.state.bulkStock[id];
+    if (grezzo === '' || grezzo === undefined) return;
+    const valore = Math.max(0, Math.floor(Number(grezzo) || 0));
+    const p = this.getProduct(id);
+    if (!p) return;
+    const varianti = (p.sizes && p.sizes.length) ? p.sizes : [''];
+    // I valori si calcolano tutti da una fotografia dello stato di adesso:
+    // leggendoli dentro al ciclo si rischia di sommare su numeri già cambiati.
+    const obiettivi = varianti.map(v => {
+      if (modo === 'imposta') return { size: v, qty: valore };
+      const attuale = this.stockOf(id, v);
+      return { size: v, qty: (attuale === Infinity ? 0 : attuale) + valore };
+    });
+    for (let i = 0; i < obiettivi.length; i++) {
+      await this.setStock(id, obiettivi[i].size, obiettivi[i].qty);
+    }
+    this.setState(st => ({ bulkStock: { ...st.bulkStock, [id]: '' } }));
+  }
+
   async markPaid(code) {
     const paidAt = new Date().toISOString();
     try {
@@ -2140,7 +2187,7 @@ class Component extends DCLogic {
       id: e.product.id,
       name: e.product.name,
       size: e.size,
-      sizeLabel: e.size ? `${this.t().size} ${e.size}` : '',
+      sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}` : '',
       qty: e.qty,
       price: e.price,
       lineTotal: e.lineTotal,
@@ -2343,6 +2390,13 @@ class Component extends DCLogic {
   totalCost() { return this.totalMaterialCost() + (Number(this.state.extraCost) || 0); }
 
   money(n) { return n.toFixed(2).replace('.', ','); }
+
+  // "Taglia" è solo il nome predefinito: un prodotto può chiamare la sua
+  // variante Colore, Modello, Gusto. Le giacenze non cambiano di una riga.
+  variantLabel(id) {
+    const p = this.getProduct(id);
+    return (p && p.variantLabel) ? p.variantLabel : this.t().size;
+  }
 
   previousItemsFor(code) {
     const o = this.state.orders.find(x => x.code === code);
@@ -2552,6 +2606,7 @@ class Component extends DCLogic {
           }),
           priceLabel: this.money(this.getPrice(p.id)),
           sizesText: (p.sizes && p.sizes.length) ? p.sizes.join(' · ') : '',
+          variantName: this.variantLabel(p.id),
           hasSizes: !!(p.sizes && p.sizes.length),
           availabilityLabel: this.availabilityLabel(p.id, sel.size),
           availabilityStyle: this.availabilityStyle(p.id, sel.size),
@@ -2562,7 +2617,7 @@ class Component extends DCLogic {
 
       cartEntries: cartEntries.map(e => ({
         ...e,
-        sizeLabel: e.size ? `${this.t().size} ${e.size}` : '',
+        sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}` : '',
         cannotIncrease: e.qty >= this.availableOf(e.product.id, e.size),
         lineTotalLabel: this.money(e.lineTotal),
         inc: () => this.changeCartQty(e.key, 1),
@@ -2742,7 +2797,12 @@ class Component extends DCLogic {
         const known = !!this.state.stock[p.id];
         return {
           name: p.name,
+          variantName: this.variantLabel(p.id),
           unlimited: !known,
+          bulkValue: this.state.bulkStock[p.id] === undefined ? '' : this.state.bulkStock[p.id],
+          onBulk: (e) => this.setBulkStock(p.id, e.target.value),
+          setAll: () => this.applyBulkStock(p.id, 'imposta'),
+          addAll: () => this.applyBulkStock(p.id, 'aggiungi'),
           rows: sizes.map(size => {
             const qty = known ? this.stockOf(p.id, size) : 0;
             return {
@@ -2808,6 +2868,10 @@ class Component extends DCLogic {
       onProductDesc: (e) => this.updateProductForm('desc', e.target.value),
       onProductPrice: (e) => this.updateProductForm('price', e.target.value),
       onProductSizes: (e) => this.updateProductForm('sizesText', e.target.value),
+      onProductVariant: (e) => this.updateProductForm('variantLabel', e.target.value),
+      variantPresets: ['Taglia', 'Colore', 'Modello', 'Gusto'].map(v => ({
+        label: v, select: () => this.updateProductForm('variantLabel', v),
+      })),
       onProductOrder: (e) => this.updateProductForm('sortOrder', e.target.value),
       onProductPhoto: (e) => this.onProductPhoto(e),
       sizePresets: [
