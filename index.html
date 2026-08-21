@@ -52,11 +52,14 @@
       <img src="assets/logo-sunnycreations.png" alt="SunnyCreations" style="height:36px;width:36px;border-radius:50%;object-fit:cover;">
       <span class="brand-script">SunnyCreations</span>
     </span>
-    <sc-if value="{{ isPreordini }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ showCustomerNav }}" hint-placeholder-val="{{ true }}">
       <span style="display:flex;align-items:center;gap:var(--space-4);">
         <a href="#" onClick="{{ goToCatalog }}" aria-current="{{ catalogCurrent }}">{{ t.navBook }}</a>
         <a href="#" onClick="{{ goToLookup }}" aria-current="{{ lookupCurrent }}">{{ t.navEdit }}</a>
       </span>
+    </sc-if>
+    <sc-if value="{{ isAdminView }}" hint-placeholder-val="{{ false }}">
+      <a href="{{ vetrinaUrl }}" target="_blank" rel="noopener">Vedi la vetrina ↗</a>
     </sc-if>
     <div class="seg" style="margin-left:var(--space-2);">
       <sc-for list="{{ langOptions }}" as="lo" hint-placeholder-count="2">
@@ -2464,6 +2467,10 @@ class Component extends DCLogic {
         || (this.state.events.find(e => e.isCurrent) || {}).name || 'SunnyCreations',
       vetrinaIntroText: this.state.settings['vetrina_intro_' + this.state.lang] || this.t().vetrinaIntro,
       isPreordini: this.state.mode === 'preordini',
+      // Nell'area riservata le voci del cliente sono rumore: al loro posto
+      // il collegamento alla vetrina, per vedere l'effetto di quello che tocchi.
+      showCustomerNav: this.state.mode === 'preordini' && view !== 'admin',
+      isAdminView: view === 'admin',
       // Si prenota solo con un invito valido in mano.
       canOrder: this.state.mode === 'preordini' && !!this.state.invite,
       inviteMissing: this.state.mode === 'preordini' && this.state.inviteChecked && !this.state.invite,
