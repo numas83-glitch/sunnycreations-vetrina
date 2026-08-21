@@ -757,6 +757,7 @@
                   <td style="{{ p.statusStyle }}">{{ p.statusLabel }}</td>
                   <td style="white-space:nowrap;">
                     <button type="button" class="btn btn-ghost" onClick="{{ p.edit }}">Modifica</button>
+                    <button type="button" class="btn btn-ghost" onClick="{{ p.duplicate }}">Duplica</button>
                     <button type="button" class="btn btn-ghost" onClick="{{ p.toggle }}">{{ p.toggleLabel }}</button>
                     <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ p.remove }}">Elimina</button>
                   </td>
@@ -800,6 +801,7 @@
           <h4>Prodotti e collezioni</h4>
           <p>Qui aggiungi e modifichi gli articoli, prezzi compresi. La <strong>foto si carica dal telefono</strong> e viene rimpicciolita da sola prima di partire.</p>
           <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. È quello che serve nove volte su dieci.</p>
+          <p><em>Duplica</em> apre una scheda nuova già compilata come quella di partenza — foto, prezzo, variante, collezione — con "(copia)" nel nome. Cambi quello che serve e salvi: è il modo rapido per lo stesso oggetto in più colori, o per la versione bambino di una maglietta. Le giacenze non si copiano: il prodotto nuovo parte senza.</p>
           <p><em>Elimina</em> lo cancella davvero, con le sue giacenze e la sua foto, e chiede conferma due volte. Gli <strong>ordini già ricevuti non cambiano</strong>: conservano nome, taglia e prezzo di allora, perché sono scritti dentro l'ordine e non letti dal catalogo. Se l'articolo compare in ordini passati te lo dice prima, così scegli consapevolmente.</p>
           <p><strong>La scelta non deve per forza essere una taglia.</strong> Nel modulo dell'articolo decidi come si chiama: Taglia per i vestiti, <em>Colore</em> per un asciugamano in più tinte, <em>Modello</em> per un portachiavi. I valori li scrivi tu separati da virgola, e le giacenze restano separate per ognuno. Così un asciugamano in cinque colori resta <strong>un solo prodotto</strong>, con una foto e un prezzo, invece di cinque schede da tenere allineate.</p>
           <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
@@ -1829,6 +1831,28 @@ class Component extends DCLogic {
     });
   }
   closeProductForm() { this.setState({ productForm: null, productError: '' }); }
+  // Cinque colori dello stesso oggetto, o la maglietta uguale in versione
+  // bambino: cambia poco, e riscrivere tutto ogni volta è come si sbaglia.
+  duplicateProduct(id) {
+    const p = this.getProduct(id);
+    if (!p) return;
+    this.setState({
+      productForm: {
+        ...p,
+        id: '',
+        isNew: true,
+        name: p.name + ' (copia)',
+        sizesText: (p.sizes || []).join(', '),
+        variantLabel: p.variantLabel || '',
+        collection: p.collection || '',
+        photoSaved: p.photo || '',
+        active: true,
+        sortOrder: this.nextSortOrder(),
+      },
+      productError: '', productBusy: false,
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
   updateProductForm(field, value) {
     this.setState(s => ({ productForm: { ...s.productForm, [field]: value } }));
   }
@@ -1985,12 +2009,14 @@ class Component extends DCLogic {
         '\n\nSpariscono anche le sue giacenze e la foto. Non si torna indietro.')) return;
     if (!window.confirm('Confermi la cancellazione di "' + p.name + '"?')) return;
 
-    // Se la foto sta nel nostro deposito, va via con l'articolo: altrimenti
-    // resterebbe lì a occupare spazio senza che nessuno sappia di chi è.
+    // La foto va via con l'articolo, ma solo se non la usa nessun altro:
+    // un prodotto duplicato punta allo stesso file, e cancellandolo qui
+    // l'altro resterebbe senza immagine.
     try {
       const foto = String(p.photo || '');
       const segno = '/product-photos/';
-      if (foto.indexOf(segno) > 0) {
+      const condivisa = this.getCatalog().filter(x => x.photo === foto).length > 1;
+      if (foto.indexOf(segno) > 0 && !condivisa) {
         const nome = foto.slice(foto.indexOf(segno) + segno.length).split('?')[0];
         await window.__sb.storage.from('product-photos').remove([decodeURIComponent(nome)]);
       }
@@ -2897,6 +2923,7 @@ class Component extends DCLogic {
         edit: () => this.openProductForm(p),
         toggle: () => this.toggleProductActive(p.id),
         remove: () => this.deleteProduct(p.id),
+        duplicate: () => this.duplicateProduct(p.id),
       })),
       newProduct: () => this.openProductForm(null),
       productForm: this.state.productForm || {},
