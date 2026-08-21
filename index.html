@@ -1,0 +1,2548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { margin: 0; }
+    :root {
+      --color-accent: #24244c;
+      --color-accent-100: #e9e9f1;
+      --color-accent-200: #c9c9dd;
+      --color-accent-300: #a3a3c4;
+      --color-accent-400: #7373a0;
+      --color-accent-500: #4d4d80;
+      --color-accent-600: #34345f;
+      --color-accent-700: #24244c;
+      --color-accent-800: #1a1a38;
+      --color-accent-900: #111127;
+      --color-brand-red: #e30613;
+      --color-brand-green: #009641;
+    }
+    a { color: var(--color-accent); }
+    a:hover { color: var(--color-brand-red); }
+    @media print {
+      body.printing-order .no-print-on-order { display: none !important; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    window.__sb = window.supabase.createClient(
+      'https://ielgzcicknztculvrqwc.supabase.co',
+      'sb_publishable_nCQaBNHKHHs3C8061aEX-Q_Fv8zPYy6'
+    );
+  </script>
+</helmet>
+
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);display:flex;flex-direction:column;">
+
+  <div class="no-print-on-order" style="display:flex;height:4px;">
+    <div style="flex:1;background:var(--color-brand-green);"></div>
+    <div style="flex:1;background:#ffffff;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);"></div>
+    <div style="flex:1;background:var(--color-brand-red);"></div>
+  </div>
+  <nav class="nav no-print-on-order" style="border-bottom:1px solid var(--color-divider);position:sticky;top:0;background:var(--color-bg);z-index:10;">
+    <span class="nav-brand" style="display:flex;align-items:center;gap:10px;">
+      <img src="assets/logo-wksf-snail.png" alt="WKSF" style="height:32px;width:auto;">
+      SunnyCreations
+    </span>
+    <a href="#" onClick="{{ goToCatalog }}" aria-current="{{ catalogCurrent }}">{{ t.navBook }}</a>
+    <sc-if value="{{ isPreordini }}" hint-placeholder-val="{{ true }}">
+      <a href="#" onClick="{{ goToLookup }}" aria-current="{{ lookupCurrent }}">{{ t.navEdit }}</a>
+    </sc-if>
+    <div class="seg" style="margin-left:var(--space-2);">
+      <sc-for list="{{ langOptions }}" as="lo" hint-placeholder-count="2">
+        <button type="button" class="seg-opt" style="{{ lo.style }}" onClick="{{ lo.select }}">{{ lo.label }}</button>
+      </sc-for>
+    </div>
+  </nav>
+
+  <sc-if value="{{ isCatalog }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;max-width:1100px;width:100%;margin:0 auto;padding:var(--space-6) var(--space-4) 140px;box-sizing:border-box;">
+      <header style="margin-bottom:var(--space-6);max-width:680px;display:flex;gap:var(--space-4);align-items:center;">
+        <img src="assets/logo-wksf-snail.png" alt="WKSF European Championship" style="width:110px;height:auto;flex-shrink:0;">
+        <div>
+          <h6 style="color:var(--color-brand-red);">{{ t.kicker }}</h6>
+          <h1>{{ eventTitle }}</h1>
+          <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
+            <p class="text-muted">{{ t.intro }}</p>
+          </sc-if>
+          <sc-if value="{{ showcaseOnly }}" hint-placeholder-val="{{ false }}">
+            <p class="text-muted">{{ t.vetrinaIntro }}</p>
+          </sc-if>
+          <p class="text-muted" style="font-size:12px;">{{ t.madeBy }} <strong>SunnyCreations</strong>. {{ t.proceeds }}</p>
+        </div>
+      </header>
+
+      <sc-if value="{{ editingCode }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:var(--space-3);margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;">
+          <span>{{ t.editingOrder }} <strong>{{ editingCode }}</strong>.</span>
+          <button type="button" class="btn btn-ghost" onClick="{{ cancelEditing }}">{{ t.cancelEditing }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ inviteMissing }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:var(--space-6);margin-bottom:var(--space-6);border-left:4px solid var(--color-accent);">
+          <div class="card-title">{{ t.inviteNeededTitle }}</div>
+          <p class="card-body">{{ t.inviteNeededText }}</p>
+          <a class="btn btn-primary" style="align-self:flex-start;text-decoration:none;" href="{{ vetrinaUrl }}">{{ t.inviteGoVetrina }}</a>
+        </div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--space-4);">
+        <sc-for list="{{ products }}" as="product" hint-placeholder-count="4">
+          <div class="card blueprint elev-sm" style="padding:var(--space-3);">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div style="aspect-ratio:1/1;border-radius:11px;overflow:hidden;cursor:zoom-in;position:relative;" onClick="{{ product.zoom }}">
+              <img src="{{ product.photo }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+              <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.55);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+              </div>
+            </div>
+            <div class="card-kicker">{{ product.kicker }}</div>
+            <div class="card-title">{{ product.name }}</div>
+            <p class="card-body">{{ product.desc }}</p>
+
+            <sc-if value="{{ showcaseOnly }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <sc-if value="{{ product.hasSizes }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-size:12px;color:var(--color-neutral-700);">{{ t.availableSizes }}: {{ product.sizesText }}</div>
+                </sc-if>
+                <div style="font-size:12px;margin-top:2px;{{ product.availabilityStyle }}">{{ product.availabilityLabel }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <sc-if value="{{ product.isSized }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <label style="font-size:12px;color:var(--color-neutral-700);display:block;margin-bottom:4px;">{{ t.size }}</label>
+                    <div class="seg">
+                      <sc-for list="{{ product.sizeOptions }}" as="opt" hint-placeholder-count="6">
+                        <button type="button" class="seg-opt" style="{{ opt.style }}" disabled="{{ opt.disabled }}" onClick="{{ opt.select }}">{{ opt.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="font-size:12px;margin-top:6px;{{ product.availabilityStyle }}">{{ product.availabilityLabel }}</div>
+                <sc-if value="{{ showPrices }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-weight:700;font-size:17px;">€ {{ product.priceLabel }}</div>
+                </sc-if>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:var(--space-3);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" class="btn btn-secondary btn-icon" onClick="{{ product.decQty }}" aria-label="{{ t.decrease }}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/></svg>
+                    </button>
+                    <span style="min-width:18px;text-align:center;font-weight:600;">{{ product.sel.qty }}</span>
+                    <button type="button" class="btn btn-secondary btn-icon" onClick="{{ product.incQty }}" disabled="{{ product.cannotIncrease }}" aria-label="{{ t.increase }}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                  </div>
+                  <button type="button" class="btn btn-primary" onClick="{{ product.add }}" disabled="{{ product.cannotAdd }}">{{ t.add }}</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hasCartItems }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:var(--space-8);">
+          <h3>{{ t.yourItems }}</h3>
+          <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-6);">
+            <sc-for list="{{ cartEntries }}" as="item" hint-placeholder-count="2">
+              <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;">
+                <div>
+                  <div style="font-weight:600;">{{ item.product.name }}</div>
+                  <div class="text-muted" style="font-size:12px;">{{ item.sizeLabel }}</div>
+                  <sc-if value="{{ showPrices }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:13px;font-weight:600;">€ {{ item.lineTotalLabel }}</div>
+                  </sc-if>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <button type="button" class="btn btn-secondary btn-icon" onClick="{{ item.dec }}" aria-label="{{ t.decrease }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/></svg>
+                  </button>
+                  <span style="min-width:18px;text-align:center;">{{ item.qty }}</span>
+                  <button type="button" class="btn btn-secondary btn-icon" onClick="{{ item.inc }}" disabled="{{ item.cannotIncrease }}" aria-label="{{ t.increase }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-icon" onClick="{{ item.remove }}" aria-label="{{ t.remove }}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <h3>{{ t.yourDetails }}</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+            <div class="field">
+              <label for="cname">{{ t.firstName }}</label>
+              <input id="cname" class="input" type="text" value="{{ customer.name }}" onChange="{{ onName }}">
+              <sc-if value="{{ errors.name }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--color-brand-red);margin-top:4px;">{{ errors.name }}</div></sc-if>
+            </div>
+            <div class="field">
+              <label for="csurname">{{ t.lastName }}</label>
+              <input id="csurname" class="input" type="text" value="{{ customer.surname }}" onChange="{{ onSurname }}">
+              <sc-if value="{{ errors.surname }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--color-brand-red);margin-top:4px;">{{ errors.surname }}</div></sc-if>
+            </div>
+            <div class="field">
+              <label for="cemail">{{ t.email }}</label>
+              <input id="cemail" class="input" type="email" value="{{ customer.email }}" onChange="{{ onEmail }}" readOnly="{{ hasInvite }}">
+              <sc-if value="{{ hasInvite }}" hint-placeholder-val="{{ false }}">
+                <div class="text-muted" style="font-size:11px;margin-top:4px;">{{ t.inviteEmailNote }}</div>
+              </sc-if>
+              <sc-if value="{{ errors.email }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--color-brand-red);margin-top:4px;">{{ errors.email }}</div></sc-if>
+            </div>
+            <div class="field">
+              <label for="cphone">{{ t.phone }}</label>
+              <input id="cphone" class="input" type="tel" value="{{ customer.phone }}" onChange="{{ onPhone }}">
+              <sc-if value="{{ errors.phone }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--color-brand-red);margin-top:4px;">{{ errors.phone }}</div></sc-if>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-4);display:flex;flex-direction:column;gap:var(--space-2);">
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;cursor:pointer;">
+              <input type="checkbox" checked="{{ consentPrivacy }}" onChange="{{ onConsentPrivacy }}" style="margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--color-accent);">
+              <span>{{ t.privacyLabel }} <a href="{{ privacyHref }}" target="_blank" rel="noopener">{{ t.privacyLink }}</a></span>
+            </label>
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;cursor:pointer;color:var(--color-neutral-700);">
+              <input type="checkbox" checked="{{ consentMarketing }}" onChange="{{ onConsentMarketing }}" style="margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--color-accent);">
+              <span>{{ t.marketingLabel }}</span>
+            </label>
+            <sc-if value="{{ errors.privacy }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px;color:var(--color-brand-red);">{{ errors.privacy }}</div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ errors.stock }}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="border-color:var(--color-brand-red);color:var(--color-brand-red);margin-top:var(--space-4);">{{ errors.stock }}</div>
+          </sc-if>
+          <button type="button" class="btn btn-primary btn-block" onClick="{{ submitOrder }}" style="margin-top:var(--space-6);">{{ submitLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ hasCartItems }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;left:0;right:0;bottom:0;background:var(--color-surface);padding:var(--space-3) var(--space-4);display:flex;align-items:center;justify-content:space-between;box-shadow:0 -8px 28px -12px rgba(24,24,40,.35);box-sizing:border-box;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>{{ cartCount }} {{ t.selected }}</span>
+          <sc-if value="{{ showPrices }}" hint-placeholder-val="{{ false }}">
+            <strong style="margin-left:6px;">€ {{ cartTotalLabel }}</strong>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ isConfirmation }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;max-width:640px;width:100%;margin:0 auto;padding:var(--space-6) var(--space-4) var(--space-8);box-sizing:border-box;text-align:center;">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green)" stroke-width="1.5" style="margin:0 auto var(--space-2);display:block;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+      <h1>{{ confirmationTitle }}</h1>
+      <p class="text-muted">{{ t.confirmedText }}</p>
+      <div class="card blueprint" style="display:inline-block;padding:var(--space-3) var(--space-6);margin:var(--space-3) 0;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="font-family:var(--font-heading);font-size:32px;font-weight:600;letter-spacing:0.04em;">{{ lastOrder.code }}</div>
+      </div>
+
+      <div style="text-align:left;margin-top:var(--space-6);">
+        <h4>{{ t.requestedItems }}</h4>
+        <sc-for list="{{ lastOrderItems }}" as="item" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--color-divider);">
+            <span>{{ item.qty }}× {{ item.name }} <span class="text-muted">{{ item.sizeLabel }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div class="card" style="margin-top:var(--space-8);padding:var(--space-6);text-align:left;">
+        <h4>{{ t.whatYouGet }}</h4>
+        <ul style="margin:0;padding-left:18px;color:var(--color-text);">
+          <li>{{ t.getQuote }}</li>
+          <li>{{ t.getList }}</li>
+          <li>{{ t.getPay }}</li>
+        </ul>
+        <p class="text-muted" style="margin-top:var(--space-3);margin-bottom:0;">{{ t.changeMind }} <strong>{{ t.navEdit }}</strong>, {{ t.changeMind2 }} <strong>{{ lastOrder.code }}</strong> {{ t.changeMind3 }}</p>
+      </div>
+
+      <button type="button" class="btn btn-secondary" style="margin-top:var(--space-6);" onClick="{{ goToCatalog }}">{{ t.backToCatalog }}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLookup }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;max-width:560px;width:100%;margin:0 auto;padding:var(--space-6) var(--space-4) var(--space-8);box-sizing:border-box;">
+      <h1>{{ t.lookupTitle }}</h1>
+      <p class="text-muted">{{ t.lookupIntro }}</p>
+      <div class="field">
+        <label for="lookupcode">{{ t.orderCode }}</label>
+        <input id="lookupcode" class="input" type="text" placeholder="SC-XXXX-XXXX" value="{{ lookupCode }}" onChange="{{ onLookupCode }}">
+      </div>
+      <div class="field">
+        <label for="lookupmail">{{ t.orderEmail }}</label>
+        <input id="lookupmail" class="input" type="email" placeholder="nome@esempio.it" value="{{ lookupEmail }}" onChange="{{ onLookupEmail }}">
+      </div>
+      <button type="button" class="btn btn-primary" style="margin-top:var(--space-2);" onClick="{{ runLookup }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        {{ t.search }}
+      </button>
+
+      <sc-if value="{{ lookupIncomplete }}" hint-placeholder-val="{{ false }}">
+        <p style="color:var(--color-brand-red);margin-top:var(--space-4);">{{ t.lookupIncomplete }}</p>
+      </sc-if>
+      <sc-if value="{{ lookupNotFound }}" hint-placeholder-val="{{ false }}">
+        <p style="color:var(--color-brand-red);margin-top:var(--space-4);">{{ t.lookupNotFound }}</p>
+      </sc-if>
+
+      <sc-if value="{{ lookupFound }}" hint-placeholder-val="{{ false }}">
+        <div class="card blueprint" style="margin-top:var(--space-4);padding:var(--space-4);text-align:left;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div class="card-kicker">Ordine {{ lookupFound.code }}</div>
+          <div class="card-title">{{ lookupFound.customer.name }} {{ lookupFound.customer.surname }}</div>
+          <sc-for list="{{ lookupFoundItems }}" as="item" hint-placeholder-count="2">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+              <span>{{ item.qty }}× {{ item.name }} <span class="text-muted">{{ item.sizeLabel }}</span></span>
+            </div>
+          </sc-for>
+          <div style="margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--color-divider);">
+            <sc-if value="{{ lookupFoundPending }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:4px;">{{ t.paidAsk }}</div>
+                <div class="seg">
+                  <sc-for list="{{ payMethodOptions }}" as="opt" hint-placeholder-count="2">
+                    <button type="button" class="seg-opt" style="{{ opt.style }}" onClick="{{ opt.select }}">{{ opt.label }}</button>
+                  </sc-for>
+                </div>
+                <button type="button" class="btn btn-primary btn-block" style="margin-top:var(--space-2);" onClick="{{ declarePayment }}">{{ t.paidButton }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ lookupFoundDeclared }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;color:#8a6d00;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/></svg>
+                {{ lookupPaymentLabel }}
+              </div>
+            </sc-if>
+            <sc-if value="{{ lookupFoundPaid }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--color-brand-green);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                {{ lookupPaymentLabel }}
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ lookupFoundPaid }}" hint-placeholder-val="{{ false }}">
+            <p class="text-muted" style="font-size:12px;margin:var(--space-2) 0 0;">{{ t.paidNote }}</p>
+          </sc-if>
+          <sc-if value="{{ lookupFoundEditable }}" hint-placeholder-val="{{ true }}">
+            <button type="button" class="btn btn-primary btn-block" style="margin-top:var(--space-3);" onClick="{{ startEditing }}">{{ t.editQty }}</button>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isAdminLocked }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;max-width:420px;width:100%;margin:0 auto;padding:var(--space-8) var(--space-4);box-sizing:border-box;text-align:center;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="margin:0 auto var(--space-2);display:block;"><rect x="4" y="10" width="16" height="10" rx="1"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <h1>Area riservata</h1>
+      <p class="text-muted">Accedi con l'account admin creato su Supabase (Authentication → Users).</p>
+      <sc-if value="{{ mfaAskPassword }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div class="field" style="text-align:left;">
+            <label for="adminemail">Email</label>
+            <input id="adminemail" class="input" type="email" value="{{ adminEmail }}" onChange="{{ onAdminEmail }}">
+          </div>
+          <div class="field" style="text-align:left;">
+            <label for="adminpass">Password</label>
+            <input id="adminpass" class="input" type="password" value="{{ adminPassInput }}" onChange="{{ onAdminPass }}" onKeyDown="{{ onAdminPassKey }}">
+          </div>
+          <sc-if value="{{ adminPassError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:var(--color-brand-red);margin:4px 0;">{{ adminPassError }}</div>
+          </sc-if>
+          <button type="button" class="btn btn-primary btn-block" onClick="{{ unlockAdmin }}" disabled="{{ adminBusy }}">{{ adminButtonLabel }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ mfaAskCode }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <p class="text-muted" style="margin-top:-4px;">Apri Google Authenticator e scrivi il codice a sei cifre che vedi accanto a SunnyCreations.</p>
+          <div class="field" style="text-align:left;">
+            <label for="mfacode">Codice</label>
+            <input id="mfacode" class="input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" style="font-size:22px;letter-spacing:.3em;text-align:center;" value="{{ mfaCode }}" onChange="{{ onMfaCode }}" onKeyDown="{{ onMfaCodeKey }}">
+          </div>
+          <sc-if value="{{ adminPassError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:var(--color-brand-red);margin:4px 0;">{{ adminPassError }}</div>
+          </sc-if>
+          <button type="button" class="btn btn-primary btn-block" onClick="{{ verifyMfa }}" disabled="{{ adminBusy }}">{{ mfaVerifyLabel }}</button>
+          <button type="button" class="btn btn-ghost btn-block" onClick="{{ cancelMfa }}">Annulla</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;max-width:900px;width:100%;margin:0 auto;padding:var(--space-6) var(--space-4) var(--space-8);box-sizing:border-box;">
+      <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <h6 style="color:var(--color-brand-red);">Area admin</h6>
+          <h1>Area admin</h1>
+        </div>
+        <button type="button" class="btn btn-ghost" onClick="{{ lockAdmin }}">Esci</button>
+      </div>
+
+      <div class="no-print-on-order" style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin:var(--space-4) 0;">
+        <div class="card" style="gap:2px;">
+          <div class="card-kicker">Ordini</div>
+          <div style="font-family:var(--font-heading);font-size:28px;line-height:1;">{{ summaryOrderCount }}</div>
+        </div>
+        <div class="card" style="gap:2px;">
+          <div class="card-kicker">Da incassare</div>
+          <div style="font-family:var(--font-heading);font-size:28px;line-height:1;">€ {{ summaryToCollect }}</div>
+        </div>
+        <div class="card" style="gap:2px;">
+          <div class="card-kicker">Incassato</div>
+          <div style="font-family:var(--font-heading);font-size:28px;line-height:1;color:var(--color-brand-green);">€ {{ summaryCollected }}</div>
+        </div>
+        <div class="card" style="gap:2px;">
+          <div class="card-kicker">Sotto scorta</div>
+          <div style="font-family:var(--font-heading);font-size:28px;line-height:1;color:var(--color-brand-red);">{{ summaryLowStock }}</div>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasEvents }}" hint-placeholder-val="{{ true }}">
+        <div class="no-print-on-order field" style="max-width:360px;margin-bottom:var(--space-4);">
+          <label for="adminevent">Evento — i numeri qui sotto riguardano solo questo</label>
+          <select id="adminevent" class="input" value="{{ adminEvent }}" onChange="{{ onAdminEvent }}">
+            <sc-for list="{{ eventOptions }}" as="ev" hint-placeholder-count="2">
+              <option value="{{ ev.id }}">{{ ev.label }}</option>
+            </sc-for>
+          </select>
+        </div>
+      </sc-if>
+
+      <div class="no-print-on-order seg" style="margin-bottom:var(--space-6);">
+        <sc-for list="{{ adminTabs }}" as="tab" hint-placeholder-count="5">
+          <button type="button" class="seg-opt" style="{{ tab.style }}" onClick="{{ tab.select }}">{{ tab.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isTabRichieste }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h3 style="margin-top:0;">Richieste di informazioni</h3>
+          <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido 14 giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta.</p>
+          <table class="table">
+            <thead><tr><th>Quando</th><th>Chi</th><th>Messaggio</th><th>Stato</th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ inquiryRows }}" as="q" hint-placeholder-count="3">
+                <tr>
+                  <td style="white-space:nowrap;">{{ q.dateLabel }}<div class="text-muted" style="font-size:11px;">{{ q.langLabel }}</div></td>
+                  <td>{{ q.name }}<div class="text-muted" style="font-size:11px;">{{ q.email }}</div></td>
+                  <td style="max-width:280px;white-space:pre-wrap;">{{ q.message }}</td>
+                  <td style="{{ q.statusStyle }}">{{ q.statusLabel }}</td>
+                  <td style="white-space:nowrap;">
+                    <sc-if value="{{ q.isNew }}" hint-placeholder-val="{{ true }}">
+                      <span>
+                        <button type="button" class="btn btn-primary" onClick="{{ q.accept }}">Accetta e invita</button>
+                        <button type="button" class="btn btn-ghost" onClick="{{ q.reject }}">Archivia</button>
+                      </span>
+                    </sc-if>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabOrdini }}" hint-placeholder-val="{{ true }}">
+        <div>
+        <h3 class="no-print-on-order" style="margin-top:0;">Ordini</h3>
+        <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
+          <sc-for list="{{ orderFilters }}" as="f" hint-placeholder-count="4">
+            <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <table class="table no-print-on-order">
+          <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Evento</th><th></th></tr></thead>
+          <tbody>
+            <sc-for list="{{ adminOrders }}" as="o" hint-placeholder-count="3">
+              <tr>
+                <td>{{ o.code }}</td>
+                <td>{{ o.customer.name }} {{ o.customer.surname }}</td>
+                <td>{{ o.dateLabel }}</td>
+                <td>€ {{ o.totalLabel }}</td>
+                <td style="{{ o.statusStyle }}">{{ o.statusLabel }}</td>
+                <td>
+                  <sc-if value="{{ hasSeveralEvents }}" hint-placeholder-val="{{ true }}">
+                    <select class="input" style="min-width:150px;font-size:13px;" value="{{ o.eventId }}" onChange="{{ o.moveTo }}">
+                      <sc-for list="{{ eventChoices }}" as="ec" hint-placeholder-count="2">
+                        <option value="{{ ec.id }}">{{ ec.label }}</option>
+                      </sc-for>
+                    </select>
+                  </sc-if>
+                </td>
+                <td style="white-space:nowrap;">
+                  <button type="button" class="btn btn-ghost" onClick="{{ o.viewDetail }}">Dettagli</button>
+                  <sc-if value="{{ o.isNotPaid }}" hint-placeholder-val="{{ true }}">
+                    <button type="button" class="btn btn-ghost" onClick="{{ o.markPaid }}">Segna pagato</button>
+                  </sc-if>
+                  <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ o.cancel }}">Annulla</button>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+
+        <sc-if value="{{ selectedOrder }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:var(--space-6);">
+            <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
+              <h3 style="margin:0;">Scheda preparazione — {{ selectedOrder.code }}</h3>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-secondary" onClick="{{ printOrderDetail }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
+                  Stampa questo ordine
+                </button>
+                <button type="button" class="btn btn-ghost" onClick="{{ closeOrderDetail }}">Chiudi</button>
+              </div>
+            </div>
+            <div class="card blueprint elev-sm" style="padding:var(--space-4);">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div class="card-kicker">Ordine {{ selectedOrder.code }} — {{ selectedOrder.dateLabel }}</div>
+              <div class="card-title">{{ selectedOrder.customer.name }} {{ selectedOrder.customer.surname }}</div>
+              <p class="card-body" style="margin-bottom:var(--space-3);">{{ selectedOrder.customer.email }} · {{ selectedOrder.customer.phone }}</p>
+              <table class="table">
+                <thead><tr><th>Articolo</th><th>Taglia</th><th>Quantità</th><th>Prezzo</th><th>Totale</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ selectedOrderItems }}" as="item" hint-placeholder-count="2">
+                    <tr><td>{{ item.name }}</td><td>{{ item.sizeLabel }}</td><td>{{ item.qty }}</td><td>€ {{ item.priceLabel }}</td><td>€ {{ item.lineTotalLabel }}</td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <div style="display:flex;justify-content:space-between;font-weight:600;font-size:18px;padding-top:var(--space-2);border-top:1px solid var(--color-divider);margin-top:var(--space-2);">
+                <span>Totale</span><span>€ {{ selectedOrder.totalLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabMagazzino }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div class="no-print-on-order" style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
+            <button type="button" class="btn btn-secondary" onClick="{{ printAdmin }}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
+              Stampa totali da produrre
+            </button>
+          </div>
+
+          <h3 class="no-print-on-order" style="margin-top:0;">Giacenze</h3>
+          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile.</p>
+          <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
+            <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+              <div class="card-title">{{ g.name }}</div>
+              <sc-if value="{{ g.unlimited }}" hint-placeholder-val="{{ false }}">
+                <div class="text-muted" style="font-size:12px;">Nessuna giacenza impostata — sempre disponibile. Scrivi un numero per iniziare a tracciarlo.</div>
+              </sc-if>
+              <table class="table">
+                <thead><tr><th>Taglia</th><th>Disponibili</th><th>Stato</th><th>Aggiungi</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="6">
+                    <tr>
+                      <td>{{ r.sizeLabel }}</td>
+                      <td><input class="input" type="number" min="0" step="1" style="max-width:90px;" value="{{ r.qty }}" onChange="{{ r.onQty }}"></td>
+                      <td style="{{ r.statusStyle }}">{{ r.statusLabel }}</td>
+                      <td style="white-space:nowrap;display:flex;gap:6px;align-items:center;">
+                        <input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="+" value="{{ r.restockValue }}" onChange="{{ r.onRestock }}">
+                        <button type="button" class="btn btn-secondary" onClick="{{ r.add }}">Aggiungi</button>
+                      </td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-for>
+
+        <h3 class="no-print-on-order">Totali per articolo</h3>
+        <table class="table no-print-on-order">
+          <thead><tr><th>Articolo</th><th>Quantità</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ adminAggregates }}" as="row" hint-placeholder-count="3">
+              <tr><td>{{ row.label }}</td><td>{{ row.qty }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabProdotti }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;">Prodotti</h3>
+            <button type="button" class="btn btn-primary" onClick="{{ newProduct }}">+ Nuovo articolo</button>
+          </div>
+          <p class="text-muted">Qui aggiungi e modifichi gli articoli del catalogo, prezzi compresi. "Ritira" toglie un articolo dal catalogo senza cancellarlo, così gli ordini già ricevuti continuano a mostrarlo. Il numero in "Ordine" decide in che posizione compare.</p>
+
+          <sc-if value="{{ hasProductForm }}" hint-placeholder-val="{{ false }}">
+            <div class="card blueprint elev-sm" style="padding:var(--space-4);margin-bottom:var(--space-4);">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div class="card-kicker">{{ productFormTitle }}</div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-2);">
+                <div class="field">
+                  <label for="pname">Nome</label>
+                  <input id="pname" class="input" type="text" value="{{ productForm.name }}" onChange="{{ onProductName }}">
+                </div>
+                <div class="field">
+                  <label for="pkicker">Categoria</label>
+                  <input id="pkicker" class="input" type="text" placeholder="Abbigliamento, Accessori, Idee regalo…" value="{{ productForm.kicker }}" onChange="{{ onProductKicker }}">
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="pdesc">Descrizione</label>
+                <textarea id="pdesc" class="input" value="{{ productForm.desc }}" onChange="{{ onProductDesc }}"></textarea>
+              </div>
+
+              <div class="field">
+                <label for="psizes">Taglie</label>
+                <div class="seg" style="margin-bottom:6px;">
+                  <sc-for list="{{ sizePresets }}" as="sp" hint-placeholder-count="3">
+                    <button type="button" class="seg-opt" onClick="{{ sp.select }}">{{ sp.label }}</button>
+                  </sc-for>
+                </div>
+                <input id="psizes" class="input" type="text" placeholder="Lascia vuoto se non ha taglie" value="{{ productForm.sizesText }}" onChange="{{ onProductSizes }}">
+              </div>
+
+              <div class="field">
+                <label for="pphoto">Foto</label>
+                <div style="display:flex;gap:var(--space-3);align-items:center;">
+                  <sc-if value="{{ productFormHasPhoto }}" hint-placeholder-val="{{ true }}">
+                    <img src="{{ productForm.photo }}" alt="Anteprima" style="width:96px;height:72px;object-fit:cover;border:1px solid var(--color-divider);">
+                  </sc-if>
+                  <input id="pphoto" class="input" type="file" accept="image/*" onChange="{{ onProductPhoto }}">
+                </div>
+                <div class="text-muted" style="font-size:11px;margin-top:4px;">La foto viene rimpicciolita qui nel browser prima di partire: una da 4 MB del telefono diventa circa 200 KB.</div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+                <div class="field">
+                  <label for="pprice">Prezzo €</label>
+                  <input id="pprice" class="input" type="number" min="0" step="0.5" value="{{ productForm.price }}" onChange="{{ onProductPrice }}">
+                </div>
+                <div class="field">
+                  <label for="porder">Ordine nel catalogo</label>
+                  <input id="porder" class="input" type="number" step="10" value="{{ productForm.sortOrder }}" onChange="{{ onProductOrder }}">
+                </div>
+              </div>
+
+              <sc-if value="{{ productError }}" hint-placeholder-val="{{ false }}">
+                <div style="color:var(--color-brand-red);font-size:13px;">{{ productError }}</div>
+              </sc-if>
+
+              <div style="display:flex;gap:var(--space-2);justify-content:flex-end;margin-top:var(--space-2);">
+                <button type="button" class="btn btn-ghost" onClick="{{ closeProductForm }}">Annulla</button>
+                <button type="button" class="btn btn-primary" onClick="{{ saveProduct }}" disabled="{{ productBusy }}">{{ productSaveLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <table class="table">
+            <thead><tr><th></th><th>Articolo</th><th>Prezzo</th><th>Taglie</th><th>Ordine</th><th>Stato</th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ productRows }}" as="p" hint-placeholder-count="5">
+                <tr>
+                  <td>
+                    <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ true }}">
+                      <img src="{{ p.photo }}" alt="" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--color-divider);">
+                    </sc-if>
+                  </td>
+                  <td>
+                    {{ p.name }}
+                    <div class="text-muted" style="font-size:11px;">{{ p.kicker }}</div>
+                  </td>
+                  <td>€ {{ p.priceLabel }}</td>
+                  <td>{{ p.sizesLabel }}</td>
+                  <td>{{ p.sortOrder }}</td>
+                  <td style="{{ p.statusStyle }}">{{ p.statusLabel }}</td>
+                  <td style="white-space:nowrap;">
+                    <button type="button" class="btn btn-ghost" onClick="{{ p.edit }}">Modifica</button>
+                    <button type="button" class="btn btn-ghost" onClick="{{ p.toggle }}">{{ p.toggleLabel }}</button>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabImpostazioni }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h3 style="margin-top:0;">Catalogo</h3>
+          <div class="field">
+            <label>Prezzi nel catalogo</label>
+            <div class="seg">
+              <sc-for list="{{ showPricesOptions }}" as="o" hint-placeholder-count="2">
+                <button type="button" class="seg-opt" style="{{ o.style }}" onClick="{{ o.select }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+            <div class="text-muted" style="font-size:11px;margin-top:6px;">Da spento la pagina resta una vetrina: si prenota senza vedere gli importi, e il prezzo arriva nel preventivo via email. Da acceso compaiono prezzo per articolo e totale del carrello.</div>
+          </div>
+
+          <h3 style="margin-top:var(--space-8);">Pagamenti</h3>
+          <p class="text-muted" style="margin-top:-6px;">Questi valori finiscono nella mail di preventivo. Cambiali qui: la mail li rilegge a ogni invio, non serve toccare il codice.</p>
+
+          <div class="field">
+            <label for="setpaypalme">Link PayPal.Me</label>
+            <input id="setpaypalme" class="input" type="text" placeholder="https://www.paypal.me/nome" value="{{ settingPaypalMe }}" onChange="{{ onSettingPaypalMe }}">
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Lascialo vuoto per togliere dalla mail il pulsante di pagamento e il QR.</div>
+          </div>
+          <div class="field">
+            <label for="setpaypalmail">Indirizzo PayPal</label>
+            <input id="setpaypalmail" class="input" type="email" placeholder="nome@esempio.it" value="{{ settingPaypalEmail }}" onChange="{{ onSettingPaypalEmail }}">
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Serve a chi preferisce fare il pagamento a mano dall'app di PayPal.</div>
+          </div>
+          <div class="field">
+            <label for="setnote">Istruzioni per il pagamento — italiano</label>
+            <textarea id="setnote" class="input" value="{{ settingPaymentNote }}" onChange="{{ onSettingPaymentNote }}"></textarea>
+          </div>
+          <div class="field">
+            <label for="setnoteen">Istruzioni per il pagamento — inglese</label>
+            <textarea id="setnoteen" class="input" value="{{ settingPaymentNoteEn }}" onChange="{{ onSettingPaymentNoteEn }}"></textarea>
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Va nelle mail di chi ha prenotato dalla versione inglese del sito.</div>
+          </div>
+
+          <div class="field">
+            <label>Bonifico bancario</label>
+            <div class="seg">
+              <sc-for list="{{ showIbanOptions }}" as="o" hint-placeholder-count="2">
+                <button type="button" class="seg-opt" style="{{ o.style }}" onClick="{{ o.select }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-3);">
+            <div class="field">
+              <label for="setiban">IBAN</label>
+              <input id="setiban" class="input" type="text" placeholder="IT.." value="{{ settingIban }}" onChange="{{ onSettingIban }}">
+            </div>
+            <div class="field">
+              <label for="setibanholder">Intestatario</label>
+              <input id="setibanholder" class="input" type="text" value="{{ settingIbanHolder }}" onChange="{{ onSettingIbanHolder }}">
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:var(--space-3);">
+            <button type="button" class="btn btn-primary" onClick="{{ saveSettings }}" disabled="{{ settingsBusy }}">{{ settingsSaveLabel }}</button>
+            <sc-if value="{{ settingsMsg }}" hint-placeholder-val="{{ false }}">
+              <span class="text-muted" style="font-size:13px;">{{ settingsMsg }}</span>
+            </sc-if>
+          </div>
+
+          <h3 style="margin-top:var(--space-8);">Sicurezza</h3>
+          <p class="text-muted" style="margin-top:-6px;">Con l'autenticatore acceso, per entrare qui servono la password <em>e</em> il codice a sei cifre del telefono. Questa pagina è pubblica e qui dentro ci sono nome, email e telefono di chi ha prenotato.</p>
+
+          <sc-if value="{{ mfaOn }}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;">
+              <span style="color:var(--color-brand-green);font-weight:600;">Autenticatore attivo</span>
+              <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ removeMfa }}">Togli</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mfaOff }}" hint-placeholder-val="{{ true }}">
+            <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;">
+              <span class="text-muted">Non attivo: per entrare basta la password.</span>
+              <button type="button" class="btn btn-primary" onClick="{{ startMfaEnroll }}">Attiva</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mfaEnrolling }}" hint-placeholder-val="{{ false }}">
+            <div class="card" style="padding:var(--space-6);">
+              <div class="card-title">Inquadra il codice con Google Authenticator</div>
+              <p class="card-body">Apri l'app sul telefono, premi <strong>+</strong> e scegli "Scansiona codice QR". Poi scrivi qui sotto le sei cifre che compaiono.</p>
+              <img src="{{ mfaQr }}" alt="Codice QR per l'autenticatore" style="width:200px;height:200px;background:#fff;padding:8px;border-radius:12px;">
+              <p class="text-muted" style="font-size:12px;margin:0;">Se non riesci a inquadrarlo, inserisci a mano questo codice — e conservalo, è quello che ti rimette dentro se cambi telefono:<br><code style="font-size:13px;letter-spacing:.08em;">{{ mfaSecret }}</code></p>
+              <div class="field" style="max-width:220px;">
+                <label for="mfaenroll">Codice dall'app</label>
+                <input id="mfaenroll" class="input" type="text" inputmode="numeric" placeholder="000000" style="font-size:18px;letter-spacing:.25em;text-align:center;" value="{{ mfaEnrollCode }}" onChange="{{ onMfaEnrollCode }}">
+              </div>
+              <div style="display:flex;gap:var(--space-2);">
+                <button type="button" class="btn btn-primary" onClick="{{ confirmMfaEnroll }}">Conferma</button>
+                <button type="button" class="btn btn-ghost" onClick="{{ cancelMfaEnroll }}">Annulla</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mfaError }}" hint-placeholder-val="{{ false }}">
+            <div style="color:var(--color-brand-red);font-size:13px;">{{ mfaError }}</div>
+          </sc-if>
+
+          <h3 style="margin-top:var(--space-8);">Eventi</h3>
+          <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. Finita una manifestazione non si cancella niente: apri l'evento nuovo, e la vista si svuota da sé. L'anno dopo ritrovi tutto.</p>
+
+          <table class="table">
+            <thead><tr><th>Evento</th><th>Ordini</th><th></th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ eventRows }}" as="ev" hint-placeholder-count="2">
+                <tr>
+                  <td>{{ ev.name }} <span style="{{ ev.currentStyle }}">· {{ ev.currentLabel }}</span></td>
+                  <td>{{ ev.orderCount }}</td>
+                  <td>
+                    <sc-if value="{{ ev.canBeCurrent }}" hint-placeholder-val="{{ true }}">
+                      <button type="button" class="btn btn-ghost" onClick="{{ ev.makeCurrent }}">Rendi corrente</button>
+                    </sc-if>
+                  </td>
+                  <td><button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ ev.purge }}">Cancella ordini</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <div style="display:flex;gap:var(--space-2);align-items:flex-end;max-width:520px;margin-top:var(--space-3);">
+            <div class="field" style="flex:1;margin:0;">
+              <label for="newevent">Nuovo evento</label>
+              <input id="newevent" class="input" type="text" placeholder="Es. WKSF Championship 2027, oppure Lavori 2027" value="{{ newEventName }}" onChange="{{ onNewEventName }}">
+            </div>
+            <button type="button" class="btn btn-secondary" onClick="{{ createEvent }}">Crea</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabContabilita }}" hint-placeholder-val="{{ false }}">
+        <div>
+        <h3 class="no-print-on-order" style="margin-top:var(--space-6);">Contabilità — solo per te</h3>
+        <p class="no-print-on-order text-muted" style="margin-top:-6px;">Imposta il costo materiale per unità di ogni articolo (e un eventuale costo del tuo tempo/beneficenza) per calcolare quanto resta all'evento.</p>
+        <table class="table no-print-on-order">
+          <thead><tr><th>Articolo</th><th>Venduti</th><th>Ricavo</th><th>Costo materiale/unità</th><th>Costo totale</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ costRows }}" as="row" hint-placeholder-count="4">
+              <tr>
+                <td>{{ row.label }}</td>
+                <td>{{ row.qty }}</td>
+                <td>€ {{ row.revenueLabel }}</td>
+                <td><input class="input" type="number" min="0" step="0.5" style="max-width:100px;" value="{{ row.unitCost }}" onChange="{{ row.onCost }}"></td>
+                <td>€ {{ row.costLabel }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <div class="no-print-on-order field" style="max-width:280px;margin-top:var(--space-3);">
+          <label for="extracost">Altri costi (stampa, spedizioni…)</label>
+          <input id="extracost" class="input" type="number" min="0" step="1" value="{{ extraCost }}" onChange="{{ onExtraCost }}">
+        </div>
+        <div class="no-print-on-order card blueprint elev-sm" style="margin-top:var(--space-4);padding:var(--space-4);max-width:420px;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Ricavo totale</span><strong>€ {{ adminRevenueLabel }}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Costi materiali + altri</span><strong>€ {{ totalCostLabel }}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:4px;border-top:1px solid var(--color-divider);font-size:18px;"><span>A copertura evento / beneficenza</span><strong style="color:var(--color-brand-green);">€ {{ surplusLabel }}</strong></div>
+        </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isVetrina }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;width:100%;margin:0 auto;padding:0 var(--space-4) var(--space-8);box-sizing:border-box;">
+      <sc-if value="{{ inquirySent }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
+          <div class="card-title">{{ t.inquirySentTitle }}</div>
+          <p class="card-body" style="margin:0;">{{ t.inquirySentText }}</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ inquiryOpen }}" hint-placeholder-val="{{ true }}">
+        <div class="card" style="padding:var(--space-6);">
+          <h3 style="margin-top:0;">{{ t.inquiryTitle }}</h3>
+          <p class="text-muted" style="margin-top:-6px;">{{ t.inquiryIntro }}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+            <div class="field">
+              <label for="qname">{{ t.inquiryName }}</label>
+              <input id="qname" class="input" type="text" value="{{ inquiryName }}" onChange="{{ onInquiryName }}">
+            </div>
+            <div class="field">
+              <label for="qmail">{{ t.inquiryEmail }}</label>
+              <input id="qmail" class="input" type="email" value="{{ inquiryEmailValue }}" onChange="{{ onInquiryEmail }}">
+            </div>
+          </div>
+          <div class="field">
+            <label for="qmsg">{{ t.inquiryMessage }}</label>
+            <textarea id="qmsg" class="input" value="{{ inquiryMessageValue }}" onChange="{{ onInquiryMessage }}"></textarea>
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">{{ t.inquiryMessageHint }}</div>
+          </div>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;cursor:pointer;">
+            <input type="checkbox" checked="{{ inquiryConsent }}" onChange="{{ onInquiryConsent }}" style="margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--color-accent);">
+            <span>{{ t.privacyLabel }} <a href="{{ privacyHref }}" target="_blank" rel="noopener">{{ t.privacyLink }}</a></span>
+          </label>
+          <sc-if value="{{ inquiryError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:var(--color-brand-red);">{{ inquiryError }}</div>
+          </sc-if>
+          <button type="button" class="btn btn-primary" style="align-self:flex-start;" onClick="{{ sendInquiry }}" disabled="{{ inquiryBusy }}">{{ inquirySendLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <footer style="padding:var(--space-6) var(--space-4);text-align:center;font-size:12px;" class="text-muted">
+    <a href="{{ privacyHref }}" target="_blank" rel="noopener">{{ t.footerPrivacy }}</a>
+  </footer>
+
+  <sc-if value="{{ zoomPhoto }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(20,20,25,0.9);z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--space-6);" onClick="{{ closeZoom }}">
+      <img src="{{ zoomPhoto }}" alt="Zoom" style="max-width:100%;max-height:100%;object-fit:contain;box-shadow:var(--shadow-lg);">
+      <button type="button" class="btn btn-secondary btn-icon" style="position:absolute;top:20px;right:20px;background:#fff;" onClick="{{ closeZoom }}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    view: 'catalog',
+    editingCode: null,
+    cart: {},
+    selection: {
+      'tshirt-bianca': { size: 'S', qty: 1 },
+      'tshirt-arancio': { size: 'S', qty: 1 },
+      'tshirt-woman': { size: 'S', qty: 1 },
+      buff: { qty: 1 },
+      portamedaglie: { qty: 1 },
+      panni: { qty: 1 },
+      kettlebell3d: { qty: 1 },
+      'tshirt-legendary': { size: 'S', qty: 1 },
+      zaino: { qty: 1 },
+      'sacca-camo': { qty: 1 },
+      borraccia: { qty: 1 },
+      telo: { qty: 1 },
+      orecchini: { qty: 1 },
+      portachiavi: { qty: 1 },
+      'kettlebell-oro': { qty: 1 },
+      'kettlebell-lampada': { qty: 1 },
+      'tshirt-bianca-kid': { size: '4', qty: 1 },
+      'tshirt-arancio-kid': { size: '4', qty: 1 },
+    },
+    customer: { name: '', surname: '', email: '', phone: '' },
+    errors: {},
+    orders: [],
+    lookupCode: '',
+    lookupEmail: '',
+    editingEmail: null,
+    payMethod: 'PayPal',
+    lang: 'it',
+    // 'vetrina' su qualsiasi indirizzo, 'preordini' solo su preordini.*
+    mode: 'preordini',
+    invite: null,          // { token, email } quando si arriva da un invito valido
+    inviteChecked: false,
+    inquiry: { name: '', email: '', message: '' },
+    inquiryConsent: false,
+    inquiryBusy: false,
+    inquirySent: false,
+    inquiryError: '',
+    inquiries: [],
+    consentPrivacy: false,
+    consentMarketing: false,
+    lookupResult: 'none',
+    lastOrder: null,
+    unitCosts: {},
+    extraCost: 0,
+    adminUnlocked: false,
+    adminTab: 'ordini',
+    settings: {},
+    settingsBusy: false,
+    settingsMsg: '',
+    events: [],
+    adminEvent: '',       // '' finché non si conosce l'evento corrente, 'tutti' = nessun filtro
+    newEventName: '',
+    orderFilter: 'tutti',
+    productForm: null,   // null = nessuna scheda aperta
+    productError: '',
+    productBusy: false,
+    restock: {},      // { 'id::size': '3' } — contenuto dei campi "+"
+    adminEmail: '',
+    adminPassInput: '',
+    adminPassError: '',
+    mfaStage: '',          // '' = email e password, 'code' = codice a sei cifre
+    mfaFactorId: '',
+    mfaChallengeId: '',
+    mfaCode: '',
+    mfaFactors: [],
+    mfaEnroll: null,       // { factorId, qr, secret } durante l'attivazione
+    mfaEnrollCode: '',
+    mfaError: '',
+    adminBusy: false,
+    selectedOrderCode: null,
+    zoomPhoto: null,
+    prices: {},
+    catalog: [],      // catalogo dal database; vuoto = si usa l'elenco qui sotto
+    stock: {},        // { productId: { [size|'']: qty } } — id assente = illimitato
+    dbReady: false,
+  };
+
+  products = [
+    { id: 'tshirt-bianca', kicker: 'Abbigliamento', name: 'T-shirt WKSF Open — Bianca', desc: 'T-shirt tecnica con logo lumaca sul petto e WKSF sul retro, taglio unisex.', price: 18, sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], photo: 'assets/products/tshirt-bianca.jpg' },
+    { id: 'tshirt-arancio', kicker: 'Abbigliamento', name: 'T-shirt WKSF Open — Arancio', desc: 'Stessa grafica in versione arancio fluo, taglio unisex.', price: 18, sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], photo: 'assets/products/tshirt-arancio.jpg' },
+    { id: 'tshirt-woman', kicker: 'Abbigliamento', name: 'T-shirt Kettlebell Woman', desc: 'T-shirt grigia melange con stampa "Kettlebell Woman" sul retro.', price: 18, sizes: ['XS', 'S', 'M', 'L', 'XL'], photo: 'assets/products/tshirt-kettlebell-woman.jpg' },
+    { id: 'buff', kicker: 'Accessori', name: 'Scaldacollo WKSF', desc: 'Buff/scaldacollo giallo con logo WKSF Italy Turbigo, taglia unica.', price: 8, sizes: null, photo: 'assets/products/buff-giallo.jpg' },
+    { id: 'portamedaglie', kicker: 'Idee regalo', name: 'Porta-medaglie in legno "Kettlebell Sport"', desc: 'Pannello in legno inciso a forma di kettlebell, per appendere le medaglie.', price: 25, sizes: null, photo: 'assets/products/portamedaglie-legno.jpg' },
+    { id: 'panni', kicker: 'Idee regalo', name: 'Panni struccanti settimanali (set 7pz)', desc: 'Set di 7 panni riutilizzabili in microfibra, uno per ogni giorno della settimana.', price: 10, sizes: null, photo: 'assets/products/panni-struccanti.jpg' },
+    { id: 'kettlebell3d', kicker: 'Idee regalo', name: 'Kettlebell decorativa 3D', desc: 'Collezione di mini kettlebell stampate in 3D, alcune luminose, personalizzabili con logo.', price: 22, sizes: null, photo: 'assets/products/kettlebell-3d.jpg' },
+    { id: 'tshirt-legendary', kicker: 'Abbigliamento', name: 'T-shirt "Legendary Super Girevik"', desc: 'T-shirt bianca con grafica fantasy sul fronte e scritta sul retro, taglio unisex.', price: 18, sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'], photo: 'assets/products/tshirt-legendary.jpg' },
+    { id: 'zaino', kicker: 'Accessori', name: 'Zaino WKSF', desc: 'Zaino sportivo giallo con logo WKSF, tasche laterali e schienale imbottito.', price: 15, sizes: null, photo: 'assets/products/zaino-giallo.jpg' },
+    { id: 'sacca-camo', kicker: 'Accessori', name: 'Sacca porta attrezzi camo WKSF', desc: 'Sacca militare in tessuto camouflage con logo WKSF, ideale per kettlebell e accessori.', price: 5, sizes: null, photo: 'assets/products/sacca-camo.jpg' },
+    { id: 'borraccia', kicker: 'Accessori', name: 'Borraccia WKSF', desc: 'Borraccia in acciaio "Kettlebell Sport For All", 500ml.', price: 12, sizes: null, photo: 'assets/products/borraccia.jpg' },
+    { id: 'telo', kicker: 'Accessori', name: 'Telo microfibra WKSF', desc: 'Telo asciugamano in microfibra verde con logo WKSF, si asciuga in fretta.', price: 15, sizes: null, photo: 'assets/products/telo-microfibra.jpg' },
+    { id: 'orecchini', kicker: 'Idee regalo', name: 'Orecchini kettlebell', desc: 'Orecchini pendenti a forma di kettlebell stampati in 3D, vari colori.', price: 8, sizes: null, photo: 'assets/products/orecchini-kb.jpg' },
+    { id: 'portachiavi', kicker: 'Idee regalo', name: 'Portachiavi kettlebell WASF', desc: 'Set di mini kettlebell portachiavi trasparenti colorati, stampati in 3D.', price: 4, sizes: null, photo: 'assets/products/portachiavi-kb.jpg' },
+    { id: 'kettlebell-oro', kicker: 'Idee regalo', name: 'Kettlebell trofeo dorata', desc: 'Kettlebell decorativa dorata con logo WKSF, effetto trofeo.', price: 35, sizes: null, photo: 'assets/products/kettlebell-oro.jpg' },
+    { id: 'kettlebell-lampada', kicker: 'Idee regalo', name: 'Lampada foto kettlebell', desc: 'Lampada a forma di kettlebell con cornice porta-foto retroilluminata, personalizzabile.', price: 55, sizes: null, photo: 'assets/products/kettlebell-lampada.jpg' },
+    // TODO(sunny): confermare quali modelli escono anche in versione bambino
+    // e a che prezzo — qui 15 € è provvisorio.
+    { id: 'tshirt-bianca-kid', kicker: 'Bambino', name: 'T-shirt WKSF Open — Bianca · Bambino', desc: 'Stessa grafica della versione adulto, in taglie bambino.', price: 15, sizes: ['4', '6', '8', '10', '12', '14'], photo: 'assets/products/tshirt-bianca.jpg' },
+    { id: 'tshirt-arancio-kid', kicker: 'Bambino', name: 'T-shirt WKSF Open — Arancio · Bambino', desc: 'Versione arancio fluo, in taglie bambino.', price: 15, sizes: ['4', '6', '8', '10', '12', '14'], photo: 'assets/products/tshirt-arancio.jpg' },
+  ];
+
+
+  // ── Testi ──────────────────────────────────────────────────────────────
+  // Solo quello che vede il cliente. L'area riservata resta in italiano:
+  // la usa una persona sola e tradurla raddoppierebbe la manutenzione.
+  strings = {
+    it: {
+      navBook: 'Prenota', navEdit: 'Modifica un ordine',
+      kicker: 'Preordini ufficiali',
+      intro: "Scegli taglia e quantità per ogni articolo che ti interessa e lascia i tuoi dati. Ti mandiamo via email il preventivo con i prezzi, il listino completo e come pagare — se poi vuoi cambiare qualcosa, riapri l'ordine con il codice e modifica le quantità.",
+      madeBy: 'Prodotti realizzati a mano da',
+      proceeds: "Il ricavato, tolti i costi dei materiali, va a copertura delle spese dell'evento / beneficenza.",
+      editingOrder: "Stai modificando l'ordine", cancelEditing: 'Annulla modifica',
+      size: 'Taglia', add: 'Aggiungi', decrease: 'Diminuisci quantità', increase: 'Aumenta quantità',
+      soldOut: 'Esaurito', lastOne: 'Ultimo disponibile', lastTwo: 'Ultimi 2 disponibili', available: 'Disponibili',
+      yourItems: 'I tuoi articoli', yourDetails: 'I tuoi dati',
+      firstName: 'Nome', lastName: 'Cognome', email: 'Email', phone: 'Telefono',
+      remove: 'Rimuovi',
+      required: 'Obbligatorio', badEmail: 'Email non valida', badPhone: 'Numero non valido', emptyCart: 'Il carrello è vuoto',
+      submit: 'Invia prenotazione', submitUpdate: 'Aggiorna prenotazione',
+      selected: 'articoli selezionati',
+      privacyLabel: "Ho letto l'informativa e acconsento al trattamento dei miei dati per gestire questa prenotazione.",
+      privacyLink: 'Leggi l\u2019informativa',
+      privacyRequired: 'Per inviare la prenotazione serve il consenso al trattamento dei dati.',
+      marketingLabel: 'Potete scrivermi quando il listino si aggiorna o arrivano articoli nuovi. (facoltativo)',
+      confirmedTitle: 'Prenotazione ricevuta!', updatedTitle: 'Richiesta aggiornata!',
+      confirmedText: "A breve ricevi una email con il preventivo (prezzi e totale), il listino completo e i dati per il pagamento. Conserva questo codice: insieme alla tua email ti serve per richiamare o modificare l'ordine.",
+      requestedItems: 'Articoli richiesti',
+      whatYouGet: 'Cosa riceverai via email',
+      getQuote: 'Preventivo con prezzi e totale da pagare',
+      getList: 'Listino completo con tutti gli articoli disponibili',
+      getPay: 'Il link per pagare con PayPal e il QR da inquadrare col telefono',
+      changeMind: 'Il totale è troppo alto o hai cambiato idea sulle quantità? Vai su',
+      changeMind2: 'inserisci il codice',
+      changeMind3: 'con la tua email e aggiorna le quantità: ti mandiamo un nuovo preventivo.',
+      backToCatalog: 'Torna al catalogo',
+      lookupTitle: 'Modifica un ordine',
+      lookupIntro: "Servono il codice ricevuto via email (es. SC-4F2A-9K7D) e l'indirizzo email con cui hai prenotato: insieme sono la chiave del tuo ordine.",
+      orderCode: 'Codice ordine', orderEmail: 'Email della prenotazione',
+      search: 'Cerca',
+      lookupIncomplete: "Servono sia il codice sia l'email della prenotazione.",
+      lookupNotFound: 'Nessun ordine corrisponde a questo codice e a questa email.',
+      paidAsk: 'Hai già pagato? Dicci come, così lo segniamo.',
+      paidButton: 'Ho pagato',
+      paidNote: 'Questo ordine risulta pagato: per cambiare qualcosa scrivici, così sistemiamo anche l\u2019importo.',
+      editQty: 'Modifica quantità',
+      statusToPay: 'Da pagare', statusDeclared: 'Pagamento dichiarato', statusInReview: 'in verifica', statusPaid: 'Pagamento confermato',
+      footerPrivacy: 'Informativa privacy',
+      vetrinaIntro: "Queste sono le creazioni disponibili per l'evento: pezzi fatti a mano, in tiratura limitata. Se qualcosa ti interessa scrivimi qui sotto — ti rispondo io con disponibilità, prezzi e come fare.",
+      availableSizes: 'Taglie disponibili', oneSize: 'Taglia unica',
+      inquiryTitle: 'Ti interessa qualcosa?',
+      inquiryIntro: 'Dimmi cosa ti piace e ti rispondo personalmente. Non è un ordine: è una richiesta di informazioni, e la trattiamo io e te.',
+      inquiryName: 'Come ti chiami', inquiryEmail: 'La tua email',
+      inquiryMessage: 'Cosa ti interessa', inquiryMessageHint: 'Scrivi pure che articoli ti attirano, le taglie, o qualsiasi domanda.',
+      inquirySend: 'Invia la richiesta', inquirySending: 'Invio…',
+      inquirySentTitle: 'Richiesta ricevuta',
+      inquirySentText: 'Grazie: ti rispondo io appena possibile, all\u2019indirizzo che mi hai lasciato.',
+      inquiryFailed: 'Non sono riuscito a inviare la richiesta. Riprova fra poco.',
+      inviteNeededTitle: 'Questa pagina si apre su invito',
+      inviteNeededText: 'Il preordine si fa dal link personale che ricevi via email dopo aver chiesto informazioni. Se il tuo link è scaduto, scrivimi di nuovo e te ne mando uno nuovo.',
+      inviteGoVetrina: 'Vai alla vetrina',
+      inviteEmailNote: 'L\u2019invito è intestato a questo indirizzo.',
+      soldOutOf: 'disponibili', youAsked: 'ne hai chiesti', sizeWord: 'taglia',
+      noLongerAvailable: 'non è più disponibile nella quantità richiesta.',
+      someUnavailable: 'Uno degli articoli non è più disponibile nella quantità richiesta.',
+    },
+    en: {
+      navBook: 'Order', navEdit: 'Change an order',
+      kicker: 'Official pre-orders',
+      intro: 'Pick a size and a quantity for anything you like, then leave your details. We email you a quote with prices, the full price list and how to pay — if you change your mind, reopen the order with your code and adjust the quantities.',
+      madeBy: 'Handmade by',
+      proceeds: 'After material costs, what is left goes towards the event and to charity.',
+      editingOrder: 'You are changing order', cancelEditing: 'Cancel changes',
+      size: 'Size', add: 'Add', decrease: 'Decrease quantity', increase: 'Increase quantity',
+      soldOut: 'Sold out', lastOne: 'Last one left', lastTwo: 'Only 2 left', available: 'Available',
+      yourItems: 'Your items', yourDetails: 'Your details',
+      firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone',
+      remove: 'Remove',
+      required: 'Required', badEmail: 'Invalid email', badPhone: 'Invalid number', emptyCart: 'Your basket is empty',
+      submit: 'Send pre-order', submitUpdate: 'Update pre-order',
+      selected: 'items selected',
+      privacyLabel: 'I have read the privacy notice and agree to my data being used to handle this pre-order.',
+      privacyLink: 'Read the privacy notice',
+      privacyRequired: 'We need your consent to data processing before we can take the pre-order.',
+      marketingLabel: 'You may email me when the price list changes or new items arrive. (optional)',
+      confirmedTitle: 'Pre-order received!', updatedTitle: 'Order updated!',
+      confirmedText: 'You will shortly get an email with the quote (prices and total), the full price list and how to pay. Keep this code: together with your email address it is what reopens your order.',
+      requestedItems: 'Items requested',
+      whatYouGet: 'What you will get by email',
+      getQuote: 'A quote with prices and the total to pay',
+      getList: 'The full price list with everything available',
+      getPay: 'The PayPal link and a QR code to scan with your phone',
+      changeMind: 'Total too high, or changed your mind about quantities? Go to',
+      changeMind2: 'enter the code',
+      changeMind3: 'together with your email and adjust the quantities: we will send a new quote.',
+      backToCatalog: 'Back to the catalogue',
+      lookupTitle: 'Change an order',
+      lookupIntro: 'You need the code from your email (e.g. SC-4F2A-9K7D) and the email address you ordered with: together they are the key to your order.',
+      orderCode: 'Order code', orderEmail: 'Email used for the order',
+      search: 'Search',
+      lookupIncomplete: 'We need both the code and the email address.',
+      lookupNotFound: 'No order matches this code and this email address.',
+      paidAsk: 'Already paid? Tell us how, so we can mark it down.',
+      paidButton: 'I have paid',
+      paidNote: 'This order is already paid: write to us for any change, so we can sort the amount out too.',
+      editQty: 'Change quantities',
+      statusToPay: 'To pay', statusDeclared: 'Payment reported', statusInReview: 'being checked', statusPaid: 'Payment confirmed',
+      footerPrivacy: 'Privacy notice',
+      vetrinaIntro: 'These are the pieces available for the event: handmade, in small numbers. If something catches your eye, write to me below — I will answer personally about availability, prices and how it works.',
+      availableSizes: 'Available sizes', oneSize: 'One size',
+      inquiryTitle: 'Interested in something?',
+      inquiryIntro: 'Tell me what you like and I will answer you personally. This is not an order: it is a request for information, handled between the two of us.',
+      inquiryName: 'Your name', inquiryEmail: 'Your email',
+      inquiryMessage: 'What are you interested in', inquiryMessageHint: 'Feel free to name the items, the sizes, or ask anything.',
+      inquirySend: 'Send request', inquirySending: 'Sending…',
+      inquirySentTitle: 'Request received',
+      inquirySentText: 'Thank you: I will get back to you as soon as I can, at the address you left.',
+      inquiryFailed: 'I could not send the request. Please try again shortly.',
+      inviteNeededTitle: 'This page opens by invitation',
+      inviteNeededText: 'Pre-orders are placed from the personal link you receive by email after asking for information. If your link has expired, write again and I will send a new one.',
+      inviteGoVetrina: 'Go to the showcase',
+      inviteEmailNote: 'The invitation is tied to this address.',
+      soldOutOf: 'available', youAsked: 'you asked for', sizeWord: 'size',
+      noLongerAvailable: 'is no longer available in the quantity requested.',
+      someUnavailable: 'One of the items is no longer available in the quantity requested.',
+    },
+  };
+  t() { return this.strings[this.state.lang] || this.strings.it; }
+  setLang(lang) {
+    this.setState({ lang });
+    try { localStorage.setItem('sunnycreations_lang', lang); } catch (e) {}
+  }
+
+  async componentDidMount() {
+    // Su preordini.* si prenota, ovunque altro si guarda e basta. Un file
+    // solo per due facce: il catalogo resta in un posto, e quel che correggo
+    // lo correggo una volta.
+    try {
+      const host = String(window.location.hostname || '').toLowerCase();
+      this.setState({ mode: host.indexOf('preordini.') === 0 ? 'preordini' : 'vetrina' });
+    } catch (e) {}
+    try {
+      let lang = localStorage.getItem('sunnycreations_lang');
+      if (lang !== 'it' && lang !== 'en') {
+        lang = String((navigator.language || 'it')).toLowerCase().indexOf('it') === 0 ? 'it' : 'en';
+      }
+      this.setState({ lang });
+    } catch (e) {}
+    try {
+      const saved = JSON.parse(localStorage.getItem('sunnycreations_orders') || '[]');
+      if (Array.isArray(saved)) this.setState({ orders: saved.filter(o => o && Array.isArray(o.items)) });
+    } catch (e) {}
+    try {
+      const savedPrices = JSON.parse(localStorage.getItem('sunnycreations_prices') || '{}');
+      if (savedPrices && typeof savedPrices === 'object') this.setState({ prices: savedPrices });
+    } catch (e) {}
+
+    await this.loadCatalogFromDb();
+    await this.loadEventsFromDb();
+    await this.loadSettingsFromDb();
+
+    await this.loadStockFromDb();
+
+    // restore an existing admin session
+    try {
+      const { data } = await window.__sb.auth.getSession();
+      if (data && data.session) {
+        let needsCode = false;
+        try {
+          const { data: aal } = await window.__sb.auth.mfa.getAuthenticatorAssuranceLevel();
+          needsCode = !!aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2';
+        } catch (e) {}
+        if (needsCode) { await this.afterSignIn(); }
+        else { this.setState({ adminUnlocked: true }); this.loadAdminData(); }
+      }
+    } catch (e) {}
+
+    // Pulsante "Ho pagato" della mail: apre la pagina su #pay=SC-XXXX
+    try {
+      const h = String(window.location.hash || '');
+      if (/(^|[#&])admin\b/i.test(h)) this.setState({ view: 'admin' });
+
+      // L'invito arriva per email ed è la chiave che apre la prenotazione.
+      const inv = h.match(/invito=([A-Za-z0-9_\-]+)/i);
+      if (inv) await this.checkInvite(decodeURIComponent(inv[1]));
+      else this.setState({ inviteChecked: true });
+      const m = h.match(/pay=([A-Za-z0-9-]+)/i);
+      const e = h.match(/[?&#]e=([^&]+)/i);
+      if (m) {
+        const code = m[1].toUpperCase();
+        const email = e ? decodeURIComponent(e[1]).trim().toLowerCase() : '';
+        this.setState({ view: 'lookup', lookupCode: code, lookupEmail: email });
+        if (email) await this.runLookup(code, email);
+      }
+    } catch (e) {}
+  }
+
+  async checkInvite(token) {
+    try {
+      const { data, error } = await window.__sb.rpc('check_invite', { p_token: token });
+      if (error) throw error;
+      if (data && data.length) {
+        const email = String(data[0].email || '').toLowerCase();
+        this.setState(st => ({
+          invite: { token, email },
+          inviteChecked: true,
+          customer: { ...st.customer, email },
+        }));
+        return;
+      }
+    } catch (e) {}
+    this.setState({ invite: null, inviteChecked: true });
+  }
+
+  // ── Richieste di informazioni ──────────────────────────────────────────
+  updateInquiry(field, value) {
+    this.setState(st => ({ inquiry: { ...st.inquiry, [field]: value }, inquiryError: '' }));
+  }
+  async sendInquiry() {
+    const t = this.t();
+    const { name, email, message } = this.state.inquiry;
+    if (!String(name).trim()) { this.setState({ inquiryError: t.required }); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) { this.setState({ inquiryError: t.badEmail }); return; }
+    if (!this.state.inquiryConsent) { this.setState({ inquiryError: t.privacyRequired }); return; }
+    this.setState({ inquiryBusy: true, inquiryError: '' });
+    try {
+      const { error } = await window.__sb.functions.invoke('inquiry-new', {
+        body: { name, email, message, lang: this.state.lang },
+      });
+      if (error) throw error;
+      this.setState({ inquiryBusy: false, inquirySent: true, inquiry: { name: '', email: '', message: '' }, inquiryConsent: false });
+    } catch (e) {
+      this.setState({ inquiryBusy: false, inquiryError: t.inquiryFailed });
+    }
+  }
+  async loadInquiriesFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('inquiries')
+        .select('id, name, email, message, lang, status, created_at')
+        .order('created_at', { ascending: false });
+      if (error || !Array.isArray(data)) return;
+      this.setState({ inquiries: data });
+    } catch (e) {}
+  }
+  async acceptInquiry(id) {
+    try {
+      const { data, error } = await window.__sb.rpc('create_invite', { p_inquiry_id: id, p_days: 14 });
+      if (error) throw error;
+      await window.__sb.functions.invoke('invite-send', { body: { token: data } });
+      window.alert("Invito inviato: la persona riceve il link per il preordine, valido 14 giorni.");
+    } catch (e) {
+      window.alert("Non sono riuscito a mandare l'invito: " + ((e && e.message) || e));
+    }
+    await this.loadInquiriesFromDb();
+  }
+  async rejectInquiry(id) {
+    if (!window.confirm('Archiviare la richiesta senza rispondere?')) return;
+    try { await window.__sb.rpc('reject_inquiry', { p_id: id }); } catch (e) {}
+    await this.loadInquiriesFromDb();
+  }
+
+  async loadSettingsFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('settings').select('key, value');
+      if (error || !Array.isArray(data)) return;
+      const settings = {};
+      data.forEach(r => { settings[r.key] = r.value || ''; });
+      this.setState({ settings });
+    } catch (e) {}
+  }
+  async loadEventsFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('events')
+        .select('id, name, is_current').order('created_at', { ascending: false });
+      if (error || !Array.isArray(data) || !data.length) return;
+      const events = data.map(e => ({ id: e.id, name: e.name, isCurrent: !!e.is_current }));
+      const current = events.find(e => e.isCurrent);
+      this.setState(s => ({ events, adminEvent: s.adminEvent || (current ? current.id : 'tutti') }));
+    } catch (e) {}
+  }
+  async loadAdminData() {
+    await this.loadMfaFactors();
+    await this.loadInquiriesFromDb();
+    await this.loadSettingsFromDb();
+    await this.loadEventsFromDb();
+    await this.loadOrdersFromDb();
+  }
+  async loadOrdersFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('orders').select('*').order('created_at', { ascending: false });
+      if (!error && Array.isArray(data)) {
+        this.setState({ orders: data
+          .filter(o => !o.cancelled_at)
+          .map(o => ({
+            code: o.code, date: o.created_at, customer: o.customer, items: o.items, total: Number(o.total),
+            eventId: o.event_id || '',
+            paymentStatus: o.payment_status || 'pending',
+            paymentMethod: o.payment_method || null,
+            paymentDeclaredAt: o.payment_declared_at || null,
+            paidAt: o.paid_at || null,
+          })) });
+      }
+    } catch (e) {}
+  }
+
+  saveOrders(orders) {
+    try { localStorage.setItem('sunnycreations_orders', JSON.stringify(orders)); } catch (e) {}
+  }
+
+  // Il catalogo vive sul database. L'elenco scritto qui sotto in "products"
+  // resta come rete di sicurezza: se Supabase non risponde la pagina si vede
+  // lo stesso, ed è quello che tiene in piedi il prototipo, che non ha rete.
+  getCatalog() {
+    if (this.state.catalog.length) return this.state.catalog;
+    return this.products.map((p, i) => ({ ...p, active: p.active !== false, sortOrder: (i + 1) * 10 }));
+  }
+  getVisibleCatalog() { return this.getCatalog().filter(p => p.active !== false); }
+  async loadCatalogFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('products')
+        .select('id, name, kicker, description, photo, price, sizes, active, sort_order')
+        .order('sort_order', { ascending: true }).order('name', { ascending: true });
+      if (error || !Array.isArray(data) || !data.length) return;
+      this.setState({
+        dbReady: true,
+        catalog: data.map(r => ({
+          id: r.id,
+          name: r.name || '',
+          kicker: r.kicker || '',
+          desc: r.description || '',
+          photo: r.photo || '',
+          price: Number(r.price) || 0,
+          sizes: Array.isArray(r.sizes) && r.sizes.length ? r.sizes : null,
+          active: r.active !== false,
+          sortOrder: Number(r.sort_order) || 0,
+        })),
+      });
+    } catch (e) {}
+  }
+  getProduct(id) { return this.getCatalog().find(p => p.id === id); }
+  // state.selection elenca una voce per prodotto: senza questo, il primo
+  // prodotto aggiunto e non elencato lì farebbe esplodere setSelectionQty.
+  getSelection(id) {
+    const cur = this.state.selection[id];
+    if (cur) return cur;
+    const p = this.getProduct(id);
+    return { size: p && p.sizes ? p.sizes[0] : undefined, qty: 1 };
+  }
+  getPrice(id) { const v = this.state.prices[id]; return typeof v === 'number' && !isNaN(v) ? v : this.getProduct(id).price; }
+
+  // ── Giacenze ───────────────────────────────────────────────────────────
+  // Un prodotto assente da state.stock è illimitato; una taglia assente da
+  // un prodotto presente vale zero.
+  stockOf(id, size) {
+    const rows = this.state.stock[id];
+    if (!rows) return Infinity;
+    const q = rows[size || ''];
+    return typeof q === 'number' ? q : 0;
+  }
+  inCart(id, size) {
+    const key = size ? `${id}::${size}` : id;
+    return this.state.cart[key] || 0;
+  }
+  // Quando si modifica un ordine, i pezzi che quell'ordine trattiene sono già
+  // scalati dalla giacenza: vanno ricontati come disponibili, altrimenti il
+  // cliente non riesce a riconfermare la propria quantità.
+  heldByEditedOrder(id, size) {
+    const code = this.state.editingCode;
+    if (!code) return 0;
+    const order = this.state.orders.find(o => o.code === code);
+    if (!order) return 0;
+    return (order.items || [])
+      .filter(it => it.id === id && (it.size || '') === (size || ''))
+      .reduce((sum, it) => sum + it.qty, 0);
+  }
+  availableOf(id, size) {
+    const base = this.stockOf(id, size);
+    return base === Infinity ? Infinity : base + this.heldByEditedOrder(id, size);
+  }
+  availableToAdd(id, size) {
+    const a = this.availableOf(id, size);
+    return a === Infinity ? Infinity : Math.max(0, a - this.inCart(id, size));
+  }
+  applyStockDelta(items, sign) {   // sign = -1 impegna, +1 restituisce
+    this.setState(s => {
+      const stock = { ...s.stock };
+      (items || []).forEach(it => {
+        if (!it.id || !stock[it.id]) return;
+        const size = it.size || '';
+        const rows = { ...stock[it.id] };
+        if (typeof rows[size] !== 'number') return;
+        rows[size] = Math.max(0, rows[size] + sign * it.qty);
+        stock[it.id] = rows;
+      });
+      return { stock };
+    });
+  }
+  async loadStockFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('product_stock').select('product_id, size, qty');
+      if (error || !Array.isArray(data)) return;
+      const stock = {};
+      data.forEach(r => {
+        if (!stock[r.product_id]) stock[r.product_id] = {};
+        stock[r.product_id][r.size || ''] = Number(r.qty);
+      });
+      this.setState({ stock });
+    } catch (e) {}
+  }
+  async setPrice(id, value) {
+    this.setState(s => {
+      const prices = { ...s.prices, [id]: value };
+      try { localStorage.setItem('sunnycreations_prices', JSON.stringify(prices)); } catch (e) {}
+      return { prices };
+    });
+    try { await window.__sb.from('products').update({ price: value }).eq('id', id); } catch (e) {}
+  }
+
+  setSelectionSize(id, size) {
+    this.setState(s => ({ selection: { ...s.selection, [id]: { ...this.getSelection(id), size } } }));
+  }
+  setSelectionQty(id, delta) {
+    this.setState(s => {
+      const cur = this.getSelection(id);
+      const qty = Math.max(1, (cur.qty || 1) + delta);
+      return { selection: { ...s.selection, [id]: { ...cur, qty } } };
+    });
+  }
+  addToCart(id) {
+    const sel = this.getSelection(id);
+    const key = sel.size ? `${id}::${sel.size}` : id;
+    this.setState(s => ({
+      cart: { ...s.cart, [key]: (s.cart[key] || 0) + sel.qty },
+      selection: { ...s.selection, [id]: { ...sel, qty: 1 } },
+    }));
+  }
+  changeCartQty(key, delta) {
+    this.setState(s => {
+      const qty = Math.max(0, (s.cart[key] || 0) + delta);
+      const cart = { ...s.cart };
+      if (qty === 0) delete cart[key]; else cart[key] = qty;
+      return { cart };
+    });
+  }
+  removeFromCart(key) {
+    this.setState(s => { const cart = { ...s.cart }; delete cart[key]; return { cart }; });
+  }
+  updateCustomer(field, value) {
+    this.setState(s => ({ customer: { ...s.customer, [field]: value }, errors: { ...s.errors, [field]: null } }));
+  }
+  goTo(view) { this.setState({ view }); window.scrollTo(0, 0); }
+
+  async unlockAdmin() {
+    this.setState({ adminBusy: true, adminPassError: '' });
+    try {
+      const { error } = await window.__sb.auth.signInWithPassword({ email: this.state.adminEmail.trim(), password: this.state.adminPassInput });
+      if (error) { this.setState({ adminPassError: 'Credenziali errate.', adminBusy: false }); return; }
+      await this.afterSignIn();
+    } catch (e) {
+      this.setState({ adminPassError: 'Impossibile contattare Supabase.', adminBusy: false });
+    }
+  }
+  // Password giusta non basta se c'è un autenticatore: si passa al codice.
+  async afterSignIn() {
+    let totp = null;
+    try {
+      const { data } = await window.__sb.auth.mfa.listFactors();
+      totp = ((data && data.totp) || []).find(f => f.status === 'verified') || null;
+    } catch (e) {}
+    if (totp) {
+      try {
+        const { data: ch, error } = await window.__sb.auth.mfa.challenge({ factorId: totp.id });
+        if (error) throw error;
+        this.setState({ mfaStage: 'code', mfaFactorId: totp.id, mfaChallengeId: ch.id, mfaCode: '', adminBusy: false, adminPassInput: '' });
+        return;
+      } catch (e) {
+        this.setState({ adminPassError: 'Non riesco a chiedere il codice dell\'autenticatore.', adminBusy: false });
+        return;
+      }
+    }
+    this.setState({ adminUnlocked: true, adminBusy: false, adminPassInput: '', mfaStage: '' });
+    this.loadAdminData();
+  }
+  async verifyMfa() {
+    const code = String(this.state.mfaCode || '').replace(/\D/g, '');
+    if (code.length !== 6) { this.setState({ adminPassError: 'Il codice è di sei cifre.' }); return; }
+    this.setState({ adminBusy: true, adminPassError: '' });
+    try {
+      const { error } = await window.__sb.auth.mfa.verify({
+        factorId: this.state.mfaFactorId, challengeId: this.state.mfaChallengeId, code });
+      if (error) throw error;
+      this.setState({ adminUnlocked: true, adminBusy: false, mfaStage: '', mfaCode: '' });
+      this.loadAdminData();
+    } catch (e) {
+      this.setState({ adminBusy: false, adminPassError: 'Codice non valido o scaduto: aspetta quello nuovo e riprova.' });
+    }
+  }
+  cancelMfa() {
+    this.setState({ mfaStage: '', mfaCode: '', adminPassError: '' });
+    try { window.__sb.auth.signOut(); } catch (e) {}
+  }
+
+  // ── Attivazione dell'autenticatore ────────────────────────────────────
+  async loadMfaFactors() {
+    try {
+      const { data } = await window.__sb.auth.mfa.listFactors();
+      this.setState({ mfaFactors: ((data && data.totp) || []).filter(f => f.status === 'verified') });
+    } catch (e) {}
+  }
+  async startMfaEnroll() {
+    this.setState({ mfaError: '' });
+    try {
+      const { data, error } = await window.__sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'SunnyCreations' });
+      if (error) throw error;
+      this.setState({ mfaEnroll: { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret }, mfaEnrollCode: '' });
+    } catch (e) {
+      this.setState({ mfaError: 'Non riesco ad avviare l\'attivazione: ' + ((e && e.message) || e) });
+    }
+  }
+  async confirmMfaEnroll() {
+    const en = this.state.mfaEnroll;
+    if (!en) return;
+    const code = String(this.state.mfaEnrollCode || '').replace(/\D/g, '');
+    if (code.length !== 6) { this.setState({ mfaError: 'Il codice è di sei cifre.' }); return; }
+    try {
+      const { data: ch, error: cerr } = await window.__sb.auth.mfa.challenge({ factorId: en.factorId });
+      if (cerr) throw cerr;
+      const { error } = await window.__sb.auth.mfa.verify({ factorId: en.factorId, challengeId: ch.id, code });
+      if (error) throw error;
+      this.setState({ mfaEnroll: null, mfaEnrollCode: '', mfaError: '' });
+      await this.loadMfaFactors();
+    } catch (e) {
+      this.setState({ mfaError: 'Codice non valido. Controlla di aver inquadrato il QR e riprova col codice successivo.' });
+    }
+  }
+  async removeMfa(factorId) {
+    if (!window.confirm('Togliere l\'autenticatore? Da quel momento per entrare basterà la password.')) return;
+    try { await window.__sb.auth.mfa.unenroll({ factorId }); } catch (e) {}
+    await this.loadMfaFactors();
+  }
+
+  async lockAdmin() {
+    try { await window.__sb.auth.signOut(); } catch (e) {}
+    this.setState({ adminUnlocked: false, view: 'catalog', selectedOrderCode: null, mfaStage: '', mfaCode: '', mfaEnroll: null });
+  }
+
+  async setStock(id, size, value) {
+    const qty = Math.max(0, Math.floor(Number(value) || 0));
+    this.setState(s => {
+      const stock = { ...s.stock };
+      stock[id] = { ...(stock[id] || {}), [size || '']: qty };
+      return { stock };
+    });
+    try {
+      await window.__sb.from('product_stock')
+        .upsert({ product_id: id, size: size || '', qty }, { onConflict: 'product_id,size' });
+    } catch (e) {}
+  }
+  setRestockInput(id, size, value) {
+    this.setState(s => ({ restock: { ...s.restock, [`${id}::${size || ''}`]: value } }));
+  }
+  // Lo stato locale si aggiorna prima della chiamata, così la scheda funziona
+  // identica anche senza database raggiungibile.
+  async addStock(id, size) {
+    const key = `${id}::${size || ''}`;
+    const delta = Math.floor(Number(this.state.restock[key]) || 0);
+    if (!delta) return;
+    const current = this.stockOf(id, size);
+    const next = (current === Infinity ? 0 : current) + delta;
+    this.setState(s => {
+      const stock = { ...s.stock };
+      stock[id] = { ...(stock[id] || {}), [size || '']: Math.max(0, next) };
+      return { stock, restock: { ...s.restock, [key]: '' } };
+    });
+    try {
+      await window.__sb.rpc('add_stock', { p_id: id, p_size: size || '', p_delta: delta });
+    } catch (e) {}
+  }
+
+  // ── Pannello prodotti ──────────────────────────────────────────────────
+  slugify(name) {
+    return String(name || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'articolo';
+  }
+  newProductId(name) {
+    const base = this.slugify(name);
+    const taken = new Set(this.getCatalog().map(p => p.id));
+    if (!taken.has(base)) return base;
+    let i = 2;
+    while (taken.has(base + '-' + i)) i++;
+    return base + '-' + i;
+  }
+  nextSortOrder() {
+    return this.getCatalog().reduce((m, p) => Math.max(m, p.sortOrder || 0), 0) + 10;
+  }
+  openProductForm(product) {
+    this.setState({
+      productForm: product
+        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '' }
+        : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0,
+            sizesText: '', active: true, sortOrder: this.nextSortOrder(), isNew: true },
+      productError: '', productBusy: false,
+    });
+  }
+  closeProductForm() { this.setState({ productForm: null, productError: '' }); }
+  updateProductForm(field, value) {
+    this.setState(s => ({ productForm: { ...s.productForm, [field]: value } }));
+  }
+  parseSizes(text) {
+    const list = String(text || '').split(',').map(x => x.trim()).filter(Boolean);
+    return list.length ? list : null;
+  }
+
+  // Le foto scattate col telefono pesano megabyte: le rimpiccioliamo qui,
+  // prima di spedirle, così il caricamento regge anche sulla rete dello stand.
+  resizePhoto(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('lettura fallita'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('immagine non valida'));
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          canvas.toBlob(
+            b => b ? resolve({ blob: b, dataUrl }) : reject(new Error('conversione fallita')),
+            'image/jpeg', 0.82);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  async onProductPhoto(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    this.setState({ productBusy: true, productError: '' });
+    let resized;
+    try {
+      resized = await this.resizePhoto(file, 1200);
+    } catch (err) {
+      this.setState({ productBusy: false, productError: 'Non riesco a leggere questa immagine.' });
+      return;
+    }
+    const form = this.state.productForm || {};
+    const id = form.id || this.newProductId(form.name);
+    const path = id + '-' + Date.now() + '.jpg';
+    try {
+      const { error } = await window.__sb.storage.from('product-photos')
+        .upload(path, resized.blob, { contentType: 'image/jpeg', upsert: true });
+      if (error) throw error;
+      const { data } = window.__sb.storage.from('product-photos').getPublicUrl(path);
+      this.setState(s => ({
+        productForm: { ...s.productForm, photo: data.publicUrl, photoSaved: data.publicUrl },
+        productBusy: false,
+      }));
+    } catch (err) {
+      // Anteprima sì, ma non scriviamo l'immagine dentro il database:
+      // una foto in base64 nella tabella la farebbe pesare a ogni caricamento.
+      this.setState(s => ({
+        productForm: { ...s.productForm, photo: resized.dataUrl },
+        productBusy: false,
+        productError: 'Foto non caricata sul server: la vedi solo su questo dispositivo.',
+      }));
+    }
+  }
+
+  async saveProduct() {
+    const f = this.state.productForm;
+    if (!f) return;
+    const name = String(f.name || '').trim();
+    if (!name) { this.setState({ productError: 'Il nome è obbligatorio.' }); return; }
+    const price = Number(f.price);
+    if (!isFinite(price) || price < 0) { this.setState({ productError: 'Il prezzo non è un numero valido.' }); return; }
+
+    const product = {
+      id: f.isNew ? this.newProductId(name) : f.id,
+      name,
+      kicker: String(f.kicker || '').trim(),
+      desc: String(f.desc || '').trim(),
+      photo: f.photoSaved || '',
+      price,
+      sizes: this.parseSizes(f.sizesText),
+      active: f.active !== false,
+      sortOrder: Number(f.sortOrder) || 0,
+    };
+
+    this.setState({ productBusy: true, productError: '' });
+    try {
+      const { error } = await window.__sb.from('products').upsert({
+        id: product.id, name: product.name, kicker: product.kicker,
+        description: product.desc, photo: product.photo, price: product.price,
+        sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
+      });
+      if (error) throw error;
+      await this.loadCatalogFromDb();
+    } catch (e) {
+      this.applyCatalogLocally({ ...product, photo: f.photo || product.photo });
+    }
+    this.setState({ productForm: null, productBusy: false });
+  }
+
+  // Senza database il catalogo resta su questo dispositivo: è ciò che tiene
+  // vivo il prototipo, e in produzione è una rete e basta.
+  applyCatalogLocally(product) {
+    this.setState(s => {
+      const base = s.catalog.length ? s.catalog.slice() : this.getCatalog();
+      const i = base.findIndex(p => p.id === product.id);
+      if (i >= 0) base[i] = { ...base[i], ...product };
+      else base.push(product);
+      base.sort((a, b) => ((a.sortOrder || 0) - (b.sortOrder || 0)) || String(a.name).localeCompare(String(b.name)));
+      return { catalog: base };
+    });
+  }
+  async toggleProductActive(id) {
+    const p = this.getProduct(id);
+    if (!p) return;
+    const active = p.active === false;
+    try {
+      const { error } = await window.__sb.from('products').update({ active }).eq('id', id);
+      if (error) throw error;
+      await this.loadCatalogFromDb();
+      return;
+    } catch (e) {}
+    this.applyCatalogLocally({ ...p, active });
+  }
+
+  setSetting(key, value) {
+    this.setState(s => ({ settings: { ...s.settings, [key]: value }, settingsMsg: '' }));
+  }
+  async saveSettings() {
+    this.setState({ settingsBusy: true, settingsMsg: '' });
+    const rows = Object.keys(this.state.settings).map(k => ({ key: k, value: String(this.state.settings[k]) }));
+    try {
+      const { error } = await window.__sb.from('settings').upsert(rows);
+      if (error) throw error;
+      this.setState({ settingsBusy: false, settingsMsg: 'Impostazioni salvate.' });
+    } catch (e) {
+      this.setState({ settingsBusy: false, settingsMsg: 'Non salvate sul server: valgono solo su questo dispositivo.' });
+    }
+  }
+  async createEvent() {
+    const name = String(this.state.newEventName || '').trim();
+    if (!name) return;
+    const id = this.slugify(name);
+    try {
+      const { error } = await window.__sb.from('events').insert({ id, name });
+      if (error) throw error;
+      await this.loadEventsFromDb();
+    } catch (e) {
+      this.setState(s => ({ events: [{ id, name, isCurrent: false }, ...s.events] }));
+    }
+    this.setState({ newEventName: '' });
+  }
+  async makeEventCurrent(id) {
+    try {
+      const { error } = await window.__sb.rpc('set_current_event', { p_id: id });
+      if (error) throw error;
+      await this.loadEventsFromDb();
+      return;
+    } catch (e) {}
+    this.setState(s => ({ events: s.events.map(e => ({ ...e, isCurrent: e.id === id })) }));
+  }
+  // Cancellazione definitiva: due conferme, e le giacenze non si toccano —
+  // la merce di un evento chiuso è stata consegnata.
+  async purgeEvent(id) {
+    const ev = this.state.events.find(e => e.id === id);
+    if (!ev) return;
+    if (!window.confirm('Cancellare DEFINITIVAMENTE tutti gli ordini di "' + ev.name + '"?\n\nNon si torna indietro. Le giacenze non vengono toccate.')) return;
+    if (!window.confirm('Confermi? Gli ordini di questo evento spariscono per sempre.')) return;
+    try {
+      const { error } = await window.__sb.rpc('purge_event_orders', { p_id: id });
+      if (error) throw error;
+      await this.loadOrdersFromDb();
+      return;
+    } catch (e) {}
+    this.setState(s => ({ orders: s.orders.filter(o => (o.eventId || '') !== id) }));
+  }
+
+  // Capita di accorgersi tardi che l'evento corrente era quello sbagliato, o
+  // che un ordine ordinario è finito dentro una manifestazione.
+  async moveOrderToEvent(code, eventId) {
+    try {
+      const { error } = await window.__sb.from('orders').update({ event_id: eventId }).eq('code', code);
+      if (error) throw error;
+    } catch (e) {}
+    const orders = this.state.orders.map(o => o.code === code ? { ...o, eventId } : o);
+    this.saveOrders(orders);
+    this.setState({ orders });
+  }
+
+  async markPaid(code) {
+    const paidAt = new Date().toISOString();
+    try {
+      const { error } = await window.__sb.from('orders')
+        .update({ payment_status: 'paid', paid_at: paidAt }).eq('code', code);
+      if (error) throw error;
+    } catch (e) {}
+    const orders = this.state.orders.map(o => o.code === code ? { ...o, paymentStatus: 'paid', paidAt } : o);
+    this.saveOrders(orders);
+    this.setState({ orders });
+  }
+  async cancelOrder(code) {
+    const order = this.state.orders.find(o => o.code === code);
+    if (!order) return;
+    if (!window.confirm(`Annullare l'ordine ${code}? Le quantità tornano disponibili.`)) return;
+    try {
+      const { error } = await window.__sb.rpc('cancel_order', { p_code: code });
+      if (error) throw error;
+      await this.loadStockFromDb();
+      await this.loadOrdersFromDb();
+      this.setState({ selectedOrderCode: null });
+      return;
+    } catch (e) {}
+    this.applyStockDelta(order.items, +1);
+    const orders = this.state.orders.filter(o => o.code !== code);
+    this.saveOrders(orders);
+    this.setState({ orders, selectedOrderCode: null });
+  }
+
+  printOrderDetail() {
+    document.body.classList.add('printing-order');
+    window.print();
+    setTimeout(() => document.body.classList.remove('printing-order'), 500);
+  }
+
+  cartEntries() {
+    return Object.entries(this.state.cart).map(([key, qty]) => {
+      const [id, size] = key.split('::');
+      const product = this.getProduct(id);
+      if (!product) return null;
+      const price = this.getPrice(id);
+      return { key, product, size: size || null, qty, price, lineTotal: price * qty };
+    }).filter(Boolean);
+  }
+  cartTotal() { return this.cartEntries().reduce((sum, e) => sum + e.lineTotal, 0); }
+  cartCount() { return this.cartEntries().reduce((sum, e) => sum + e.qty, 0); }
+
+  // Il codice è l'unica chiave che apre un ordine, e la pagina è pubblica:
+  // 8 caratteri su un alfabeto senza O/0 e I/1, così si detta al telefono
+  // senza equivoci e resta fuori portata di chi prova codici in sequenza.
+  generateCode() {
+    const existing = new Set(this.state.orders.map(o => o.code));
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code;
+    do {
+      const buf = new Uint8Array(8);
+      if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(buf);
+      else for (let i = 0; i < 8; i++) buf[i] = Math.floor(Math.random() * 256);
+      let raw = '';
+      for (let i = 0; i < 8; i++) raw += chars[buf[i] % chars.length];
+      code = 'SC-' + raw.slice(0, 4) + '-' + raw.slice(4);
+    } while (existing.has(code));
+    return code;
+  }
+
+  validate() {
+    const { name, surname, email, phone } = this.state.customer;
+    const errors = {};
+    const t = this.t();
+    if (!name.trim()) errors.name = t.required;
+    if (!surname.trim()) errors.surname = t.required;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = t.badEmail;
+    if (!/^[\d+\s]{6,}$/.test(phone.trim())) errors.phone = t.badPhone;
+    if (this.cartEntries().length === 0) errors.cart = t.emptyCart;
+    // Il consenso è obbligatorio: senza, l'ordine non parte.
+    if (!this.state.editingCode && !this.state.consentPrivacy) errors.privacy = t.privacyRequired;
+    return errors;
+  }
+
+  async submitOrder() {
+    const errors = this.validate();
+    if (Object.keys(errors).length) { this.setState({ errors }); return; }
+
+    const items = this.cartEntries().map(e => ({
+      id: e.product.id,
+      name: e.product.name,
+      size: e.size,
+      sizeLabel: e.size ? `${this.t().size} ${e.size}` : '',
+      qty: e.qty,
+      price: e.price,
+      lineTotal: e.lineTotal,
+    }));
+    const total = this.cartTotal();
+    const editingCode = this.state.editingCode;
+    const previousItems = editingCode ? this.previousItemsFor(editingCode) : [];
+
+    const shortage = this.findShortage(items, previousItems);
+    if (shortage) { this.setState({ errors: { stock: shortage } }); return; }
+
+    const previous = editingCode ? this.state.orders.find(o => o.code === editingCode) : null;
+    let order;
+    let savedRemotely = false;
+
+    if (editingCode) {
+      order = {
+        code: editingCode,
+        date: previous ? previous.date : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        customer: { ...this.state.customer },
+        items, total,
+        paymentStatus: previous ? previous.paymentStatus : 'pending',
+      };
+      try {
+        const { error } = await window.__sb.rpc('update_order', { p_code: editingCode, p_email: this.state.editingEmail, p_items: items, p_total: total });
+        if (error) throw error;
+        savedRemotely = true;
+        await this.loadStockFromDb();
+      } catch (e) {
+        if (this.isShortageError(e)) { this.setState({ errors: { stock: this.shortageMessage(e) } }); return; }
+        this.applyStockDelta(previousItems, +1);
+        this.applyStockDelta(items, -1);
+        const orders = this.state.orders.map(o => o.code === editingCode ? order : o);
+        this.saveOrders(orders);
+        this.setState({ orders });
+      }
+    } else {
+      order = {
+        code: this.generateCode(),
+        date: new Date().toISOString(),
+        customer: { ...this.state.customer },
+        items, total,
+        paymentStatus: 'pending',
+      };
+      try {
+        const { error } = await window.__sb.rpc('place_order', {
+          p_code: order.code, p_customer: order.customer, p_items: items, p_total: total,
+          p_lang: this.state.lang, p_consent_marketing: !!this.state.consentMarketing,
+          p_invite: this.state.invite ? this.state.invite.token : null,
+        });
+        if (error) throw error;
+        savedRemotely = true;
+        await this.loadStockFromDb();
+      } catch (e) {
+        if (this.isShortageError(e)) { this.setState({ errors: { stock: this.shortageMessage(e) } }); return; }
+        this.applyStockDelta(items, -1);
+        const orders = [...this.state.orders, order];
+        this.saveOrders(orders);
+        this.setState({ orders });
+      }
+    }
+
+    // Preventivo via email. Se fallisce l'ordine resta valido: il cliente ha
+    // comunque il suo codice a video, e la mail si può rimandare dall'admin.
+    if (savedRemotely) {
+      try { await window.__sb.functions.invoke('order-confirmation', { body: { code: order.code } }); } catch (e) {}
+    }
+
+    this.setState({ cart: {}, lastOrder: order, view: 'confirmation', errors: {}, editingCode: null, editingEmail: null, wasEdit: !!editingCode });
+    window.scrollTo(0, 0);
+  }
+
+  setLookupCode(v) { this.setState({ lookupCode: v }); }
+  setLookupEmail(v) { this.setState({ lookupEmail: v }); }
+  async runLookup(codeArg, emailArg) {
+    // Agganciata anche a onClick, quindi il primo argomento può essere l'evento:
+    // i valori passati a mano valgono solo se sono davvero stringhe.
+    const rawCode = typeof codeArg === 'string' ? codeArg : this.state.lookupCode;
+    const rawMail = typeof emailArg === 'string' ? emailArg : this.state.lookupEmail;
+    const code = String(rawCode || '').trim().toUpperCase();
+    const email = String(rawMail || '').trim().toLowerCase();
+    if (!code || !email) { this.setState({ lookupResult: 'incomplete' }); return; }
+    try {
+      const { data, error } = await window.__sb.rpc('lookup_order', { p_code: code, p_email: email });
+      if (error) throw error;
+      if (data && data.length) {
+        const o = data[0];
+        this.setState({ lookupResult: {
+          code: o.code, date: o.created_at, customer: o.customer, items: o.items, total: Number(o.total),
+          paymentStatus: o.payment_status || 'pending',
+          paymentMethod: o.payment_method || null,
+          paymentDeclaredAt: o.payment_declared_at || null,
+          paidAt: o.paid_at || null,
+        } });
+        return;
+      }
+      this.setState({ lookupResult: 'notfound' });
+    } catch (e) {
+      const found = this.state.orders.find(o =>
+        o.code === code && String((o.customer && o.customer.email) || '').trim().toLowerCase() === email);
+      this.setState({ lookupResult: found || 'notfound' });
+    }
+  }
+  startEditing() {
+    const order = this.state.lookupResult;
+    if (!order || order === 'notfound' || order === 'none') return;
+    const cart = {};
+    order.items.forEach(it => {
+      const prod = this.getCatalog().find(p => p.name === it.name);
+      if (!prod) return;
+      const key = it.size ? `${prod.id}::${it.size}` : prod.id;
+      cart[key] = it.qty;
+    });
+    this.setState({
+      cart, customer: { ...order.customer },
+      editingCode: order.code,
+      // il cliente può correggere la propria email mentre modifica: per il
+      // database vale quella con cui ha aperto l'ordine
+      editingEmail: String((order.customer && order.customer.email) || '').trim().toLowerCase(),
+      view: 'catalog', errors: {},
+    });
+    window.scrollTo(0, 0);
+  }
+  setPayMethod(m) { this.setState({ payMethod: m }); }
+  async declarePayment() {
+    const order = this.state.lookupResult;
+    if (!order || order === 'none' || order === 'notfound') return;
+    if (order.paymentStatus && order.paymentStatus !== 'pending') return;
+    const method = this.state.payMethod || 'PayPal';
+    const declaredAt = new Date().toISOString();
+    try {
+      const { error } = await window.__sb.rpc('declare_payment', {
+        p_code: order.code,
+        p_email: String((order.customer && order.customer.email) || '').trim().toLowerCase(),
+        p_method: method,
+      });
+      if (error) throw error;
+    } catch (e) {}
+    const patch = { paymentStatus: 'declared', paymentMethod: method, paymentDeclaredAt: declaredAt };
+    const orders = this.state.orders.map(o => o.code === order.code ? { ...o, ...patch } : o);
+    this.saveOrders(orders);
+    this.setState({ orders, lookupResult: { ...order, ...patch } });
+  }
+  paymentLabel(order) {
+    if (!order) return '';
+    const t = this.t();
+    if (order.paymentStatus === 'paid') return t.statusPaid;
+    if (order.paymentStatus === 'declared') {
+      const d = order.paymentDeclaredAt
+        ? new Date(order.paymentDeclaredAt).toLocaleDateString(this.state.lang === 'en' ? 'en-GB' : 'it-IT') : '';
+      return `${t.statusDeclared}${d ? ' · ' + d : ''} — ${t.statusInReview}`;
+    }
+    return t.statusToPay;
+  }
+  cancelEditing() {
+    this.setState({ editingCode: null, editingEmail: null, cart: {}, customer: { name: '', surname: '', email: '', phone: '' } });
+  }
+
+  adminAggregates() {
+    const map = {};
+    this.activeOrders().forEach(o => o.items.forEach(it => {
+      const key = it.sizeLabel ? `${it.name} — ${it.sizeLabel}` : it.name;
+      map[key] = (map[key] || 0) + it.qty;
+    }));
+    return Object.entries(map).map(([label, qty]) => ({ label, qty }));
+  }
+  // Un ordine appartiene a un evento: filtrando qui, ordini, totali per
+  // articolo, incassi e contabilità parlano tutti dello stesso periodo.
+  activeOrders() {
+    const ev = this.state.adminEvent;
+    return this.state.orders.filter(o =>
+      !o.cancelledAt && (!ev || ev === 'tutti' || (o.eventId || '') === ev));
+  }
+  adminRevenue() { return this.activeOrders().reduce((s, o) => s + o.total, 0); }
+  amountToCollect() {
+    return this.activeOrders().filter(o => o.paymentStatus !== 'paid').reduce((s, o) => s + o.total, 0);
+  }
+  amountCollected() {
+    return this.activeOrders().filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + o.total, 0);
+  }
+  lowStockCount() {
+    let n = 0;
+    Object.keys(this.state.stock).forEach(id => {
+      const rows = this.state.stock[id];
+      Object.keys(rows).forEach(size => { if (rows[size] <= 2) n++; });
+    });
+    return n;
+  }
+
+  productQtySold() {
+    const map = {};
+    this.activeOrders().forEach(o => o.items.forEach(it => { map[it.name] = (map[it.name] || 0) + it.qty; }));
+    return map;
+  }
+  totalMaterialCost() {
+    const sold = this.productQtySold();
+    return this.getCatalog().reduce((sum, p) => sum + (sold[p.name] || 0) * (this.state.unitCosts[p.id] ?? 0), 0);
+  }
+  totalCost() { return this.totalMaterialCost() + (Number(this.state.extraCost) || 0); }
+
+  money(n) { return n.toFixed(2).replace('.', ','); }
+
+  previousItemsFor(code) {
+    const o = this.state.orders.find(x => x.code === code);
+    return o ? (o.items || []) : [];
+  }
+  // Controllo locale prima di scomodare il database: dà un messaggio che
+  // nomina l'articolo invece di un errore SQL.
+  findShortage(items, previousItems) {
+    const held = {};
+    (previousItems || []).forEach(it => {
+      if (!it.id) return;
+      const k = `${it.id}::${it.size || ''}`;
+      held[k] = (held[k] || 0) + it.qty;
+    });
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (!it.id) continue;
+      const base = this.stockOf(it.id, it.size);
+      if (base === Infinity) continue;
+      const max = base + (held[`${it.id}::${it.size || ''}`] || 0);
+      if (it.qty > max) {
+        const t = this.t();
+        return `${it.name}${it.size ? ' ' + t.sizeWord + ' ' + it.size : ''}: ${max} ${t.soldOutOf}, ${t.youAsked} ${it.qty}.`;
+      }
+    }
+    return null;
+  }
+  isShortageError(e) {
+    return String((e && e.message) || e || '').indexOf('stock_insufficiente:') >= 0;
+  }
+  shortageMessage(e) {
+    const t = this.t();
+    const m = String((e && e.message) || e || '').match(/stock_insufficiente:([^:]*):(.*)$/);
+    if (!m) return t.someUnavailable;
+    const p = this.getProduct(m[1]);
+    return `${p ? p.name : m[1]}${m[2] ? ' ' + t.sizeWord + ' ' + m[2] : ''} ${t.noLongerAvailable}`;
+  }
+
+  availabilityLabel(id, size) {
+    const a = this.availableOf(id, size);
+    const t = this.t();
+    if (a === Infinity) return '';
+    if (a <= 0) return t.soldOut;
+    if (a === 1) return t.lastOne;
+    if (a === 2) return t.lastTwo;
+    return `${t.available} ${a}`;
+  }
+  availabilityStyle(id, size) {
+    const a = this.availableOf(id, size);
+    if (a === Infinity) return 'display:none;';
+    if (a <= 2) return 'color:var(--color-brand-red);';
+    return 'color:color-mix(in srgb, var(--color-text) 55%, transparent);';
+  }
+
+  renderVals() {
+    const view = this.state.view;
+    const cartEntries = this.cartEntries();
+    const lastOrder = this.state.lastOrder;
+    const lr = this.state.lookupResult;
+    const lookupFound = (lr && lr !== 'none' && lr !== 'notfound' && lr !== 'incomplete') ? lr : null;
+
+    return {
+      isCatalog: view === 'catalog',
+      isConfirmation: view === 'confirmation',
+      isLookup: view === 'lookup',
+      isAdmin: view === 'admin' && this.state.adminUnlocked,
+      isAdminLocked: view === 'admin' && !this.state.adminUnlocked,
+      catalogCurrent: view === 'catalog' ? 'page' : undefined,
+      lookupCurrent: view === 'lookup' ? 'page' : undefined,
+      adminCurrent: view === 'admin' ? 'page' : undefined,
+      goToCatalog: (e) => { if (e) e.preventDefault(); this.goTo('catalog'); },
+      goToLookup: (e) => { if (e) e.preventDefault(); this.goTo('lookup'); },
+      goToAdmin: (e) => { if (e) e.preventDefault(); this.goTo('admin'); },
+
+      adminEmail: this.state.adminEmail,
+      onAdminEmail: (e) => this.setState({ adminEmail: e.target.value }),
+      adminPassInput: this.state.adminPassInput,
+      onAdminPass: (e) => this.setState({ adminPassInput: e.target.value, adminPassError: '' }),
+      onAdminPassKey: (e) => { if (e.key === 'Enter') this.unlockAdmin(); },
+      adminPassError: this.state.adminPassError,
+      adminBusy: this.state.adminBusy,
+      mfaAskPassword: this.state.mfaStage !== 'code',
+      mfaAskCode: this.state.mfaStage === 'code',
+      mfaCode: this.state.mfaCode,
+      onMfaCode: (e) => this.setState({ mfaCode: e.target.value }),
+      onMfaCodeKey: (e) => { if (e.key === 'Enter') this.verifyMfa(); },
+      verifyMfa: () => this.verifyMfa(),
+      cancelMfa: () => this.cancelMfa(),
+      mfaVerifyLabel: this.state.adminBusy ? 'Verifico…' : 'Entra',
+      mfaOn: this.state.mfaFactors.length > 0,
+      mfaOff: this.state.mfaFactors.length === 0 && !this.state.mfaEnroll,
+      mfaEnrolling: !!this.state.mfaEnroll,
+      mfaQr: this.state.mfaEnroll ? this.state.mfaEnroll.qr : '',
+      mfaSecret: this.state.mfaEnroll ? this.state.mfaEnroll.secret : '',
+      mfaEnrollCode: this.state.mfaEnrollCode,
+      onMfaEnrollCode: (e) => this.setState({ mfaEnrollCode: e.target.value }),
+      startMfaEnroll: () => this.startMfaEnroll(),
+      confirmMfaEnroll: () => this.confirmMfaEnroll(),
+      cancelMfaEnroll: () => this.setState({ mfaEnroll: null, mfaEnrollCode: '', mfaError: '' }),
+      removeMfa: () => this.removeMfa(this.state.mfaFactors[0] && this.state.mfaFactors[0].id),
+      mfaError: this.state.mfaError,
+      adminButtonLabel: this.state.adminBusy ? 'Accesso in corso…' : 'Accedi',
+      unlockAdmin: () => this.unlockAdmin(),
+      lockAdmin: () => this.lockAdmin(),
+
+      t: this.t(),
+      isVetrina: this.state.mode === 'vetrina',
+      isPreordini: this.state.mode === 'preordini',
+      // Si prenota solo con un invito valido in mano.
+      canOrder: this.state.mode === 'preordini' && !!this.state.invite,
+      inviteMissing: this.state.mode === 'preordini' && this.state.inviteChecked && !this.state.invite,
+      showcaseOnly: !(this.state.mode === 'preordini' && !!this.state.invite),
+      inquiryOpen: !this.state.inquirySent,
+      hasInvite: !!this.state.invite,
+      vetrinaUrl: 'https://vetrina.sunnycreations.it/',
+      inquiryName: this.state.inquiry.name,
+      inquiryEmailValue: this.state.inquiry.email,
+      inquiryMessageValue: this.state.inquiry.message,
+      onInquiryName: (e) => this.updateInquiry('name', e.target.value),
+      onInquiryEmail: (e) => this.updateInquiry('email', e.target.value),
+      onInquiryMessage: (e) => this.updateInquiry('message', e.target.value),
+      inquiryConsent: this.state.inquiryConsent,
+      onInquiryConsent: () => this.setState(st => ({ inquiryConsent: !st.inquiryConsent, inquiryError: '' })),
+      sendInquiry: () => this.sendInquiry(),
+      inquiryBusy: this.state.inquiryBusy,
+      inquirySent: this.state.inquirySent,
+      inquiryError: this.state.inquiryError,
+      inquirySendLabel: this.state.inquiryBusy ? this.t().inquirySending : this.t().inquirySend,
+      inquiryRows: this.state.inquiries.map(q => ({
+        id: q.id, name: q.name, email: q.email, message: q.message || '',
+        dateLabel: new Date(q.created_at).toLocaleString('it-IT'),
+        langLabel: q.lang === 'en' ? 'EN' : 'IT',
+        isNew: q.status === 'new',
+        statusLabel: q.status === 'accepted' ? 'Invito inviato' : (q.status === 'rejected' ? 'Archiviata' : 'Da leggere'),
+        statusStyle: q.status === 'accepted'
+          ? 'color:var(--color-brand-green);'
+          : (q.status === 'rejected' ? 'color:color-mix(in srgb, var(--color-text) 45%, transparent);' : 'color:#8a6d00;font-weight:600;'),
+        accept: () => this.acceptInquiry(q.id),
+        reject: () => this.rejectInquiry(q.id),
+      })),
+      newInquiryCount: this.state.inquiries.filter(q => q.status === 'new').length,
+      langOptions: [{ id: 'it', label: 'IT' }, { id: 'en', label: 'EN' }].map(l => ({
+        label: l.label,
+        select: () => this.setLang(l.id),
+        style: this.state.lang === l.id
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      consentPrivacy: this.state.consentPrivacy,
+      onConsentPrivacy: (e) => this.setState(st => ({ consentPrivacy: !st.consentPrivacy, errors: { ...st.errors, privacy: null } })),
+      consentMarketing: this.state.consentMarketing,
+      onConsentMarketing: () => this.setState(st => ({ consentMarketing: !st.consentMarketing })),
+      privacyHref: this.state.lang === 'en' ? 'privacy-en.html' : 'privacy.html',
+      eventTitle: (this.state.events.find(e => e.isCurrent) || {}).name || 'WKSF European Championship',
+      showPrices: (this.state.settings.show_prices || '0') === '1',
+      cartTotalLabel: this.money(this.cartTotal()),
+      editingCode: this.state.editingCode,
+      cancelEditing: () => this.cancelEditing(),
+      submitLabel: this.state.editingCode ? this.t().submitUpdate : this.t().submit,
+
+      products: this.getVisibleCatalog().map(p => {
+        const sel = this.getSelection(p.id);
+        return {
+          ...p,
+          isSized: !!p.sizes,
+          sel,
+          incQty: () => this.setSelectionQty(p.id, 1),
+          decQty: () => this.setSelectionQty(p.id, -1),
+          add: () => this.addToCart(p.id),
+          zoom: () => this.setState({ zoomPhoto: p.photo }),
+          sizeOptions: (p.sizes || []).map(s => {
+            const soldOut = this.availableOf(p.id, s) <= 0;
+            return {
+              label: s,
+              disabled: soldOut,
+              select: () => this.setSelectionSize(p.id, s),
+              style: soldOut
+                ? { background: 'transparent', color: 'var(--color-neutral-500)', textDecoration: 'line-through', cursor: 'not-allowed' }
+                : (sel.size === s
+                    ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+                    : { background: 'transparent', color: 'var(--color-text)' }),
+            };
+          }),
+          priceLabel: this.money(this.getPrice(p.id)),
+          sizesText: (p.sizes && p.sizes.length) ? p.sizes.join(' · ') : '',
+          hasSizes: !!(p.sizes && p.sizes.length),
+          availabilityLabel: this.availabilityLabel(p.id, sel.size),
+          availabilityStyle: this.availabilityStyle(p.id, sel.size),
+          cannotAdd: this.availableToAdd(p.id, sel.size) <= 0,
+          cannotIncrease: sel.qty >= this.availableToAdd(p.id, sel.size),
+        };
+      }),
+
+      cartEntries: cartEntries.map(e => ({
+        ...e,
+        sizeLabel: e.size ? `${this.t().size} ${e.size}` : '',
+        cannotIncrease: e.qty >= this.availableOf(e.product.id, e.size),
+        lineTotalLabel: this.money(e.lineTotal),
+        inc: () => this.changeCartQty(e.key, 1),
+        dec: () => this.changeCartQty(e.key, -1),
+        remove: () => this.removeFromCart(e.key),
+      })),
+      hasCartItems: cartEntries.length > 0,
+      cartCount: this.cartCount(),
+
+      customer: this.state.customer,
+      errors: this.state.errors,
+      onName: (e) => this.updateCustomer('name', e.target.value),
+      onSurname: (e) => this.updateCustomer('surname', e.target.value),
+      onEmail: (e) => this.updateCustomer('email', e.target.value),
+      onPhone: (e) => this.updateCustomer('phone', e.target.value),
+      submitOrder: () => this.submitOrder(),
+
+      lastOrder,
+      confirmationTitle: this.state.wasEdit ? this.t().updatedTitle : this.t().confirmedTitle,
+      lastOrderItems: lastOrder ? lastOrder.items.map(it => ({ ...it })) : [],
+
+      lookupCode: this.state.lookupCode,
+      onLookupCode: (e) => this.setLookupCode(e.target.value),
+      lookupEmail: this.state.lookupEmail,
+      onLookupEmail: (e) => this.setLookupEmail(e.target.value),
+      runLookup: () => this.runLookup(),
+      lookupNotFound: lr === 'notfound',
+      lookupIncomplete: lr === 'incomplete',
+      lookupFound,
+      lookupFoundPending: !!lookupFound && (lookupFound.paymentStatus || 'pending') === 'pending',
+      lookupFoundDeclared: !!lookupFound && lookupFound.paymentStatus === 'declared',
+      lookupFoundPaid: !!lookupFound && lookupFound.paymentStatus === 'paid',
+      lookupFoundEditable: !!lookupFound && lookupFound.paymentStatus !== 'paid',
+      lookupPaymentLabel: this.paymentLabel(lookupFound),
+      payMethodOptions: ['PayPal', 'Bonifico'].map(m => ({
+        label: m,
+        select: () => this.setPayMethod(m),
+        style: this.state.payMethod === m
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      declarePayment: () => this.declarePayment(),
+      lookupFoundItems: lookupFound ? lookupFound.items.map(it => ({ ...it })) : [],
+      startEditing: () => this.startEditing(),
+
+      orderFilters: [
+        { id: 'tutti', label: 'Tutti' },
+        { id: 'pending', label: 'Da pagare' },
+        { id: 'declared', label: 'Dichiarati' },
+        { id: 'paid', label: 'Pagati' },
+      ].map(f => ({
+        label: f.label,
+        select: () => this.setState({ orderFilter: f.id }),
+        style: this.state.orderFilter === f.id
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      adminOrders: this.activeOrders()
+        .filter(o => this.state.orderFilter === 'tutti' || (o.paymentStatus || 'pending') === this.state.orderFilter)
+        .slice().reverse()
+        .map(o => ({
+          ...o,
+          totalLabel: this.money(o.total),
+          dateLabel: new Date(o.date).toLocaleString('it-IT'),
+          statusLabel: this.paymentLabel(o),
+          statusStyle: o.paymentStatus === 'paid'
+            ? 'color:var(--color-brand-green);'
+            : (o.paymentStatus === 'declared' ? 'color:#8a6d00;' : 'color:color-mix(in srgb, var(--color-text) 55%, transparent);'),
+          isNotPaid: (o.paymentStatus || 'pending') !== 'paid',
+          eventId: o.eventId || '',
+          moveTo: (e) => this.moveOrderToEvent(o.code, e.target.value),
+          viewDetail: () => this.setState({ selectedOrderCode: o.code }),
+          markPaid: () => this.markPaid(o.code),
+          cancel: () => this.cancelOrder(o.code),
+        })),
+      adminTabs: [
+        { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
+        { id: 'ordini', label: 'Ordini' },
+        { id: 'magazzino', label: 'Magazzino' },
+        { id: 'prodotti', label: 'Prodotti' },
+        { id: 'contabilita', label: 'Contabilità' },
+        { id: 'impostazioni', label: 'Impostazioni' },
+      ].map(t => ({
+        label: t.label,
+        select: () => this.setState({ adminTab: t.id }),
+        style: this.state.adminTab === t.id
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      isTabOrdini: this.state.adminTab === 'ordini',
+      isTabRichieste: this.state.adminTab === 'richieste',
+      isTabMagazzino: this.state.adminTab === 'magazzino',
+      isTabProdotti: this.state.adminTab === 'prodotti',
+      isTabContabilita: this.state.adminTab === 'contabilita',
+      isTabImpostazioni: this.state.adminTab === 'impostazioni',
+      adminEvent: this.state.adminEvent,
+      onAdminEvent: (e) => this.setState({ adminEvent: e.target.value }),
+      eventOptions: this.state.events
+        .map(ev => ({ id: ev.id, label: ev.name + (ev.isCurrent ? ' — in corso' : '') }))
+        .concat([{ id: 'tutti', label: 'Tutti gli eventi' }]),
+      eventChoices: this.state.events.map(ev => ({ id: ev.id, label: ev.name })),
+      hasSeveralEvents: this.state.events.length > 1,
+      hasEvents: this.state.events.length > 0,
+      eventRows: this.state.events.map(ev => ({
+        id: ev.id,
+        name: ev.name,
+        orderCount: this.state.orders.filter(o => (o.eventId || '') === ev.id && !o.cancelledAt).length,
+        currentLabel: ev.isCurrent ? 'In corso' : '',
+        currentStyle: ev.isCurrent ? 'color:var(--color-brand-green);' : 'display:none;',
+        canBeCurrent: !ev.isCurrent,
+        makeCurrent: () => this.makeEventCurrent(ev.id),
+        purge: () => this.purgeEvent(ev.id),
+      })),
+      newEventName: this.state.newEventName,
+      onNewEventName: (e) => this.setState({ newEventName: e.target.value }),
+      createEvent: () => this.createEvent(),
+      settingPaypalMe: this.state.settings.paypal_me || '',
+      settingPaypalEmail: this.state.settings.paypal_email || '',
+      settingIban: this.state.settings.iban || '',
+      settingIbanHolder: this.state.settings.iban_holder || '',
+      settingPaymentNote: this.state.settings.payment_note || '',
+      showPricesOptions: [
+        { key: '1', label: 'Sì, mostra i prezzi' },
+        { key: '0', label: 'No, solo vetrina' },
+      ].map(o => ({
+        label: o.label,
+        select: () => this.setSetting('show_prices', o.key),
+        style: (this.state.settings.show_prices || '0') === o.key
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      showIbanOptions: [
+        { key: '1', label: 'Sì, mostra il bonifico' },
+        { key: '0', label: 'No, solo PayPal' },
+      ].map(o => ({
+        label: o.label,
+        select: () => this.setSetting('show_iban', o.key),
+        style: (this.state.settings.show_iban || '0') === o.key
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      onSettingPaypalMe: (e) => this.setSetting('paypal_me', e.target.value),
+      onSettingPaypalEmail: (e) => this.setSetting('paypal_email', e.target.value),
+      onSettingIban: (e) => this.setSetting('iban', e.target.value),
+      onSettingIbanHolder: (e) => this.setSetting('iban_holder', e.target.value),
+      onSettingPaymentNote: (e) => this.setSetting('payment_note', e.target.value),
+      settingPaymentNoteEn: this.state.settings.payment_note_en || '',
+      onSettingPaymentNoteEn: (e) => this.setSetting('payment_note_en', e.target.value),
+      saveSettings: () => this.saveSettings(),
+      settingsBusy: this.state.settingsBusy,
+      settingsSaveLabel: this.state.settingsBusy ? 'Salvo…' : 'Salva impostazioni',
+      settingsMsg: this.state.settingsMsg,
+      summaryOrderCount: this.activeOrders().length,
+      summaryToCollect: this.money(this.amountToCollect()),
+      summaryCollected: this.money(this.amountCollected()),
+      summaryLowStock: this.lowStockCount(),
+      stockGroups: this.getCatalog().map(p => {
+        const sizes = p.sizes && p.sizes.length ? p.sizes : [''];
+        const known = !!this.state.stock[p.id];
+        return {
+          name: p.name,
+          unlimited: !known,
+          rows: sizes.map(size => {
+            const qty = known ? this.stockOf(p.id, size) : 0;
+            return {
+              sizeLabel: size || 'Unica',
+              qty,
+              statusLabel: qty <= 0 ? 'esaurito' : (qty <= 2 ? 'sotto scorta' : ''),
+              statusStyle: qty <= 2 ? 'color:var(--color-brand-red);' : 'display:none;',
+              onQty: (e) => this.setStock(p.id, size, e.target.value),
+              restockValue: this.state.restock[`${p.id}::${size || ''}`] || '',
+              onRestock: (e) => this.setRestockInput(p.id, size, e.target.value),
+              add: () => this.addStock(p.id, size),
+            };
+          }),
+        };
+      }),
+      adminAggregates: this.adminAggregates(),
+      adminRevenueLabel: this.money(this.adminRevenue()),
+      adminOrderCount: this.activeOrders().length,
+      printAdmin: () => window.print(),
+      printOrderDetail: () => this.printOrderDetail(),
+      productRows: this.getCatalog().map(p => ({
+        ...p,
+        priceLabel: this.money(p.price),
+        sizesLabel: (p.sizes || []).join(' · ') || 'Taglia unica',
+        hasPhoto: !!p.photo,
+        statusLabel: p.active === false ? 'Ritirato' : 'In catalogo',
+        statusStyle: p.active === false
+          ? 'color:var(--color-brand-red);'
+          : 'color:var(--color-brand-green);',
+        toggleLabel: p.active === false ? 'Rimetti in catalogo' : 'Ritira',
+        edit: () => this.openProductForm(p),
+        toggle: () => this.toggleProductActive(p.id),
+      })),
+      newProduct: () => this.openProductForm(null),
+      productForm: this.state.productForm || {},
+      hasProductForm: !!this.state.productForm,
+      productFormHasPhoto: !!(this.state.productForm && this.state.productForm.photo),
+      productFormTitle: this.state.productForm && this.state.productForm.isNew ? 'Nuovo articolo' : 'Modifica articolo',
+      productError: this.state.productError,
+      productBusy: this.state.productBusy,
+      productSaveLabel: this.state.productBusy ? 'Attendi…' : 'Salva',
+      onProductName: (e) => this.updateProductForm('name', e.target.value),
+      onProductKicker: (e) => this.updateProductForm('kicker', e.target.value),
+      onProductDesc: (e) => this.updateProductForm('desc', e.target.value),
+      onProductPrice: (e) => this.updateProductForm('price', e.target.value),
+      onProductSizes: (e) => this.updateProductForm('sizesText', e.target.value),
+      onProductOrder: (e) => this.updateProductForm('sortOrder', e.target.value),
+      onProductPhoto: (e) => this.onProductPhoto(e),
+      sizePresets: [
+        { label: 'Adulto', value: 'XS, S, M, L, XL, XXL' },
+        { label: 'Bambino', value: '4, 6, 8, 10, 12, 14' },
+        { label: 'Taglia unica', value: '' },
+      ].map(p => ({ label: p.label, select: () => this.updateProductForm('sizesText', p.value) })),
+      saveProduct: () => this.saveProduct(),
+      closeProductForm: () => this.closeProductForm(),
+      zoomPhoto: this.state.zoomPhoto,
+      closeZoom: () => this.setState({ zoomPhoto: null }),
+      closeOrderDetail: () => this.setState({ selectedOrderCode: null }),
+      selectedOrder: (() => {
+        const o = this.state.orders.find(o => o.code === this.state.selectedOrderCode);
+        return o ? { ...o, totalLabel: this.money(o.total), dateLabel: new Date(o.date).toLocaleString('it-IT') } : null;
+      })(),
+      selectedOrderItems: (() => {
+        const o = this.state.orders.find(o => o.code === this.state.selectedOrderCode);
+        return o ? o.items.map(it => ({ ...it, priceLabel: this.money(it.price), lineTotalLabel: this.money(it.lineTotal) })) : [];
+      })(),
+
+      costRows: (() => {
+        const sold = this.productQtySold();
+        return this.getCatalog().map(p => {
+          const qty = sold[p.name] || 0;
+          const unitCost = this.state.unitCosts[p.id] ?? 0;
+          const revenue = qty * this.getPrice(p.id);
+          return {
+            label: p.name,
+            qty,
+            revenueLabel: this.money(revenue),
+            unitCost,
+            costLabel: this.money(qty * unitCost),
+            onCost: (e) => this.setState(s => ({ unitCosts: { ...s.unitCosts, [p.id]: Number(e.target.value) || 0 } })),
+          };
+        });
+      })(),
+      extraCost: this.state.extraCost,
+      onExtraCost: (e) => this.setState({ extraCost: Number(e.target.value) || 0 }),
+      totalCostLabel: this.money(this.totalCost()),
+      surplusLabel: this.money(Math.max(0, this.adminRevenue() - this.totalCost())),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
