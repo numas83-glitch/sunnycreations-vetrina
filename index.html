@@ -746,6 +746,66 @@
         </div>
       </sc-if>
 
+      <sc-if value="{{ isTabGuida }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:720px;">
+          <h3 style="margin-top:0;">Come funziona</h3>
+          <p class="text-muted" style="margin-top:-6px;">Il giro completo, dall'inizio alla fine. Nessuno può ordinare da solo: ogni ordine nasce da un invito che decidi tu.</p>
+
+          <div class="card" style="padding:var(--space-6);margin-bottom:var(--space-6);">
+            <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+              <div><strong>1. Qualcuno guarda la vetrina.</strong> Su <em>vetrina.sunnycreations.it</em> vede le creazioni con foto, descrizioni e taglie. Non ci sono prezzi né pulsanti per ordinare: può solo scriverti.</div>
+              <div><strong>2. Ti manda una richiesta.</strong> Ti arriva una mail e la richiesta compare qui, nella scheda <em>Richieste</em>, col numero di quelle da leggere sulla linguetta.</div>
+              <div><strong>3. Tu decidi.</strong> Scegli l'evento a cui appartiene e premi <em>Accetta e invita</em>: parte una mail con il link per prenotare. Oppure <em>Archivia</em>, e non parte niente.</div>
+              <div><strong>4. La persona prenota.</strong> Dal suo link sceglie articoli, taglie e quantità. Il link vale 14 giorni ed è legato alla sua email: girato a un altro non funziona.</div>
+              <div><strong>5. Riceve il preventivo</strong> con prezzi, totale, listino e come pagare. Se cambia idea, dalla mail può riaprire l'ordine e correggere le quantità.</div>
+              <div><strong>6. Dichiara il pagamento</strong> premendo <em>Ho pagato</em> nella mail. Tu lo confermi qui quando vedi i soldi arrivare.</div>
+            </div>
+          </div>
+
+          <h4>Ogni giorno: la scheda Richieste</h4>
+          <p>È l'unica che devi guardare con regolarità. Accanto ad <em>Accetta e invita</em> c'è il menù dell'evento: <strong>scegli lì</strong> se è roba della manifestazione o un lavoretto ordinario, perché l'ordine nascerà dentro quell'evento e non dovrai spostarlo dopo.</p>
+          <p><em>Archivia</em> non scrive niente a nessuno: serve per le richieste a cui rispondi di persona, o a cui non vuoi rispondere.</p>
+
+          <h4>Ordini e pagamenti</h4>
+          <p>Ogni ordine passa per tre stati: <strong>da pagare</strong> (grigio), <strong>pagamento dichiarato</strong> (giallo, l'ha detto il cliente) e <strong>pagato</strong> (verde, l'hai confermato tu). Giallo non vuol dire incassato: vuol dire che qualcuno sostiene di aver pagato.</p>
+          <p><em>Dettagli</em> apre la scheda di preparazione, che si stampa e si porta al banco. <em>Annulla</em> toglie l'ordine dai conti e <strong>rimette le quantità a magazzino</strong>.</p>
+
+          <h4>Magazzino</h4>
+          <p>Le giacenze sono <strong>per taglia</strong>: la M e la XL hanno numeri diversi. Un articolo senza nessun numero impostato è considerato illimitato — è così che parte tutto finché non scrivi le quantità.</p>
+          <p>Il campo <strong>"+"</strong> accanto a ogni taglia <em>aggiunge</em> le unità appena prodotte senza sovrascrivere quelle che ci sono già. Se invece scrivi il numero nella colonna a sinistra, quello sostituisce.</p>
+          <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa.</p>
+
+          <h4>Prodotti e collezioni</h4>
+          <p>Qui aggiungi e modifichi gli articoli, prezzi compresi. La <strong>foto si carica dal telefono</strong> e viene rimpicciolita da sola prima di partire.</p>
+          <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. Non c'è un pulsante per cancellare davvero, ed è voluto.</p>
+          <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
+
+          <h4>Eventi</h4>
+          <p>Ogni ordine appartiene a un evento, e il menù in cima a questa pagina filtra <strong>ordini, totali e contabilità insieme</strong>: i numeri parlano sempre dello stesso periodo.</p>
+          <p>Finita una manifestazione, crea l'evento nuovo e premi <em>Rendi corrente</em>. La vista si svuota e le nuove richieste finiranno lì. Non si cancella niente: cambiando voce nel menù ritrovi tutto.</p>
+          <p>Il <strong>logo</strong> che carichi sull'evento compare in testata al sito finché quell'evento è in corso.</p>
+
+          <h4>Impostazioni</h4>
+          <div class="card" style="border-left:4px solid var(--color-brand-red);padding:var(--space-4);margin:var(--space-3) 0;">
+            <strong>Qui bisogna salvare.</strong> A differenza del resto dell'area, le levette e i campi delle Impostazioni non fanno effetto finché non premi <em>Salva impostazioni</em>. Se ci sono modifiche in sospeso compare un avviso rosso in cima.
+          </div>
+          <p><strong>Vetrina</strong>: titolo e presentazione della pagina pubblica. Lasciando il titolo vuoto compare l'evento in corso col suo logo; scrivendone uno tuo, cambiano entrambi.</p>
+          <p><strong>Prezzi nel catalogo</strong>: da spento nessuno vede gli importi e il prezzo lo dici tu nel preventivo. Da acceso compaiono — ma <strong>solo per chi ha l'invito</strong>, mai in vetrina.</p>
+          <p><strong>Pagamenti</strong>: link PayPal, indirizzo, istruzioni e IBAN finiscono nella mail di preventivo, che li rilegge a ogni invio.</p>
+
+          <h4>Sicurezza</h4>
+          <p>Per entrare servono password <strong>e</strong> codice a sei cifre di Google Authenticator. Chi accede senza averlo attivo si trova la schermata di attivazione e non può saltarla.</p>
+          <div class="card" style="border-left:4px solid #8a6d00;padding:var(--space-4);margin:var(--space-3) 0;">
+            <strong>Conserva il codice in chiaro</strong> che compare sotto il QR al momento dell'attivazione, in un posto che non sia il telefono stesso. Se cambi o perdi il telefono, è l'unica cosa che ti rimette dentro senza aiuto esterno.
+          </div>
+
+          <h4>Gli indirizzi</h4>
+          <p><strong>vetrina.sunnycreations.it</strong> — la pagina pubblica, quella da dare in giro.<br>
+          <strong>preordini.sunnycreations.it</strong> — dove si prenota, solo con invito.<br>
+          <strong>preordini.sunnycreations.it/#admin</strong> — questa pagina. Tienila fra i preferiti: dal menù non c'è, di proposito.</p>
+        </div>
+      </sc-if>
+
       <sc-if value="{{ isTabImpostazioni }}" hint-placeholder-val="{{ false }}">
         <div>
           <sc-if value="{{ settingsDirty }}" hint-placeholder-val="{{ false }}">
@@ -2578,6 +2638,7 @@ class Component extends DCLogic {
         { id: 'prodotti', label: 'Prodotti' },
         { id: 'contabilita', label: 'Contabilità' },
         { id: 'impostazioni', label: 'Impostazioni' },
+        { id: 'guida', label: 'Guida' },
       ].map(t => ({
         label: t.label,
         select: () => this.setState({ adminTab: t.id }),
@@ -2591,6 +2652,7 @@ class Component extends DCLogic {
       isTabProdotti: this.state.adminTab === 'prodotti',
       isTabContabilita: this.state.adminTab === 'contabilita',
       isTabImpostazioni: this.state.adminTab === 'impostazioni',
+      isTabGuida: this.state.adminTab === 'guida',
       adminEvent: this.state.adminEvent,
       onAdminEvent: (e) => this.setState({ adminEvent: e.target.value }),
       eventOptions: this.state.events
