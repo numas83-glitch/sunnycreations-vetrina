@@ -381,6 +381,29 @@
         </div>
       </sc-if>
 
+      <sc-if value="{{ mfaMustEnroll }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:left;">
+          <p class="text-muted" style="text-align:center;margin-top:-4px;">Per entrare devi attivare l'autenticatore. Qui dentro ci sono nome, email e telefono di chi ha prenotato: la sola password non basta.</p>
+          <sc-if value="{{ mfaEnrolling }}" hint-placeholder-val="{{ true }}">
+            <div class="card" style="padding:var(--space-4);">
+              <div class="card-title">Inquadra il codice con Google Authenticator</div>
+              <p class="card-body">Apri l'app sul telefono, premi <strong>+</strong>, scegli "Scansiona codice QR" e poi scrivi qui sotto le sei cifre.</p>
+              <img src="{{ mfaQr }}" alt="Codice QR" style="width:190px;height:190px;background:#fff;padding:8px;border-radius:12px;align-self:center;">
+              <p class="text-muted" style="font-size:12px;margin:0;">Se non riesci a inquadrarlo inserisci a mano questo codice — <strong>e conservalo</strong>: è l'unica cosa che ti rimette dentro se cambi telefono.<br><code style="font-size:13px;letter-spacing:.08em;">{{ mfaSecret }}</code></p>
+              <div class="field" style="max-width:200px;">
+                <label for="mfaenroll2">Codice dall'app</label>
+                <input id="mfaenroll2" class="input" type="text" inputmode="numeric" placeholder="000000" style="font-size:18px;letter-spacing:.25em;text-align:center;" value="{{ mfaEnrollCode }}" onChange="{{ onMfaEnrollCode }}">
+              </div>
+              <sc-if value="{{ mfaError }}" hint-placeholder-val="{{ false }}">
+                <div style="color:var(--color-brand-red);font-size:13px;">{{ mfaError }}</div>
+              </sc-if>
+              <button type="button" class="btn btn-primary btn-block" onClick="{{ confirmMfaEnroll }}">Attiva ed entra</button>
+            </div>
+          </sc-if>
+          <button type="button" class="btn btn-ghost btn-block" onClick="{{ cancelMfa }}">Annulla</button>
+        </div>
+      </sc-if>
+
       <sc-if value="{{ mfaAskCode }}" hint-placeholder-val="{{ false }}">
         <div>
           <p class="text-muted" style="margin-top:-4px;">Apri Google Authenticator e scrivi il codice a sei cifre che vedi accanto a SunnyCreations.</p>
@@ -1048,6 +1071,7 @@ class Component extends DCLogic {
     mfaEnroll: null,       // { factorId, qr, secret } durante l'attivazione
     mfaEnrollCode: '',
     mfaError: '',
+    mfaMustEnroll: false,   // password giusta ma nessun autenticatore: si attiva ora
     adminBusy: false,
     selectedOrderCode: null,
     zoomPhoto: null,
@@ -1254,7 +1278,11 @@ class Component extends DCLogic {
           needsCode = !!aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2';
         } catch (e) {}
         if (needsCode) { await this.afterSignIn(); }
-        else { this.setState({ adminUnlocked: true }); this.loadAdminData(); }
+        else {
+          await this.loadMfaFactors();
+          if (this.state.mfaFactors.length) { this.setState({ adminUnlocked: true }); this.loadAdminData(); }
+          else { this.setState({ mfaMustEnroll: true }); await this.startMfaEnroll(); }
+        }
       }
     } catch (e) {}
 
@@ -1564,8 +1592,10 @@ class Component extends DCLogic {
         return;
       }
     }
-    this.setState({ adminUnlocked: true, adminBusy: false, adminPassInput: '', mfaStage: '' });
-    this.loadAdminData();
+    // Senza autenticatore non si entra: lo si attiva adesso. Una protezione
+    // facoltativa è una protezione che nessuno accende.
+    this.setState({ adminBusy: false, adminPassInput: '', mfaStage: '', mfaMustEnroll: true });
+    await this.startMfaEnroll();
   }
   async verifyMfa() {
     const code = String(this.state.mfaCode || '').replace(/\D/g, '');
@@ -1582,7 +1612,7 @@ class Component extends DCLogic {
     }
   }
   cancelMfa() {
-    this.setState({ mfaStage: '', mfaCode: '', adminPassError: '' });
+    this.setState({ mfaStage: '', mfaCode: '', adminPassError: '', mfaMustEnroll: false, mfaEnroll: null });
     try { window.__sb.auth.signOut(); } catch (e) {}
   }
 
@@ -1615,6 +1645,12 @@ class Component extends DCLogic {
       if (error) throw error;
       this.setState({ mfaEnroll: null, mfaEnrollCode: '', mfaError: '' });
       await this.loadMfaFactors();
+      if (this.state.mfaMustEnroll) {
+        // La verifica appena fatta porta la sessione al secondo livello:
+        // da qui il database accetta le letture riservate.
+        this.setState({ mfaMustEnroll: false, adminUnlocked: true });
+        this.loadAdminData();
+      }
     } catch (e) {
       this.setState({ mfaError: 'Codice non valido. Controlla di aver inquadrato il QR e riprova col codice successivo.' });
     }
@@ -1627,7 +1663,7 @@ class Component extends DCLogic {
 
   async lockAdmin() {
     try { await window.__sb.auth.signOut(); } catch (e) {}
-    this.setState({ adminUnlocked: false, view: 'catalog', selectedOrderCode: null, mfaStage: '', mfaCode: '', mfaEnroll: null });
+    this.setState({ adminUnlocked: false, view: 'catalog', selectedOrderCode: null, mfaStage: '', mfaCode: '', mfaEnroll: null, mfaMustEnroll: false });
   }
 
   async setStock(id, size, value) {
@@ -2314,8 +2350,9 @@ class Component extends DCLogic {
       onAdminPassKey: (e) => { if (e.key === 'Enter') this.unlockAdmin(); },
       adminPassError: this.state.adminPassError,
       adminBusy: this.state.adminBusy,
-      mfaAskPassword: this.state.mfaStage !== 'code',
-      mfaAskCode: this.state.mfaStage === 'code',
+      mfaAskPassword: this.state.mfaStage !== 'code' && !this.state.mfaMustEnroll,
+      mfaMustEnroll: this.state.mfaMustEnroll,
+      mfaAskCode: this.state.mfaStage === 'code' && !this.state.mfaMustEnroll,
       mfaCode: this.state.mfaCode,
       onMfaCode: (e) => this.setState({ mfaCode: e.target.value }),
       onMfaCodeKey: (e) => { if (e.key === 'Enter') this.verifyMfa(); },
