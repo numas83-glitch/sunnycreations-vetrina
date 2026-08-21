@@ -52,9 +52,11 @@
       <img src="assets/logo-wksf-snail.png" alt="WKSF" style="height:32px;width:auto;">
       SunnyCreations
     </span>
-    <a href="#" onClick="{{ goToCatalog }}" aria-current="{{ catalogCurrent }}">{{ t.navBook }}</a>
     <sc-if value="{{ isPreordini }}" hint-placeholder-val="{{ true }}">
-      <a href="#" onClick="{{ goToLookup }}" aria-current="{{ lookupCurrent }}">{{ t.navEdit }}</a>
+      <span style="display:flex;align-items:center;gap:var(--space-4);">
+        <a href="#" onClick="{{ goToCatalog }}" aria-current="{{ catalogCurrent }}">{{ t.navBook }}</a>
+        <a href="#" onClick="{{ goToLookup }}" aria-current="{{ lookupCurrent }}">{{ t.navEdit }}</a>
+      </span>
     </sc-if>
     <div class="seg" style="margin-left:var(--space-2);">
       <sc-for list="{{ langOptions }}" as="lo" hint-placeholder-count="2">
