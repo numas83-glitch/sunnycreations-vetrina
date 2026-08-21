@@ -49,8 +49,8 @@
   </div>
   <nav class="nav no-print-on-order" style="border-bottom:1px solid var(--color-divider);position:sticky;top:0;background:var(--color-bg);z-index:10;">
     <span class="nav-brand" style="display:flex;align-items:center;gap:10px;">
-      <img src="{{ navLogo }}" alt="SunnyCreations" style="{{ navLogoStyle }}">
-      SunnyCreations
+      <img src="assets/logo-sunnycreations.png" alt="SunnyCreations" style="height:36px;width:36px;border-radius:50%;object-fit:cover;">
+      <span class="brand-script">SunnyCreations</span>
     </span>
     <sc-if value="{{ isPreordini }}" hint-placeholder-val="{{ true }}">
       <span style="display:flex;align-items:center;gap:var(--space-4);">
@@ -82,6 +82,7 @@
               <h1>{{ vetrinaTitle }}</h1>
             </div>
           </sc-if>
+
           <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
             <p class="text-muted">{{ t.intro }}</p>
           </sc-if>
@@ -725,15 +726,15 @@
       <sc-if value="{{ isTabImpostazioni }}" hint-placeholder-val="{{ false }}">
         <div>
           <h3 style="margin-top:0;">Vetrina</h3>
-          <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Cambiali quando l'evento finisce, o quando vuoi raccontare altro: la pagina si aggiorna appena salvi. Lasciali vuoti e torna il testo predefinito.</p>
+          <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Lasciando il titolo vuoto, in evidenza compare <strong>l'evento in corso</strong> con il suo logo — è quello che la gente cerca. Quando l'occasione è passata scrivi un titolo tuo (per esempio "Creazioni di Natale") e la testata cambia, logo compreso.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
             <div class="field">
               <label for="vtit">Titolo — italiano</label>
-              <input id="vtit" class="input" type="text" placeholder="SunnyCreations" value="{{ settingVetrinaTitleIt }}" onChange="{{ onVetrinaTitleIt }}">
+              <input id="vtit" class="input" type="text" placeholder="(vuoto: mostra l'evento in corso)" value="{{ settingVetrinaTitleIt }}" onChange="{{ onVetrinaTitleIt }}">
             </div>
             <div class="field">
               <label for="vten">Titolo — inglese</label>
-              <input id="vten" class="input" type="text" placeholder="SunnyCreations" value="{{ settingVetrinaTitleEn }}" onChange="{{ onVetrinaTitleEn }}">
+              <input id="vten" class="input" type="text" placeholder="(empty: shows the current event)" value="{{ settingVetrinaTitleEn }}" onChange="{{ onVetrinaTitleEn }}">
             </div>
           </div>
           <div class="field">
@@ -2296,15 +2297,18 @@ class Component extends DCLogic {
       t: this.t(),
       isVetrina: this.state.mode === 'vetrina',
       showInquiry: this.state.mode === 'vetrina' && view === 'catalog',
-      headerLogo: this.state.mode === 'vetrina' ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
-      headerLogoStyle: this.state.mode === 'vetrina'
+      // Sui preordini l'evento c'è sempre, quindi la lumaca resta. Sulla
+      // vetrina segue il titolo: se ne scrivi uno tuo, l'evento non c'entra più.
+      headerLogo: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
+        ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
+      headerLogoStyle: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
         ? 'width:112px;height:112px;border-radius:50%;object-fit:cover;flex-shrink:0;'
         : 'width:110px;height:auto;flex-shrink:0;',
-      navLogo: this.state.mode === 'vetrina' ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
-      navLogoStyle: this.state.mode === 'vetrina'
-        ? 'height:34px;width:34px;border-radius:50%;object-fit:cover;'
-        : 'height:32px;width:auto;',
-      vetrinaTitle: this.state.settings['vetrina_title_' + this.state.lang] || 'SunnyCreations',
+      // Finché non scrivi un titolo tuo, in evidenza c'è l'evento in corso:
+      // è quello che la gente sta cercando. Quando l'occasione cambia, basta
+      // scriverne uno nelle impostazioni e il logo dell'evento si toglie da sé.
+      vetrinaTitle: this.state.settings['vetrina_title_' + this.state.lang]
+        || (this.state.events.find(e => e.isCurrent) || {}).name || 'SunnyCreations',
       vetrinaIntroText: this.state.settings['vetrina_intro_' + this.state.lang] || this.t().vetrinaIntro,
       isPreordini: this.state.mode === 'preordini',
       // Si prenota solo con un invito valido in mano.
