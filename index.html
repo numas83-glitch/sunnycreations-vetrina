@@ -49,7 +49,7 @@
   </div>
   <nav class="nav no-print-on-order" style="border-bottom:1px solid var(--color-divider);position:sticky;top:0;background:var(--color-bg);z-index:10;">
     <span class="nav-brand" style="display:flex;align-items:center;gap:10px;">
-      <img src="assets/logo-wksf-snail.png" alt="WKSF" style="height:32px;width:auto;">
+      <img src="{{ navLogo }}" alt="SunnyCreations" style="{{ navLogoStyle }}">
       SunnyCreations
     </span>
     <sc-if value="{{ isPreordini }}" hint-placeholder-val="{{ true }}">
@@ -68,15 +68,25 @@
   <sc-if value="{{ isCatalog }}" hint-placeholder-val="{{ true }}">
     <div style="flex:1;max-width:1100px;width:100%;margin:0 auto;padding:var(--space-6) var(--space-4) 140px;box-sizing:border-box;">
       <header style="margin-bottom:var(--space-6);max-width:680px;display:flex;gap:var(--space-4);align-items:center;">
-        <img src="assets/logo-wksf-snail.png" alt="WKSF European Championship" style="width:110px;height:auto;flex-shrink:0;">
+        <img src="{{ headerLogo }}" alt="SunnyCreations" style="{{ headerLogoStyle }}">
         <div>
-          <h6 style="color:var(--color-brand-red);">{{ t.kicker }}</h6>
-          <h1>{{ eventTitle }}</h1>
+          <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <h6 style="color:var(--color-brand-red);">{{ t.kicker }}</h6>
+              <h1>{{ eventTitle }}</h1>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showcaseOnly }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <h6 style="color:var(--color-brand-red);">{{ t.vetrinaKicker }}</h6>
+              <h1>{{ vetrinaTitle }}</h1>
+            </div>
+          </sc-if>
           <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
             <p class="text-muted">{{ t.intro }}</p>
           </sc-if>
           <sc-if value="{{ showcaseOnly }}" hint-placeholder-val="{{ false }}">
-            <p class="text-muted">{{ t.vetrinaIntro }}</p>
+            <p class="text-muted">{{ vetrinaIntroText }}</p>
           </sc-if>
           <p class="text-muted" style="font-size:12px;">{{ t.madeBy }} <strong>SunnyCreations</strong>. {{ t.proceeds }}</p>
         </div>
@@ -436,9 +446,9 @@
       <sc-if value="{{ isTabRichieste }}" hint-placeholder-val="{{ false }}">
         <div>
           <h3 style="margin-top:0;">Richieste di informazioni</h3>
-          <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido 14 giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta.</p>
+          <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido 14 giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta. <strong>L'evento lo scegli qui</strong>: l'ordine che nascerà da questo invito finirà lì dentro, senza che tu debba smistarlo dopo.</p>
           <table class="table">
-            <thead><tr><th>Quando</th><th>Chi</th><th>Messaggio</th><th>Stato</th><th></th></tr></thead>
+            <thead><tr><th>Quando</th><th>Chi</th><th>Messaggio</th><th>Stato</th><th>Evento e risposta</th></tr></thead>
             <tbody>
               <sc-for list="{{ inquiryRows }}" as="q" hint-placeholder-count="3">
                 <tr>
@@ -448,7 +458,12 @@
                   <td style="{{ q.statusStyle }}">{{ q.statusLabel }}</td>
                   <td style="white-space:nowrap;">
                     <sc-if value="{{ q.isNew }}" hint-placeholder-val="{{ true }}">
-                      <span>
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <select class="input" style="min-width:150px;font-size:13px;" value="{{ q.eventId }}" onChange="{{ q.onEvent }}">
+                          <sc-for list="{{ eventChoices }}" as="ec" hint-placeholder-count="2">
+                            <option value="{{ ec.id }}">{{ ec.label }}</option>
+                          </sc-for>
+                        </select>
                         <button type="button" class="btn btn-primary" onClick="{{ q.accept }}">Accetta e invita</button>
                         <button type="button" class="btn btn-ghost" onClick="{{ q.reject }}">Archivia</button>
                       </span>
@@ -685,7 +700,28 @@
 
       <sc-if value="{{ isTabImpostazioni }}" hint-placeholder-val="{{ false }}">
         <div>
-          <h3 style="margin-top:0;">Catalogo</h3>
+          <h3 style="margin-top:0;">Vetrina</h3>
+          <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Cambiali quando l'evento finisce, o quando vuoi raccontare altro: la pagina si aggiorna appena salvi. Lasciali vuoti e torna il testo predefinito.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+            <div class="field">
+              <label for="vtit">Titolo — italiano</label>
+              <input id="vtit" class="input" type="text" placeholder="SunnyCreations" value="{{ settingVetrinaTitleIt }}" onChange="{{ onVetrinaTitleIt }}">
+            </div>
+            <div class="field">
+              <label for="vten">Titolo — inglese</label>
+              <input id="vten" class="input" type="text" placeholder="SunnyCreations" value="{{ settingVetrinaTitleEn }}" onChange="{{ onVetrinaTitleEn }}">
+            </div>
+          </div>
+          <div class="field">
+            <label for="vdit">Presentazione — italiano</label>
+            <textarea id="vdit" class="input" value="{{ settingVetrinaIntroIt }}" onChange="{{ onVetrinaIntroIt }}"></textarea>
+          </div>
+          <div class="field">
+            <label for="vden">Presentazione — inglese</label>
+            <textarea id="vden" class="input" value="{{ settingVetrinaIntroEn }}" onChange="{{ onVetrinaIntroEn }}"></textarea>
+          </div>
+
+          <h3 style="margin-top:var(--space-8);">Catalogo</h3>
           <div class="field">
             <label>Prezzi nel catalogo</label>
             <div class="seg">
@@ -947,6 +983,7 @@ class Component extends DCLogic {
     inquirySent: false,
     inquiryError: '',
     inquiries: [],
+    inquiryEvent: {},   // per ogni richiesta, l'evento a cui assegnarla
     consentPrivacy: false,
     consentMarketing: false,
     lookupResult: 'none',
@@ -1057,6 +1094,7 @@ class Component extends DCLogic {
       statusToPay: 'Da pagare', statusDeclared: 'Pagamento dichiarato', statusInReview: 'in verifica', statusPaid: 'Pagamento confermato',
       footerPrivacy: 'Informativa privacy',
       vetrinaIntro: "Queste sono le creazioni disponibili per l'evento: pezzi fatti a mano, in tiratura limitata. Se qualcosa ti interessa scrivimi qui sotto — ti rispondo io con disponibilità, prezzi e come fare.",
+      vetrinaKicker: 'Creazioni artigianali',
       availableSizes: 'Taglie disponibili', oneSize: 'Taglia unica',
       inquiryTitle: 'Ti interessa qualcosa?',
       inquiryIntro: 'Dimmi cosa ti piace e ti rispondo personalmente. Non è un ordine: è una richiesta di informazioni, e la trattiamo io e te.',
@@ -1117,6 +1155,7 @@ class Component extends DCLogic {
       statusToPay: 'To pay', statusDeclared: 'Payment reported', statusInReview: 'being checked', statusPaid: 'Payment confirmed',
       footerPrivacy: 'Privacy notice',
       vetrinaIntro: 'These are the pieces available for the event: handmade, in small numbers. If something catches your eye, write to me below — I will answer personally about availability, prices and how it works.',
+      vetrinaKicker: 'Handmade creations',
       availableSizes: 'Available sizes', oneSize: 'One size',
       inquiryTitle: 'Interested in something?',
       inquiryIntro: 'Tell me what you like and I will answer you personally. This is not an order: it is a request for information, handled between the two of us.',
@@ -1252,9 +1291,11 @@ class Component extends DCLogic {
       this.setState({ inquiries: data });
     } catch (e) {}
   }
-  async acceptInquiry(id) {
+  async acceptInquiry(id, eventId) {
     try {
-      const { data, error } = await window.__sb.rpc('create_invite', { p_inquiry_id: id, p_days: 14 });
+      const { data, error } = await window.__sb.rpc('create_invite', {
+        p_inquiry_id: id, p_days: 14, p_event_id: eventId || null,
+      });
       if (error) throw error;
       await window.__sb.functions.invoke('invite-send', { body: { token: data } });
       window.alert("Invito inviato: la persona riceve il link per il preordine, valido 14 giorni.");
@@ -2204,6 +2245,16 @@ class Component extends DCLogic {
       t: this.t(),
       isVetrina: this.state.mode === 'vetrina',
       showInquiry: this.state.mode === 'vetrina' && view === 'catalog',
+      headerLogo: this.state.mode === 'vetrina' ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
+      headerLogoStyle: this.state.mode === 'vetrina'
+        ? 'width:112px;height:112px;border-radius:50%;object-fit:cover;flex-shrink:0;'
+        : 'width:110px;height:auto;flex-shrink:0;',
+      navLogo: this.state.mode === 'vetrina' ? 'assets/logo-sunnycreations.png' : 'assets/logo-wksf-snail.png',
+      navLogoStyle: this.state.mode === 'vetrina'
+        ? 'height:34px;width:34px;border-radius:50%;object-fit:cover;'
+        : 'height:32px;width:auto;',
+      vetrinaTitle: this.state.settings['vetrina_title_' + this.state.lang] || 'SunnyCreations',
+      vetrinaIntroText: this.state.settings['vetrina_intro_' + this.state.lang] || this.t().vetrinaIntro,
       isPreordini: this.state.mode === 'preordini',
       // Si prenota solo con un invito valido in mano.
       canOrder: this.state.mode === 'preordini' && !!this.state.invite,
@@ -2234,7 +2285,11 @@ class Component extends DCLogic {
         statusStyle: q.status === 'accepted'
           ? 'color:var(--color-brand-green);'
           : (q.status === 'rejected' ? 'color:color-mix(in srgb, var(--color-text) 45%, transparent);' : 'color:#8a6d00;font-weight:600;'),
-        accept: () => this.acceptInquiry(q.id),
+        eventId: this.state.inquiryEvent[q.id]
+          || (this.state.events.find(e => e.isCurrent) || {}).id || '',
+        onEvent: (e) => this.setState(st => ({ inquiryEvent: { ...st.inquiryEvent, [q.id]: e.target.value } })),
+        accept: () => this.acceptInquiry(q.id, this.state.inquiryEvent[q.id]
+          || (this.state.events.find(e => e.isCurrent) || {}).id || null),
         reject: () => this.rejectInquiry(q.id),
       })),
       newInquiryCount: this.state.inquiries.filter(q => q.status === 'new').length,
@@ -2414,6 +2469,14 @@ class Component extends DCLogic {
       settingIban: this.state.settings.iban || '',
       settingIbanHolder: this.state.settings.iban_holder || '',
       settingPaymentNote: this.state.settings.payment_note || '',
+      settingVetrinaTitleIt: this.state.settings.vetrina_title_it || '',
+      settingVetrinaTitleEn: this.state.settings.vetrina_title_en || '',
+      settingVetrinaIntroIt: this.state.settings.vetrina_intro_it || '',
+      settingVetrinaIntroEn: this.state.settings.vetrina_intro_en || '',
+      onVetrinaTitleIt: (e) => this.setSetting('vetrina_title_it', e.target.value),
+      onVetrinaTitleEn: (e) => this.setSetting('vetrina_title_en', e.target.value),
+      onVetrinaIntroIt: (e) => this.setSetting('vetrina_intro_it', e.target.value),
+      onVetrinaIntroEn: (e) => this.setSetting('vetrina_intro_en', e.target.value),
       showPricesOptions: [
         { key: '1', label: 'Sì, mostra i prezzi' },
         { key: '0', label: 'No, solo vetrina' },
