@@ -758,6 +758,7 @@
                   <td style="white-space:nowrap;">
                     <button type="button" class="btn btn-ghost" onClick="{{ p.edit }}">Modifica</button>
                     <button type="button" class="btn btn-ghost" onClick="{{ p.toggle }}">{{ p.toggleLabel }}</button>
+                    <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ p.remove }}">Elimina</button>
                   </td>
                 </tr>
               </sc-for>
@@ -798,7 +799,8 @@
 
           <h4>Prodotti e collezioni</h4>
           <p>Qui aggiungi e modifichi gli articoli, prezzi compresi. La <strong>foto si carica dal telefono</strong> e viene rimpicciolita da sola prima di partire.</p>
-          <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. Non c'è un pulsante per cancellare davvero, ed è voluto.</p>
+          <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. È quello che serve nove volte su dieci.</p>
+          <p><em>Elimina</em> lo cancella davvero, con le sue giacenze e la sua foto, e chiede conferma due volte. Gli <strong>ordini già ricevuti non cambiano</strong>: conservano nome, taglia e prezzo di allora, perché sono scritti dentro l'ordine e non letti dal catalogo. Se l'articolo compare in ordini passati te lo dice prima, così scegli consapevolmente.</p>
           <p><strong>La scelta non deve per forza essere una taglia.</strong> Nel modulo dell'articolo decidi come si chiama: Taglia per i vestiti, <em>Colore</em> per un asciugamano in più tinte, <em>Modello</em> per un portachiavi. I valori li scrivi tu separati da virgola, e le giacenze restano separate per ognuno. Così un asciugamano in cinque colori resta <strong>un solo prodotto</strong>, con una foto e un prezzo, invece di cinque schede da tenere allineate.</p>
           <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
 
@@ -1964,6 +1966,47 @@ class Component extends DCLogic {
     } catch (e) {}
     nomi.forEach(p => this.applyCatalogLocally({ ...p, active }));
   }
+  // Quante volte quell'articolo compare negli ordini già ricevuti: è
+  // l'informazione che serve per decidere se cancellarlo o solo ritirarlo.
+  ordersWithProduct(id) {
+    const p = this.getProduct(id);
+    if (!p) return 0;
+    return this.state.orders.filter(o => !o.cancelledAt &&
+      (o.items || []).some(it => it.id === id || it.name === p.name)).length;
+  }
+  async deleteProduct(id) {
+    const p = this.getProduct(id);
+    if (!p) return;
+    const usato = this.ordersWithProduct(id);
+    const avviso = usato
+      ? '\n\nCompare in ' + usato + ' ordini già ricevuti: quelli restano come sono, con nome e prezzo di allora.'
+      : '';
+    if (!window.confirm('Cancellare definitivamente "' + p.name + '"?' + avviso +
+        '\n\nSpariscono anche le sue giacenze e la foto. Non si torna indietro.')) return;
+    if (!window.confirm('Confermi la cancellazione di "' + p.name + '"?')) return;
+
+    // Se la foto sta nel nostro deposito, va via con l'articolo: altrimenti
+    // resterebbe lì a occupare spazio senza che nessuno sappia di chi è.
+    try {
+      const foto = String(p.photo || '');
+      const segno = '/product-photos/';
+      if (foto.indexOf(segno) > 0) {
+        const nome = foto.slice(foto.indexOf(segno) + segno.length).split('?')[0];
+        await window.__sb.storage.from('product-photos').remove([decodeURIComponent(nome)]);
+      }
+    } catch (e) {}
+
+    try {
+      const { error } = await window.__sb.from('products').delete().eq('id', id);
+      if (error) throw error;
+      await this.loadCatalogFromDb();
+      await this.loadStockFromDb();
+      return;
+    } catch (e) {
+      window.alert('Non sono riuscito a cancellarlo: ' + ((e && e.message) || e));
+    }
+    this.setState(st => ({ catalog: st.catalog.filter(x => x.id !== id) }));
+  }
   async toggleProductActive(id) {
     const p = this.getProduct(id);
     if (!p) return;
@@ -2853,6 +2896,7 @@ class Component extends DCLogic {
         toggleLabel: p.active === false ? 'Rimetti in catalogo' : 'Ritira',
         edit: () => this.openProductForm(p),
         toggle: () => this.toggleProductActive(p.id),
+        remove: () => this.deleteProduct(p.id),
       })),
       newProduct: () => this.openProductForm(null),
       productForm: this.state.productForm || {},
