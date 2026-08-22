@@ -954,7 +954,7 @@
           <p>Quando gli articoli sono tanti, sopra l'elenco compaiono due file di schede: <strong>Collezione</strong> (WKSF 2026, Natale 2026…) e <strong>Categoria</strong> (Abbigliamento, Accessori, Idee regalo…). Si combinano: "WKSF 2026" + "Abbigliamento" mostra solo le magliette di quell'evento. Le stesse schede filtrano anche il Magazzino, e la scelta resta finché non la cambi.</p>
 
           <h4>Versione inglese dei testi</h4>
-          <p>Chi apre il sito in inglese vede i <strong>nomi, le categorie e le descrizioni degli articoli in inglese</strong> se li hai compilati; dove mancano resta l'italiano. Nel modulo dell'articolo c'è il riquadro <em>Versione inglese</em> con il pulsante <strong>Traduci</strong>, che compila i tre campi partendo dall'italiano (li puoi correggere prima di salvare); in cima all'elenco, <em>Traduci gli articoli senza inglese</em> li fa tutti in un colpo. Lo stesso <em>Traduci</em> sta accanto ai campi inglesi delle Impostazioni (titolo e presentazione della vetrina, istruzioni di pagamento). La traduzione la fa Claude, attraverso una funzione del server che risponde solo a chi è entrato qui: serve una chiave Anthropic impostata una volta sola.</p>
+          <p>Chi apre il sito in inglese vede i <strong>nomi, le categorie e le descrizioni degli articoli in inglese</strong> se li hai compilati; dove mancano resta l'italiano. Nel modulo dell'articolo c'è il riquadro <em>Versione inglese</em> con il pulsante <strong>Traduci</strong>, che compila i tre campi partendo dall'italiano (li puoi correggere prima di salvare); in cima all'elenco, <em>Traduci gli articoli senza inglese</em> li fa tutti in un colpo. Lo stesso <em>Traduci</em> sta accanto ai campi inglesi delle Impostazioni (titolo e presentazione della vetrina, istruzioni di pagamento). La traduzione la fa un'intelligenza artificiale (Gemini di Google, piano gratuito), attraverso una funzione del server che risponde solo a chi è entrato qui: serve una chiave Gemini impostata una volta sola. Rileggi sempre il risultato prima di salvare.</p>
 
           <h4>Produzione</h4>
           <p>La scheda <em>Produzione</em> somma gli ordini attivi dell'evento scelto in alto e ti dice, <strong>articolo per articolo e taglia per taglia</strong>, quanti pezzi sono stati ordinati, quanti di questi sono già pagati e in quanti ordini compaiono. È la lista con cui compri il materiale e produci. Con i tre filtri la restringi ai soli ordini pagati o a quelli ancora da pagare; <em>Stampa riepilogo</em> manda in stampa solo quel foglio, senza il resto della pagina.</p>
@@ -1803,7 +1803,7 @@ class Component extends DCLogic {
       const m = String((e && e.message) || e || '');
       this.setState({
         translateBusy: false,
-        [msgKey]: 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '. Controlla che la funzione translate sia pubblicata e che la chiave Anthropic sia impostata.',
+        [msgKey]: 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '. Controlla che la funzione translate sia pubblicata e che la chiave Gemini (GEMINI_API_KEY) sia impostata.',
       });
       return null;
     }
