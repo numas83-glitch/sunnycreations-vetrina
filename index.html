@@ -188,7 +188,7 @@
             <sc-for list="{{ cartEntries }}" as="item" hint-placeholder-count="2">
               <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;">
                 <div>
-                  <div style="font-weight:600;">{{ item.product.name }}</div>
+                  <div style="font-weight:600;">{{ item.displayName }}</div>
                   <div class="text-muted" style="font-size:12px;">{{ item.sizeLabel }}</div>
                   <sc-if value="{{ showPrices }}" hint-placeholder-val="{{ false }}">
                     <div style="font-size:13px;font-weight:600;">€ {{ item.lineTotalLabel }}</div>
@@ -602,6 +602,30 @@
         <div>
           <h3 class="no-print-on-order" style="margin-top:0;">Giacenze</h3>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile. I totali ordinati per articolo e taglia stanno nella scheda <strong>Produzione</strong>.</p>
+          <sc-if value="{{ showAdminFilters }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:var(--space-3);">
+              <sc-if value="{{ hasSeveralCollections }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="text-muted" style="font-size:12px;min-width:72px;">Collezione</span>
+                  <div class="seg">
+                    <sc-for list="{{ adminCollectionTabs }}" as="ct" hint-placeholder-count="3">
+                      <button type="button" class="seg-opt" style="{{ ct.style }}" onClick="{{ ct.select }}">{{ ct.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasSeveralCategories }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="text-muted" style="font-size:12px;min-width:72px;">Categoria</span>
+                  <div class="seg">
+                    <sc-for list="{{ adminCategoryTabs }}" as="kt" hint-placeholder-count="4">
+                      <button type="button" class="seg-opt" style="{{ kt.style }}" onClick="{{ kt.select }}">{{ kt.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
               <div class="card-title"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</div>
@@ -700,6 +724,30 @@
             <button type="button" class="btn btn-primary" onClick="{{ newProduct }}">+ Nuovo articolo</button>
           </div>
           <p class="text-muted">Qui aggiungi e modifichi gli articoli del catalogo, prezzi compresi. "Ritira" toglie un articolo dal catalogo senza cancellarlo, così gli ordini già ricevuti continuano a mostrarlo. Il <strong>numero</strong> di ogni articolo è un progressivo assegnato da solo, che riparte da 1 per ogni collezione: decide in che posizione compare nel catalogo e identifica l'articolo nel riepilogo produzione.</p>
+          <sc-if value="{{ showAdminFilters }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:var(--space-3);">
+              <sc-if value="{{ hasSeveralCollections }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="text-muted" style="font-size:12px;min-width:72px;">Collezione</span>
+                  <div class="seg">
+                    <sc-for list="{{ adminCollectionTabs }}" as="ct" hint-placeholder-count="3">
+                      <button type="button" class="seg-opt" style="{{ ct.style }}" onClick="{{ ct.select }}">{{ ct.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasSeveralCategories }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="text-muted" style="font-size:12px;min-width:72px;">Categoria</span>
+                  <div class="seg">
+                    <sc-for list="{{ adminCategoryTabs }}" as="kt" hint-placeholder-count="4">
+                      <button type="button" class="seg-opt" style="{{ kt.style }}" onClick="{{ kt.select }}">{{ kt.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
 
           <sc-if value="{{ hasProductForm }}" hint-placeholder-val="{{ false }}">
             <div class="card blueprint elev-sm" style="padding:var(--space-4);margin-bottom:var(--space-4);">
@@ -726,6 +774,33 @@
               <div class="field">
                 <label for="pdesc">Descrizione</label>
                 <textarea id="pdesc" class="input" value="{{ productForm.desc }}" onChange="{{ onProductDesc }}"></textarea>
+              </div>
+
+              <div class="card" style="padding:var(--space-3);margin-bottom:var(--space-3);gap:var(--space-2);">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);flex-wrap:wrap;">
+                  <div>
+                    <div style="font-weight:600;">Versione inglese</div>
+                    <div class="text-muted" style="font-size:11px;">La legge chi apre il sito in inglese. Vuota = si mostra l'italiano. <em>Traduci</em> compila i tre campi dall'italiano: rileggi e correggi prima di salvare.</div>
+                  </div>
+                  <button type="button" class="btn btn-secondary" onClick="{{ translateProductForm }}" disabled="{{ translateBusy }}">{{ translateFormLabel }}</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+                  <div class="field" style="margin:0;">
+                    <label for="pnameen">Nome — inglese</label>
+                    <input id="pnameen" class="input" type="text" value="{{ productForm.nameEn }}" onChange="{{ onProductNameEn }}">
+                  </div>
+                  <div class="field" style="margin:0;">
+                    <label for="pkickeren">Categoria — inglese</label>
+                    <input id="pkickeren" class="input" type="text" placeholder="Apparel, Accessories, Gift ideas…" value="{{ productForm.kickerEn }}" onChange="{{ onProductKickerEn }}">
+                  </div>
+                </div>
+                <div class="field" style="margin:0;">
+                  <label for="pdescen">Descrizione — inglese</label>
+                  <textarea id="pdescen" class="input" value="{{ productForm.descEn }}" onChange="{{ onProductDescEn }}"></textarea>
+                </div>
+                <sc-if value="{{ translateMsg }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ translateMsgStyle }}">{{ translateMsg }}</div>
+                </sc-if>
               </div>
 
               <div class="field">
@@ -801,6 +876,17 @@
             </sc-for>
           </div>
 
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-2);">
+            <span class="text-muted" style="font-size:12px;">{{ productCountLabel }}</span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <sc-if value="{{ translateBulkMsg }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ translateBulkMsgStyle }}">{{ translateBulkMsg }}</span>
+              </sc-if>
+              <sc-if value="{{ hasUntranslated }}" hint-placeholder-val="{{ true }}">
+                <button type="button" class="btn btn-ghost" onClick="{{ translateMissing }}" disabled="{{ translateBusy }}">{{ translateBulkLabel }}</button>
+              </sc-if>
+            </span>
+          </div>
           <table class="table">
             <thead><tr><th>N.</th><th></th><th>Articolo</th><th>Collezione</th><th>Prezzo</th><th>Taglie</th><th>Stato</th><th></th></tr></thead>
             <tbody>
@@ -815,6 +901,7 @@
                   <td>
                     {{ p.name }}
                     <div class="text-muted" style="font-size:11px;">{{ p.kicker }}</div>
+                    <div style="font-size:11px;{{ p.enStyle }}">{{ p.enLabel }}</div>
                   </td>
                   <td class="text-muted" style="font-size:12px;">{{ p.collectionLabel }}</td>
                   <td>€ {{ p.priceLabel }}</td>
@@ -862,6 +949,12 @@
           <p>Il campo <strong>"+"</strong> accanto a ogni riga <em>aggiunge</em> le unità appena prodotte senza sovrascrivere quelle che ci sono già. Se invece scrivi il numero nella colonna a sinistra, quello sostituisce.</p>
           <p>Sopra la tabella c'è <strong>"Tutte insieme"</strong>: scrivi una quantità e con <em>Imposta</em> la applichi a ogni taglia o colore del prodotto in un colpo, con <em>Aggiungi</em> la sommi a quelle esistenti. Serve quando arriva una fornitura uguale per tutte le misure.</p>
           <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa.</p>
+
+          <h4>Prodotti e Magazzino: schede per collezione e categoria</h4>
+          <p>Quando gli articoli sono tanti, sopra l'elenco compaiono due file di schede: <strong>Collezione</strong> (WKSF 2026, Natale 2026…) e <strong>Categoria</strong> (Abbigliamento, Accessori, Idee regalo…). Si combinano: "WKSF 2026" + "Abbigliamento" mostra solo le magliette di quell'evento. Le stesse schede filtrano anche il Magazzino, e la scelta resta finché non la cambi.</p>
+
+          <h4>Versione inglese dei testi</h4>
+          <p>Chi apre il sito in inglese vede i <strong>nomi, le categorie e le descrizioni degli articoli in inglese</strong> se li hai compilati; dove mancano resta l'italiano. Nel modulo dell'articolo c'è il riquadro <em>Versione inglese</em> con il pulsante <strong>Traduci</strong>, che compila i tre campi partendo dall'italiano (li puoi correggere prima di salvare); in cima all'elenco, <em>Traduci gli articoli senza inglese</em> li fa tutti in un colpo. Lo stesso <em>Traduci</em> sta accanto ai campi inglesi delle Impostazioni (titolo e presentazione della vetrina, istruzioni di pagamento). La traduzione la fa Claude, attraverso una funzione del server che risponde solo a chi è entrato qui: serve una chiave Anthropic impostata una volta sola.</p>
 
           <h4>Produzione</h4>
           <p>La scheda <em>Produzione</em> somma gli ordini attivi dell'evento scelto in alto e ti dice, <strong>articolo per articolo e taglia per taglia</strong>, quanti pezzi sono stati ordinati, quanti di questi sono già pagati e in quanti ordini compaiono. È la lista con cui compri il materiale e produci. Con i tre filtri la restringi ai soli ordini pagati o a quelli ancora da pagare; <em>Stampa riepilogo</em> manda in stampa solo quel foglio, senza il resto della pagina.</p>
@@ -918,7 +1011,7 @@
               <input id="vtit" class="input" type="text" placeholder="(vuoto: mostra l'evento in corso)" value="{{ settingVetrinaTitleIt }}" onChange="{{ onVetrinaTitleIt }}">
             </div>
             <div class="field">
-              <label for="vten">Titolo — inglese</label>
+              <label for="vten">Titolo — inglese <button type="button" class="btn btn-ghost" style="font-size:11px;padding:0 6px;margin-left:6px;" onClick="{{ translateVetrinaTitle }}" disabled="{{ translateBusy }}">Traduci</button></label>
               <input id="vten" class="input" type="text" placeholder="(empty: shows the current event)" value="{{ settingVetrinaTitleEn }}" onChange="{{ onVetrinaTitleEn }}">
             </div>
           </div>
@@ -927,8 +1020,11 @@
             <textarea id="vdit" class="input" value="{{ settingVetrinaIntroIt }}" onChange="{{ onVetrinaIntroIt }}"></textarea>
           </div>
           <div class="field">
-            <label for="vden">Presentazione — inglese</label>
+            <label for="vden">Presentazione — inglese <button type="button" class="btn btn-ghost" style="font-size:11px;padding:0 6px;margin-left:6px;" onClick="{{ translateVetrinaIntro }}" disabled="{{ translateBusy }}">Traduci</button></label>
             <textarea id="vden" class="input" value="{{ settingVetrinaIntroEn }}" onChange="{{ onVetrinaIntroEn }}"></textarea>
+            <sc-if value="{{ translateSettingsMsg }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ translateSettingsMsgStyle }}">{{ translateSettingsMsg }}</div>
+            </sc-if>
           </div>
 
           <h3 style="margin-top:var(--space-8);">Catalogo</h3>
@@ -960,9 +1056,9 @@
             <textarea id="setnote" class="input" value="{{ settingPaymentNote }}" onChange="{{ onSettingPaymentNote }}"></textarea>
           </div>
           <div class="field">
-            <label for="setnoteen">Istruzioni per il pagamento — inglese</label>
+            <label for="setnoteen">Istruzioni per il pagamento — inglese <button type="button" class="btn btn-ghost" style="font-size:11px;padding:0 6px;margin-left:6px;" onClick="{{ translatePaymentNote }}" disabled="{{ translateBusy }}">Traduci</button></label>
             <textarea id="setnoteen" class="input" value="{{ settingPaymentNoteEn }}" onChange="{{ onSettingPaymentNoteEn }}"></textarea>
-            <div class="text-muted" style="font-size:11px;margin-top:4px;">Va nelle mail di chi ha prenotato dalla versione inglese del sito.</div>
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Va nelle mail di chi ha prenotato dalla versione inglese del sito. Anche qui, dopo <em>Traduci</em> bisogna premere <em>Salva impostazioni</em>.</div>
           </div>
 
           <div class="field">
@@ -1210,6 +1306,12 @@ class Component extends DCLogic {
     resendBusy: false,
     resendMsg: '',
     productionFilter: 'tutti',   // 'tutti' | 'pagati' | 'dapagare' — riepilogo produzione
+    adminCollection: '*',   // filtro Prodotti/Magazzino: '*' = tutte, '' = senza collezione
+    adminCategory: '*',     // idem per categoria (kicker)
+    translateBusy: false,
+    translateMsg: '',       // esito nel modulo articolo
+    translateBulkMsg: '',   // esito della traduzione in blocco
+    translateSettingsMsg: '',
     unitCosts: {},
     extraCost: 0,
     adminUnlocked: false,
@@ -1634,7 +1736,7 @@ class Component extends DCLogic {
   async loadCatalogFromDb() {
     try {
       const { data, error } = await window.__sb.from('products')
-        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label')
+        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label, name_en, description_en, kicker_en')
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       if (error || !Array.isArray(data) || !data.length) return;
       this.setState({
@@ -1651,11 +1753,118 @@ class Component extends DCLogic {
           sortOrder: Number(r.sort_order) || 0,
           collection: r.collection || '',
           variantLabel: (r.variant_label || '').trim(),
+          nameEn: (r.name_en || '').trim(),
+          descEn: (r.description_en || '').trim(),
+          kickerEn: (r.kicker_en || '').trim(),
         }))),
       });
     } catch (e) {}
   }
   getProduct(id) { return this.getCatalog().find(p => p.id === id); }
+  // Testi dell'articolo nella lingua del cliente: inglese se c'è, se no
+  // l'italiano. Il nome italiano resta quello "vero" (ordini, magazzino, admin).
+  isEn() { return this.state.lang === 'en'; }
+  displayName(p) { return (this.isEn() && p && p.nameEn) ? p.nameEn : (p ? p.name : ''); }
+  displayDesc(p) { return (this.isEn() && p && p.descEn) ? p.descEn : (p ? p.desc : ''); }
+  displayKicker(p) { return (this.isEn() && p && p.kickerEn) ? p.kickerEn : (p ? p.kicker : ''); }
+  // Le righe d'ordine portano anche il nome inglese di allora.
+  itemName(it) { return (this.isEn() && it && it.nameEn) ? it.nameEn : (it ? it.name : ''); }
+
+  // ── Traduzione in inglese (funzione "translate", solo admin) ───────────
+  // texts = { chiave: testo italiano } → { chiave: testo inglese }, o null se
+  // la funzione non risponde. Il messaggio d'errore va nel campo indicato.
+  async translateTexts(texts, context, msgKey) {
+    const toSend = {};
+    Object.keys(texts || {}).forEach(k => { const v = String(texts[k] || '').trim(); if (v) toSend[k] = v; });
+    if (!Object.keys(toSend).length) { this.setState({ [msgKey]: 'Niente da tradurre: i campi italiani sono vuoti.' }); return null; }
+    this.setState({ translateBusy: true, [msgKey]: '' });
+    try {
+      const { data, error } = await window.__sb.functions.invoke('translate', { body: { texts: toSend, context: context || '' } });
+      if (error) throw error;
+      if (!data || !data.translations) throw new Error((data && data.error) || 'risposta vuota');
+      this.setState({ translateBusy: false });
+      return data.translations;
+    } catch (e) {
+      const m = String((e && e.message) || e || '');
+      this.setState({
+        translateBusy: false,
+        [msgKey]: 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '. Controlla che la funzione translate sia pubblicata e che la chiave Anthropic sia impostata.',
+      });
+      return null;
+    }
+  }
+  async translateProductForm() {
+    const f = this.state.productForm;
+    if (!f) return;
+    const tr = await this.translateTexts({ name: f.name, kicker: f.kicker, desc: f.desc }, 'product card: name, category, description', 'translateMsg');
+    if (!tr) return;
+    this.setState(st => ({
+      productForm: { ...st.productForm,
+        nameEn: tr.name !== undefined ? tr.name : st.productForm.nameEn,
+        kickerEn: tr.kicker !== undefined ? tr.kicker : st.productForm.kickerEn,
+        descEn: tr.desc !== undefined ? tr.desc : st.productForm.descEn },
+      translateMsg: 'Tradotto: rileggi i tre campi e poi Salva.',
+    }));
+  }
+  untranslatedProducts() {
+    return this.getCatalog().filter(p => !p.nameEn || (p.desc && !p.descEn) || (p.kicker && !p.kickerEn));
+  }
+  // Tutti gli articoli senza inglese, in una chiamata sola; poi si salvano
+  // uno per uno (sono pochi) e si ricarica il catalogo.
+  async translateMissingProducts() {
+    const list = this.untranslatedProducts();
+    if (!list.length) return;
+    const texts = {};
+    list.forEach(p => {
+      if (!p.nameEn && p.name) texts[p.id + '::name'] = p.name;
+      if (!p.descEn && p.desc) texts[p.id + '::desc'] = p.desc;
+      if (!p.kickerEn && p.kicker) texts[p.id + '::kicker'] = p.kicker;
+    });
+    const tr = await this.translateTexts(texts, 'product catalogue: names, categories, descriptions', 'translateBulkMsg');
+    if (!tr) return;
+    let n = 0;
+    for (const p of list) {
+      const upd = {
+        nameEn: tr[p.id + '::name'] !== undefined ? tr[p.id + '::name'] : p.nameEn,
+        descEn: tr[p.id + '::desc'] !== undefined ? tr[p.id + '::desc'] : p.descEn,
+        kickerEn: tr[p.id + '::kicker'] !== undefined ? tr[p.id + '::kicker'] : p.kickerEn,
+      };
+      if (upd.nameEn === p.nameEn && upd.descEn === p.descEn && upd.kickerEn === p.kickerEn) continue;
+      n++;
+      try {
+        const { error } = await window.__sb.from('products')
+          .update({ name_en: upd.nameEn || null, description_en: upd.descEn || null, kicker_en: upd.kickerEn || null }).eq('id', p.id);
+        if (error) throw error;
+      } catch (e) {
+        this.applyCatalogLocally({ ...p, ...upd });
+      }
+    }
+    await this.loadCatalogFromDb();
+    this.setState({ translateBulkMsg: n ? ('Tradotti ' + n + ' articoli. Rileggili aprendoli con Modifica.') : 'Niente da tradurre.' });
+  }
+  async translateSetting(fromKey, toKey, context) {
+    const tr = await this.translateTexts({ t: this.state.settings[fromKey] || '' }, context, 'translateSettingsMsg');
+    if (!tr || tr.t === undefined) return;
+    this.setSetting(toKey, tr.t);
+    this.setState({ translateSettingsMsg: 'Tradotto: rileggi e poi premi Salva impostazioni.' });
+  }
+
+  // Filtri di Prodotti e Magazzino: per collezione e per categoria, combinabili.
+  adminCollectionKeys() {
+    const seen = [], cat = this.sortCatalog(this.getCatalog());
+    cat.forEach(p => { const c = p.collection || ''; if (seen.indexOf(c) < 0) seen.push(c); });
+    return seen;
+  }
+  adminCategoryKeys() {
+    const seen = [];
+    this.getCatalog().forEach(p => { const k = p.kicker || ''; if (seen.indexOf(k) < 0) seen.push(k); });
+    return seen;
+  }
+  filteredAdminCatalog() {
+    const c = this.state.adminCollection, k = this.state.adminCategory;
+    return this.getCatalog().filter(p =>
+      (c === '*' || (p.collection || '') === c) && (k === '*' || (p.kicker || '') === k));
+  }
   // state.selection elenca una voce per prodotto: senza questo, il primo
   // prodotto aggiunto e non elencato lì farebbe esplodere setSelectionQty.
   getSelection(id) {
@@ -1952,8 +2161,9 @@ class Component extends DCLogic {
   openProductForm(product) {
     this.setState({
       productForm: product
-        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '', variantLabel: product.variantLabel || '' }
-        : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0,
+        ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '', variantLabel: product.variantLabel || '',
+            nameEn: product.nameEn || '', descEn: product.descEn || '', kickerEn: product.kickerEn || '' }
+        : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0, nameEn: '', descEn: '', kickerEn: '',
             sizesText: '', variantLabel: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(this.lastCollection()), isNew: true },
       productError: '', productBusy: false,
     });
@@ -2076,6 +2286,9 @@ class Component extends DCLogic {
       collection: String(f.collection || '').trim(),
       variantLabel: String(f.variantLabel || '').trim(),
       desc: String(f.desc || '').trim(),
+      nameEn: String(f.nameEn || '').trim(),
+      descEn: String(f.descEn || '').trim(),
+      kickerEn: String(f.kickerEn || '').trim(),
       photo: f.photoSaved || '',
       price,
       sizes: this.parseSizes(f.sizesText),
@@ -2091,6 +2304,9 @@ class Component extends DCLogic {
         sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
         collection: product.collection,
         variant_label: product.variantLabel || null,
+        name_en: product.nameEn || null,
+        description_en: product.descEn || null,
+        kicker_en: product.kickerEn || null,
       });
       if (error) throw error;
       await this.loadCatalogFromDb();
@@ -2349,9 +2565,10 @@ class Component extends DCLogic {
     return Object.entries(this.state.cart).map(([key, qty]) => {
       const [id, size] = key.split('::');
       const product = this.getProduct(id);
+      const displayName = this.displayName(product);
       if (!product) return null;
       const price = this.getPrice(id);
-      return { key, product, size: size || null, qty, price, lineTotal: price * qty };
+      return { key, product, displayName, size: size || null, qty, price, lineTotal: price * qty };
     }).filter(Boolean);
   }
   cartTotal() { return this.cartEntries().reduce((sum, e) => sum + e.lineTotal, 0); }
@@ -2396,6 +2613,7 @@ class Component extends DCLogic {
     const items = this.cartEntries().map(e => ({
       id: e.product.id,
       name: e.product.name,
+      nameEn: e.product.nameEn || '',
       size: e.size,
       sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}` : '',
       qty: e.qty,
@@ -2875,6 +3093,9 @@ class Component extends DCLogic {
         const sel = this.getSelection(p.id);
         return {
           ...p,
+          name: this.displayName(p),
+          desc: this.displayDesc(p),
+          kicker: this.displayKicker(p),
           isSized: !!p.sizes,
           sel,
           incQty: () => this.setSelectionQty(p.id, 1),
@@ -2927,7 +3148,7 @@ class Component extends DCLogic {
 
       lastOrder,
       confirmationTitle: this.state.wasEdit ? this.t().updatedTitle : this.t().confirmedTitle,
-      lastOrderItems: lastOrder ? lastOrder.items.map(it => ({ ...it })) : [],
+      lastOrderItems: lastOrder ? lastOrder.items.map(it => ({ ...it, name: this.itemName(it) })) : [],
 
       lookupCode: this.state.lookupCode,
       onLookupCode: (e) => this.setLookupCode(e.target.value),
@@ -2950,7 +3171,7 @@ class Component extends DCLogic {
           : { background: 'transparent', color: 'var(--color-text)' },
       })),
       declarePayment: () => this.declarePayment(),
-      lookupFoundItems: lookupFound ? lookupFound.items.map(it => ({ ...it })) : [],
+      lookupFoundItems: lookupFound ? lookupFound.items.map(it => ({ ...it, name: this.itemName(it) })) : [],
       startEditing: () => this.startEditing(),
 
       orderFilters: [
@@ -3085,7 +3306,7 @@ class Component extends DCLogic {
       summaryToCollect: this.money(this.amountToCollect()),
       summaryCollected: this.money(this.amountCollected()),
       summaryLowStock: this.lowStockCount(),
-      stockGroups: this.getCatalog().map(p => {
+      stockGroups: this.filteredAdminCatalog().map(p => {
         const sizes = p.sizes && p.sizes.length ? p.sizes : [''];
         const known = !!this.state.stock[p.id];
         return {
@@ -3103,7 +3324,7 @@ class Component extends DCLogic {
               sizeLabel: size || 'Unica',
               qty,
               statusLabel: qty <= 0 ? 'esaurito' : (qty <= 2 ? 'sotto scorta' : ''),
-              statusStyle: qty <= 2 ? 'color:var(--color-brand-red);' : 'display:none;',
+              statusStyle: qty <= 2 ? 'color:var(--color-brand-red);' : '',
               onQty: (e) => this.setStock(p.id, size, e.target.value),
               restockValue: this.state.restock[`${p.id}::${size || ''}`] || '',
               onRestock: (e) => this.setRestockInput(p.id, size, e.target.value),
@@ -3165,8 +3386,10 @@ class Component extends DCLogic {
           renumber: () => this.renumberCollection(g.key),
         }));
       })(),
-      productRows: this.getCatalog().map(p => ({
+      productRows: this.filteredAdminCatalog().map(p => ({
         ...p,
+        enLabel: p.nameEn ? 'EN: ' + p.nameEn : 'senza inglese',
+        enStyle: p.nameEn ? 'color:color-mix(in srgb, var(--color-text) 55%, transparent);' : 'color:#8a6d00;',
         priceLabel: this.money(p.price),
         sizesLabel: (p.sizes || []).join(' · ') || 'Taglia unica',
         collectionLabel: p.collection || '—',
@@ -3182,6 +3405,49 @@ class Component extends DCLogic {
         duplicate: () => this.duplicateProduct(p.id),
       })),
       newProduct: () => this.openProductForm(null),
+      productCountLabel: (() => {
+        const n = this.filteredAdminCatalog().length, tot = this.getCatalog().length;
+        return n === tot ? (tot + ' articoli') : (n + ' su ' + tot + ' articoli');
+      })(),
+      showAdminFilters: this.getCatalog().length > 1,
+      hasSeveralCollections: this.adminCollectionKeys().length > 1,
+      hasSeveralCategories: this.adminCategoryKeys().length > 1,
+      adminCollectionTabs: [{ key: '*', label: 'Tutte' }]
+        .concat(this.adminCollectionKeys().map(c => ({ key: c, label: c || 'Senza collezione' })))
+        .map(t => ({
+          label: t.label,
+          select: () => this.setState({ adminCollection: t.key }),
+          style: this.state.adminCollection === t.key
+            ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+            : { background: 'transparent', color: 'var(--color-text)' },
+        })),
+      adminCategoryTabs: [{ key: '*', label: 'Tutte' }]
+        .concat(this.adminCategoryKeys().map(k => ({ key: k, label: k || 'Senza categoria' })))
+        .map(t => ({
+          label: t.label,
+          select: () => this.setState({ adminCategory: t.key }),
+          style: this.state.adminCategory === t.key
+            ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+            : { background: 'transparent', color: 'var(--color-text)' },
+        })),
+      translateBusy: this.state.translateBusy,
+      translateFormLabel: this.state.translateBusy ? 'Traduco…' : 'Traduci in inglese',
+      translateProductForm: () => this.translateProductForm(),
+      translateMsg: this.state.translateMsg,
+      translateMsgStyle: 'font-size:12px;' + (this.state.translateMsg.indexOf('non riuscita') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
+      hasUntranslated: this.untranslatedProducts().length > 0,
+      translateBulkLabel: this.state.translateBusy ? 'Traduco…' : ('Traduci gli articoli senza inglese (' + this.untranslatedProducts().length + ')'),
+      translateMissing: () => this.translateMissingProducts(),
+      translateBulkMsg: this.state.translateBulkMsg,
+      translateBulkMsgStyle: 'font-size:12px;' + (this.state.translateBulkMsg.indexOf('non riuscita') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
+      translateVetrinaTitle: () => this.translateSetting('vetrina_title_it', 'vetrina_title_en', 'shop page title'),
+      translateVetrinaIntro: () => this.translateSetting('vetrina_intro_it', 'vetrina_intro_en', 'shop page introduction'),
+      translatePaymentNote: () => this.translateSetting('payment_note', 'payment_note_en', 'payment instructions in a quote email'),
+      translateSettingsMsg: this.state.translateSettingsMsg,
+      translateSettingsMsgStyle: 'font-size:12px;margin-top:4px;' + (this.state.translateSettingsMsg.indexOf('non riuscita') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
+      onProductNameEn: (e) => this.updateProductForm('nameEn', e.target.value),
+      onProductKickerEn: (e) => this.updateProductForm('kickerEn', e.target.value),
+      onProductDescEn: (e) => this.updateProductForm('descEn', e.target.value),
       productForm: this.state.productForm || {},
       hasProductForm: !!this.state.productForm,
       productFormHasPhoto: !!(this.state.productForm && this.state.productForm.photo),
