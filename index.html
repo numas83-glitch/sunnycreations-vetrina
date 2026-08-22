@@ -83,6 +83,18 @@
             <div>
               <div class="script-line">{{ t.vetrinaKicker }}</div>
               <h1>{{ vetrinaTitle }}</h1>
+              <sc-if value="{{ showEventChips }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin:var(--space-2) 0 0;">
+                  <sc-for list="{{ currentEventChips }}" as="ce" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--color-divider);border-radius:999px;padding:4px 12px 4px 4px;font-size:13px;background:var(--color-bg);">
+                      <sc-if value="{{ ce.hasLogo }}" hint-placeholder-val="{{ true }}">
+                        <img src="{{ ce.logo }}" alt="" style="width:26px;height:26px;object-fit:contain;border-radius:50%;">
+                      </sc-if>
+                      <span>{{ ce.name }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
             </div>
           </sc-if>
 
@@ -264,6 +276,12 @@
       <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green)" stroke-width="1.5" style="margin:0 auto var(--space-2);display:block;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
       <h1>{{ confirmationTitle }}</h1>
       <p class="text-muted">{{ t.confirmedText }}</p>
+      <sc-if value="{{ mailFailed }}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="border-left:4px solid var(--color-brand-red);padding:var(--space-3) var(--space-4);text-align:left;margin:var(--space-3) 0;">
+          <strong>{{ t.mailFailedTitle }}</strong>
+          <p class="card-body" style="margin:4px 0 0;">{{ t.mailFailedText }}</p>
+        </div>
+      </sc-if>
       <div class="card blueprint" style="display:inline-block;padding:var(--space-3) var(--space-6);margin:var(--space-3) 0;">
         <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
         <div style="font-family:var(--font-heading);font-size:32px;font-weight:600;letter-spacing:0.04em;">{{ lastOrder.code }}</div>
@@ -546,7 +564,8 @@
           <div style="margin-top:var(--space-6);">
             <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
               <h3 style="margin:0;">Scheda preparazione — {{ selectedOrder.code }}</h3>
-              <div style="display:flex;gap:8px;">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                <button type="button" class="btn btn-ghost" onClick="{{ resendQuote }}" disabled="{{ resendBusy }}">{{ resendLabel }}</button>
                 <button type="button" class="btn btn-secondary" onClick="{{ printOrderDetail }}">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
                   Stampa questo ordine
@@ -554,6 +573,9 @@
                 <button type="button" class="btn btn-ghost" onClick="{{ closeOrderDetail }}">Chiudi</button>
               </div>
             </div>
+            <sc-if value="{{ resendMsg }}" hint-placeholder-val="{{ false }}">
+              <div class="no-print-on-order" style="{{ resendMsgStyle }}">{{ resendMsg }}</div>
+            </sc-if>
             <div class="card blueprint elev-sm" style="padding:var(--space-4);">
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
               <div class="card-kicker">Ordine {{ selectedOrder.code }} — {{ selectedOrder.dateLabel }}</div>
@@ -578,18 +600,11 @@
 
       <sc-if value="{{ isTabMagazzino }}" hint-placeholder-val="{{ false }}">
         <div>
-          <div class="no-print-on-order" style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
-            <button type="button" class="btn btn-secondary" onClick="{{ printAdmin }}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
-              Stampa totali da produrre
-            </button>
-          </div>
-
           <h3 class="no-print-on-order" style="margin-top:0;">Giacenze</h3>
-          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile.</p>
+          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile. I totali ordinati per articolo e taglia stanno nella scheda <strong>Produzione</strong>.</p>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
-              <div class="card-title">{{ g.name }}</div>
+              <div class="card-title"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</div>
               <sc-if value="{{ g.unlimited }}" hint-placeholder-val="{{ false }}">
                 <div class="text-muted" style="font-size:12px;">Nessuna giacenza impostata — sempre disponibile. Scrivi un numero per iniziare a tracciarlo.</div>
               </sc-if>
@@ -617,16 +632,64 @@
               </table>
             </div>
           </sc-for>
+        </div>
+      </sc-if>
 
-        <h3 class="no-print-on-order">Totali per articolo</h3>
-        <table class="table no-print-on-order">
-          <thead><tr><th>Articolo</th><th>Quantità</th></tr></thead>
-          <tbody>
-            <sc-for list="{{ adminAggregates }}" as="row" hint-placeholder-count="3">
-              <tr><td>{{ row.label }}</td><td>{{ row.qty }}</td></tr>
+      <sc-if value="{{ isTabProduzione }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-3);flex-wrap:wrap;">
+            <div style="max-width:620px;">
+              <h3 style="margin-top:0;">Riepilogo produzione</h3>
+              <p class="text-muted" style="margin-top:-6px;">Quanti pezzi sono stati ordinati per ogni articolo e taglia, negli ordini attivi dell'evento scelto in alto. È la lista per comprare il materiale e per produrre: si stampa così com'è, senza il resto della pagina.</p>
+            </div>
+            <button type="button" class="btn btn-secondary" onClick="{{ printProduction }}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
+              Stampa riepilogo
+            </button>
+          </div>
+          <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
+            <sc-for list="{{ productionFilters }}" as="f" hint-placeholder-count="3">
+              <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
             </sc-for>
-          </tbody>
-        </table>
+          </div>
+
+          <div class="card blueprint elev-sm" style="padding:var(--space-4);">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div class="card-kicker">Riepilogo produzione — {{ productionScopeLabel }} — {{ productionDateLabel }}</div>
+            <div class="card-title">{{ productionHeadline }}</div>
+            <sc-if value="{{ productionEmpty }}" hint-placeholder-val="{{ false }}">
+              <p class="text-muted">Nessun ordine con questi filtri.</p>
+            </sc-if>
+            <sc-for list="{{ productionGroups }}" as="pg" hint-placeholder-count="3">
+              <div style="margin-top:var(--space-4);break-inside:avoid;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-3);border-bottom:2px solid var(--color-text);padding-bottom:4px;">
+                  <strong>{{ pg.title }}</strong>
+                  <span class="text-muted" style="font-size:12px;white-space:nowrap;">{{ pg.subtitle }}</span>
+                </div>
+                <table class="table" style="margin-top:0;">
+                  <thead><tr><th>{{ pg.variantName }}</th><th style="text-align:right;">Ordinati</th><th style="text-align:right;">di cui pagati</th><th style="text-align:right;">Ordini</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ pg.rows }}" as="pr" hint-placeholder-count="4">
+                      <tr>
+                        <td>{{ pr.sizeLabel }}</td>
+                        <td style="text-align:right;font-weight:600;">{{ pr.qty }}</td>
+                        <td style="text-align:right;">{{ pr.paid }}</td>
+                        <td style="text-align:right;">{{ pr.orders }}</td>
+                      </tr>
+                    </sc-for>
+                    <sc-if value="{{ pg.showTotal }}" hint-placeholder-val="{{ true }}">
+                      <tr>
+                        <td><strong>Totale</strong></td>
+                        <td style="text-align:right;"><strong>{{ pg.total }}</strong></td>
+                        <td style="text-align:right;">{{ pg.paid }}</td>
+                        <td style="text-align:right;">{{ pg.orders }}</td>
+                      </tr>
+                    </sc-if>
+                  </tbody>
+                </table>
+              </div>
+            </sc-for>
+          </div>
         </div>
       </sc-if>
 
@@ -636,7 +699,7 @@
             <h3 style="margin:0;">Prodotti</h3>
             <button type="button" class="btn btn-primary" onClick="{{ newProduct }}">+ Nuovo articolo</button>
           </div>
-          <p class="text-muted">Qui aggiungi e modifichi gli articoli del catalogo, prezzi compresi. "Ritira" toglie un articolo dal catalogo senza cancellarlo, così gli ordini già ricevuti continuano a mostrarlo. Il numero in "Ordine" decide in che posizione compare.</p>
+          <p class="text-muted">Qui aggiungi e modifichi gli articoli del catalogo, prezzi compresi. "Ritira" toglie un articolo dal catalogo senza cancellarlo, così gli ordini già ricevuti continuano a mostrarlo. Il <strong>numero</strong> di ogni articolo è un progressivo assegnato da solo, che riparte da 1 per ogni collezione: decide in che posizione compare nel catalogo e identifica l'articolo nel riepilogo produzione.</p>
 
           <sc-if value="{{ hasProductForm }}" hint-placeholder-val="{{ false }}">
             <div class="card blueprint elev-sm" style="padding:var(--space-4);margin-bottom:var(--space-4);">
@@ -703,8 +766,9 @@
                   <input id="pprice" class="input" type="number" min="0" step="0.5" value="{{ productForm.price }}" onChange="{{ onProductPrice }}">
                 </div>
                 <div class="field">
-                  <label for="porder">Ordine nel catalogo</label>
-                  <input id="porder" class="input" type="number" step="10" value="{{ productForm.sortOrder }}" onChange="{{ onProductOrder }}">
+                  <label for="porder">Numero (posizione nel catalogo)</label>
+                  <input id="porder" class="input" type="number" min="1" step="1" value="{{ productForm.sortOrder }}" onChange="{{ onProductOrder }}">
+                  <div class="text-muted" style="font-size:11px;margin-top:4px;">Assegnato da solo: il prossimo libero nella collezione. Cambialo solo per spostare l'articolo più su o più giù.</div>
                 </div>
               </div>
 
@@ -731,16 +795,18 @@
                 <div style="display:flex;gap:var(--space-2);">
                   <button type="button" class="btn btn-secondary" onClick="{{ cl.show }}">Mostra tutti</button>
                   <button type="button" class="btn btn-ghost" onClick="{{ cl.hide }}">Nascondi tutti</button>
+                  <button type="button" class="btn btn-ghost" onClick="{{ cl.renumber }}" title="Riassegna i numeri 1, 2, 3… nell'ordine attuale">Rinumera</button>
                 </div>
               </div>
             </sc-for>
           </div>
 
           <table class="table">
-            <thead><tr><th></th><th>Articolo</th><th>Collezione</th><th>Prezzo</th><th>Taglie</th><th>Ordine</th><th>Stato</th><th></th></tr></thead>
+            <thead><tr><th>N.</th><th></th><th>Articolo</th><th>Collezione</th><th>Prezzo</th><th>Taglie</th><th>Stato</th><th></th></tr></thead>
             <tbody>
               <sc-for list="{{ productRows }}" as="p" hint-placeholder-count="5">
                 <tr>
+                  <td class="text-muted">{{ p.sortOrder }}</td>
                   <td>
                     <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ true }}">
                       <img src="{{ p.photo }}" alt="" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--color-divider);">
@@ -753,7 +819,6 @@
                   <td class="text-muted" style="font-size:12px;">{{ p.collectionLabel }}</td>
                   <td>€ {{ p.priceLabel }}</td>
                   <td>{{ p.sizesLabel }}</td>
-                  <td>{{ p.sortOrder }}</td>
                   <td style="{{ p.statusStyle }}">{{ p.statusLabel }}</td>
                   <td style="white-space:nowrap;">
                     <button type="button" class="btn btn-ghost" onClick="{{ p.edit }}">Modifica</button>
@@ -779,7 +844,7 @@
               <div><strong>2. Ti manda una richiesta.</strong> Ti arriva una mail e la richiesta compare qui, nella scheda <em>Richieste</em>, col numero di quelle da leggere sulla linguetta.</div>
               <div><strong>3. Tu decidi.</strong> Scegli l'evento a cui appartiene e premi <em>Accetta e invita</em>: parte una mail con il link per prenotare. Oppure <em>Archivia</em>, e non parte niente.</div>
               <div><strong>4. La persona prenota.</strong> Dal suo link sceglie articoli, taglie e quantità. Il link vale 14 giorni ed è legato alla sua email: girato a un altro non funziona.</div>
-              <div><strong>5. Riceve il preventivo</strong> con prezzi, totale, listino e come pagare. Se cambia idea, dalla mail può riaprire l'ordine e correggere le quantità.</div>
+              <div><strong>5. Riceve il preventivo</strong> con prezzi, totale, listino e come pagare — e a te arriva una copia con i suoi recapiti. Se cambia idea, dalla mail può riaprire l'ordine e correggere le quantità. Se una mail non è partita, da <em>Dettagli</em> la rimandi con <em>Rimanda preventivo</em>.</div>
               <div><strong>6. Dichiara il pagamento</strong> premendo <em>Ho pagato</em> nella mail. Tu lo confermi qui quando vedi i soldi arrivare.</div>
             </div>
           </div>
@@ -798,6 +863,9 @@
           <p>Sopra la tabella c'è <strong>"Tutte insieme"</strong>: scrivi una quantità e con <em>Imposta</em> la applichi a ogni taglia o colore del prodotto in un colpo, con <em>Aggiungi</em> la sommi a quelle esistenti. Serve quando arriva una fornitura uguale per tutte le misure.</p>
           <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa.</p>
 
+          <h4>Produzione</h4>
+          <p>La scheda <em>Produzione</em> somma gli ordini attivi dell'evento scelto in alto e ti dice, <strong>articolo per articolo e taglia per taglia</strong>, quanti pezzi sono stati ordinati, quanti di questi sono già pagati e in quanti ordini compaiono. È la lista con cui compri il materiale e produci. Con i tre filtri la restringi ai soli ordini pagati o a quelli ancora da pagare; <em>Stampa riepilogo</em> manda in stampa solo quel foglio, senza il resto della pagina.</p>
+
           <h4>Prodotti e collezioni</h4>
           <p>Qui aggiungi e modifichi gli articoli, prezzi compresi. La <strong>foto si carica dal telefono</strong> e viene rimpicciolita da sola prima di partire.</p>
           <p><em>Ritira</em> toglie un articolo dal catalogo <strong>senza cancellarlo</strong>: gli ordini vecchi continuano a mostrarlo, e quando serve lo rimetti. È quello che serve nove volte su dieci.</p>
@@ -805,17 +873,18 @@
           <p><em>Elimina</em> lo cancella davvero, con le sue giacenze e la sua foto, e chiede conferma due volte. Gli <strong>ordini già ricevuti non cambiano</strong>: conservano nome, taglia e prezzo di allora, perché sono scritti dentro l'ordine e non letti dal catalogo. Se l'articolo compare in ordini passati te lo dice prima, così scegli consapevolmente.</p>
           <p><strong>La scelta non deve per forza essere una taglia.</strong> Nel modulo dell'articolo decidi come si chiama: Taglia per i vestiti, <em>Colore</em> per un asciugamano in più tinte, <em>Modello</em> per un portachiavi. I valori li scrivi tu separati da virgola, e le giacenze restano separate per ognuno. Così un asciugamano in cinque colori resta <strong>un solo prodotto</strong>, con una foto e un prezzo, invece di cinque schede da tenere allineate.</p>
           <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
+          <p>Ogni articolo ha un <strong>numero</strong>: un progressivo che si assegna da solo quando lo crei o lo duplichi (il prossimo libero nella sua collezione) e che <strong>riparte da 1 per ogni collezione</strong>. Nel catalogo gli articoli stanno raggruppati per collezione e, dentro, in ordine di numero; lo stesso numero compare nel riepilogo produzione e nel magazzino, così al telefono o al banco basta dire "il 3". Se sposti un articolo in un'altra collezione prende il primo numero libero di quella; se dopo qualche cancellazione restano dei buchi, <em>Rinumera</em> nel riquadro della collezione rimette 1, 2, 3… senza cambiare l'ordine.</p>
 
           <h4>Eventi</h4>
           <p>Ogni ordine appartiene a un evento, e il menù in cima a questa pagina filtra <strong>ordini, totali e contabilità insieme</strong>: i numeri parlano sempre dello stesso periodo.</p>
-          <p>Finita una manifestazione, crea l'evento nuovo e premi <em>Rendi corrente</em>. La vista si svuota e le nuove richieste finiranno lì. Non si cancella niente: cambiando voce nel menù ritrovi tutto.</p>
-          <p>Il <strong>logo</strong> che carichi sull'evento compare in testata al sito finché quell'evento è in corso.</p>
+          <p>Più eventi possono essere <strong>in corso insieme</strong> — la manifestazione e i lavoretti ordinari, o due gare vicine. Li apri e li chiudi con <em>Apri</em> / <em>Chiudi</em> nella scheda Impostazioni; quando ne sono aperti più d'uno, il menù in alto offre anche la voce <em>Tutti gli eventi in corso</em>. Finita una manifestazione premi <em>Chiudi</em>: non si cancella niente, cambiando voce nel menù ritrovi tutto.</p>
+          <p>Il <strong>logo</strong> che carichi sull'evento compare in testata al sito finché quell'evento è in corso. Con più eventi aperti la vetrina mostra il logo del marchio e, sotto il titolo, un'etichetta per ogni evento col suo logo; chi arriva da un invito vede invece il nome e il logo dell'evento a cui è stato invitato.</p>
 
           <h4>Impostazioni</h4>
           <div class="card" style="border-left:4px solid var(--color-brand-red);padding:var(--space-4);margin:var(--space-3) 0;">
             <strong>Qui bisogna salvare.</strong> A differenza del resto dell'area, le levette e i campi delle Impostazioni non fanno effetto finché non premi <em>Salva impostazioni</em>. Se ci sono modifiche in sospeso compare un avviso rosso in cima.
           </div>
-          <p><strong>Vetrina</strong>: titolo e presentazione della pagina pubblica. Lasciando il titolo vuoto compare l'evento in corso col suo logo; scrivendone uno tuo, cambiano entrambi.</p>
+          <p><strong>Vetrina</strong>: titolo e presentazione della pagina pubblica. Lasciando il titolo vuoto compare l'evento in corso col suo logo (o l'elenco degli eventi aperti, se sono più d'uno); scrivendone uno tuo, cambiano entrambi.</p>
           <p><strong>Prezzi nel catalogo</strong>: da spento nessuno vede gli importi e il prezzo lo dici tu nel preventivo. Da acceso compaiono — ma <strong>solo per chi ha l'invito</strong>, mai in vetrina.</p>
           <p><strong>Pagamenti</strong>: link PayPal, indirizzo, istruzioni e IBAN finiscono nella mail di preventivo, che li rilegge a ogni invio.</p>
 
@@ -842,7 +911,7 @@
           </sc-if>
 
           <h3 style="margin-top:0;">Vetrina</h3>
-          <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Lasciando il titolo vuoto, in evidenza compare <strong>l'evento in corso</strong> con il suo logo — è quello che la gente cerca. Quando l'occasione è passata scrivi un titolo tuo (per esempio "Creazioni di Natale") e la testata cambia, logo compreso.</p>
+          <p class="text-muted" style="margin-top:-6px;">Titolo e presentazione di <strong>vetrina.sunnycreations.it</strong>. Lasciando il titolo vuoto, in evidenza compare <strong>l'evento in corso</strong> con il suo logo — o l'elenco degli eventi aperti, se sono più d'uno — è quello che la gente cerca. Quando l'occasione è passata scrivi un titolo tuo (per esempio "Creazioni di Natale") e la testata cambia, logo compreso.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
             <div class="field">
               <label for="vtit">Titolo — italiano</label>
@@ -964,7 +1033,7 @@
           </sc-if>
 
           <h3 style="margin-top:var(--space-8);">Eventi</h3>
-          <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. Finita una manifestazione non si cancella niente: apri l'evento nuovo, e la vista si svuota da sé. L'anno dopo ritrovi tutto. Il <strong>logo</strong> che carichi qui compare in testata finché quell'evento è in corso; senza logo si usa quello del marchio.</p>
+          <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. <strong>Più eventi possono essere in corso insieme</strong>: in vetrina compaiono tutti quelli aperti, e quando accetti una richiesta scegli in quale va l'ordine. Finita una manifestazione premi <em>Chiudi</em>: non si cancella niente, cambiando voce nel menù in alto ritrovi tutto. Il <strong>logo</strong> che carichi qui compare in testata finché l'evento è in corso (se gli eventi aperti sono più d'uno, in testata va il logo del marchio e ognuno mostra il suo accanto al nome).</p>
 
           <table class="table">
             <thead><tr><th>Logo</th><th>Evento</th><th>Ordini</th><th></th><th></th></tr></thead>
@@ -982,11 +1051,7 @@
                   </td>
                   <td>{{ ev.name }} <span style="{{ ev.currentStyle }}">· {{ ev.currentLabel }}</span></td>
                   <td>{{ ev.orderCount }}</td>
-                  <td>
-                    <sc-if value="{{ ev.canBeCurrent }}" hint-placeholder-val="{{ true }}">
-                      <button type="button" class="btn btn-ghost" onClick="{{ ev.makeCurrent }}">Rendi corrente</button>
-                    </sc-if>
-                  </td>
+                  <td><button type="button" class="btn btn-ghost" onClick="{{ ev.toggle }}">{{ ev.toggleLabel }}</button></td>
                   <td><button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ ev.purge }}">Cancella ordini</button></td>
                 </tr>
               </sc-for>
@@ -1141,6 +1206,10 @@ class Component extends DCLogic {
     consentMarketing: false,
     lookupResult: 'none',
     lastOrder: null,
+    mailStatus: '',        // '' | 'sent' | 'failed' — esito della mail di preventivo dell'ultimo ordine
+    resendBusy: false,
+    resendMsg: '',
+    productionFilter: 'tutti',   // 'tutti' | 'pagati' | 'dapagare' — riepilogo produzione
     unitCosts: {},
     extraCost: 0,
     adminUnlocked: false,
@@ -1233,6 +1302,8 @@ class Component extends DCLogic {
       getQuote: 'Preventivo con prezzi e totale da pagare',
       getList: 'Listino completo con tutti gli articoli disponibili',
       getPay: 'Il link per pagare con PayPal e il QR da inquadrare col telefono',
+      mailFailedTitle: 'La mail col preventivo non è partita.',
+      mailFailedText: "L'ordine è registrato lo stesso. Conserva il codice qui sopra e scrivi a sunnycreationshm@gmail.com indicando il codice: ti mandiamo il preventivo e i dati per pagare a mano.",
       changeMind: 'Il totale è troppo alto o hai cambiato idea sulle quantità? Vai su',
       changeMind2: 'inserisci il codice',
       changeMind3: 'con la tua email e aggiorna le quantità: ti mandiamo un nuovo preventivo.',
@@ -1294,6 +1365,8 @@ class Component extends DCLogic {
       getQuote: 'A quote with prices and the total to pay',
       getList: 'The full price list with everything available',
       getPay: 'The PayPal link and a QR code to scan with your phone',
+      mailFailedTitle: 'The quote email could not be sent.',
+      mailFailedText: 'Your order is saved anyway. Keep the code above and write to sunnycreationshm@gmail.com quoting it: we will send you the quote and payment details by hand.',
       changeMind: 'Total too high, or changed your mind about quantities? Go to',
       changeMind2: 'enter the code',
       changeMind3: 'together with your email and adjust the quantities: we will send a new quote.',
@@ -1411,7 +1484,8 @@ class Component extends DCLogic {
       if (data && data.length) {
         const email = String(data[0].email || '').toLowerCase();
         this.setState(st => ({
-          invite: { token, email },
+          invite: { token, email,
+            eventId: data[0].event_id || '', eventName: data[0].event_name || '', eventLogo: data[0].event_logo || '' },
           inviteChecked: true,
           customer: { ...st.customer, email },
         }));
@@ -1485,9 +1559,24 @@ class Component extends DCLogic {
         .select('id, name, is_current, logo').order('created_at', { ascending: false });
       if (error || !Array.isArray(data) || !data.length) return;
       const events = data.map(e => ({ id: e.id, name: e.name, isCurrent: !!e.is_current, logo: e.logo || '' }));
-      const current = events.find(e => e.isCurrent);
-      this.setState(s => ({ events, adminEvent: s.adminEvent || (current ? current.id : 'tutti') }));
+      const current = events.filter(e => e.isCurrent);
+      // Un solo evento aperto: si parte da quello. Più d'uno: da tutti
+      // quelli in corso insieme. Nessuno: tutto.
+      const dflt = current.length === 1 ? current[0].id : (current.length > 1 ? 'in-corso' : 'tutti');
+      this.setState(s => ({ events, adminEvent: s.adminEvent || dflt }));
     } catch (e) {}
+  }
+  // Gli eventi "in corso" possono essere più d'uno: la manifestazione e i
+  // lavoretti ordinari, o due gare vicine. Chi ha bisogno di UN evento
+  // (titolo, logo, evento proposto per una richiesta) prende il primo.
+  currentEvents() { return this.state.events.filter(e => e.isCurrent); }
+  primaryEvent() { return this.currentEvents()[0] || null; }
+  adminEventLabel() {
+    const ev = this.state.adminEvent;
+    if (!ev || ev === 'tutti') return 'Tutti gli eventi';
+    if (ev === 'in-corso') return 'Eventi in corso';
+    const e = this.state.events.find(x => x.id === ev);
+    return e ? e.name : ev;
   }
   async loadAdminData() {
     await this.loadMfaFactors();
@@ -1523,7 +1612,23 @@ class Component extends DCLogic {
   // lo stesso, ed è quello che tiene in piedi il prototipo, che non ha rete.
   getCatalog() {
     if (this.state.catalog.length) return this.state.catalog;
-    return this.products.map((p, i) => ({ ...p, active: p.active !== false, sortOrder: (i + 1) * 10 }));
+    return this.products.map((p, i) => ({ ...p, active: p.active !== false, sortOrder: i + 1 }));
+  }
+  // Il numero di un articolo riparte da 1 in ogni collezione: per non
+  // mescolare il 3 di una collezione col 3 di un'altra, il catalogo sta
+  // raggruppato per collezione (in ordine di nome, quella vuota — gli
+  // articoli sempre in vetrina — per ultima) e dentro per numero.
+  sortCatalog(list) {
+    const key = p => (p.collection || '');
+    return list.slice().sort((a, b) => {
+      const ka = key(a), kb = key(b);
+      if (ka !== kb) {
+        if (!ka) return 1;
+        if (!kb) return -1;
+        return ka.localeCompare(kb);
+      }
+      return ((a.sortOrder || 0) - (b.sortOrder || 0)) || String(a.name).localeCompare(String(b.name));
+    });
   }
   getVisibleCatalog() { return this.getCatalog().filter(p => p.active !== false); }
   async loadCatalogFromDb() {
@@ -1534,7 +1639,7 @@ class Component extends DCLogic {
       if (error || !Array.isArray(data) || !data.length) return;
       this.setState({
         dbReady: true,
-        catalog: data.map(r => ({
+        catalog: this.sortCatalog(data.map(r => ({
           id: r.id,
           name: r.name || '',
           kicker: r.kicker || '',
@@ -1546,7 +1651,7 @@ class Component extends DCLogic {
           sortOrder: Number(r.sort_order) || 0,
           collection: r.collection || '',
           variantLabel: (r.variant_label || '').trim(),
-        })),
+        }))),
       });
     } catch (e) {}
   }
@@ -1818,15 +1923,38 @@ class Component extends DCLogic {
     const c = this.getCatalog();
     return c.length ? (c[c.length - 1].collection || '') : '';
   }
-  nextSortOrder() {
-    return this.getCatalog().reduce((m, p) => Math.max(m, p.sortOrder || 0), 0) + 10;
+  // Il prossimo numero libero nella collezione: il progressivo si assegna
+  // da solo e riparte da 1 per ogni collezione. excludeId serve quando si
+  // ricalcola il numero di un articolo che esiste già (cambio di collezione).
+  nextSortOrder(collection, excludeId) {
+    const coll = String(collection || '').trim();
+    return this.getCatalog()
+      .filter(p => (p.collection || '') === coll && p.id !== excludeId)
+      .reduce((m, p) => Math.max(m, p.sortOrder || 0), 0) + 1;
+  }
+  // Dopo qualche cancellazione restano dei buchi: 1, 2, 5, 9. Rinumera
+  // rimette 1, 2, 3, 4 senza cambiare l'ordine.
+  async renumberCollection(collection) {
+    const coll = String(collection || '');
+    const list = this.sortCatalog(this.getCatalog().filter(p => (p.collection || '') === coll));
+    const changes = list.map((p, i) => ({ ...p, sortOrder: i + 1 })).filter((p, i) => p.sortOrder !== (list[i].sortOrder || 0));
+    if (!changes.length) return;
+    try {
+      for (const p of changes) {
+        const { error } = await window.__sb.from('products').update({ sort_order: p.sortOrder }).eq('id', p.id);
+        if (error) throw error;
+      }
+      await this.loadCatalogFromDb();
+      return;
+    } catch (e) {}
+    changes.forEach(p => this.applyCatalogLocally(p));
   }
   openProductForm(product) {
     this.setState({
       productForm: product
         ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '', variantLabel: product.variantLabel || '' }
         : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', price: 0,
-            sizesText: '', variantLabel: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(), isNew: true },
+            sizesText: '', variantLabel: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(this.lastCollection()), isNew: true },
       productError: '', productBusy: false,
     });
   }
@@ -1847,14 +1975,26 @@ class Component extends DCLogic {
         collection: p.collection || '',
         photoSaved: p.photo || '',
         active: true,
-        sortOrder: this.nextSortOrder(),
+        sortOrder: this.nextSortOrder(p.collection),
       },
       productError: '', productBusy: false,
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
   updateProductForm(field, value) {
-    this.setState(s => ({ productForm: { ...s.productForm, [field]: value } }));
+    this.setState(s => {
+      const form = { ...s.productForm, [field]: value };
+      // Cambiando collezione l'articolo prende il primo numero libero di
+      // quella; se torna nella sua, riprende il numero che aveva.
+      if (field === 'collection') {
+        const coll = String(value || '').trim();
+        const orig = form.id ? this.getProduct(form.id) : null;
+        form.sortOrder = (orig && (orig.collection || '') === coll)
+          ? orig.sortOrder
+          : this.nextSortOrder(coll, form.id || undefined);
+      }
+      return { productForm: form };
+    });
   }
   parseSizes(text) {
     const list = String(text || '').split(',').map(x => x.trim()).filter(Boolean);
@@ -1968,8 +2108,7 @@ class Component extends DCLogic {
       const i = base.findIndex(p => p.id === product.id);
       if (i >= 0) base[i] = { ...base[i], ...product };
       else base.push(product);
-      base.sort((a, b) => ((a.sortOrder || 0) - (b.sortOrder || 0)) || String(a.name).localeCompare(String(b.name)));
-      return { catalog: base };
+      return { catalog: this.sortCatalog(base) };
     });
   }
   // Il senso di tutto questo: a evento finito si spegne il gruppo in un
@@ -2108,14 +2247,16 @@ class Component extends DCLogic {
     }
     this.setState({ newEventName: '' });
   }
-  async makeEventCurrent(id) {
+  // Apre o chiude un evento senza toccare gli altri: più eventi possono
+  // stare aperti insieme.
+  async setEventOpen(id, open) {
     try {
-      const { error } = await window.__sb.rpc('set_current_event', { p_id: id });
+      const { error } = await window.__sb.rpc('set_event_open', { p_id: id, p_open: !!open });
       if (error) throw error;
       await this.loadEventsFromDb();
       return;
     } catch (e) {}
-    this.setState(s => ({ events: s.events.map(e => ({ ...e, isCurrent: e.id === id })) }));
+    this.setState(s => ({ events: s.events.map(e => e.id === id ? { ...e, isCurrent: !!open } : e) }));
   }
   // Cancellazione definitiva: due conferme, e le giacenze non si toccano —
   // la merce di un evento chiuso è stata consegnata.
@@ -2321,13 +2462,36 @@ class Component extends DCLogic {
     }
 
     // Preventivo via email. Se fallisce l'ordine resta valido: il cliente ha
-    // comunque il suo codice a video, e la mail si può rimandare dall'admin.
-    if (savedRemotely) {
-      try { await window.__sb.functions.invoke('order-confirmation', { body: { code: order.code } }); } catch (e) {}
-    }
+    // comunque il suo codice a video e un avviso che gli dice di scriverci,
+    // e la mail si può rimandare dall'admin (Dettagli → Rimanda preventivo).
+    let mailStatus = '';
+    if (savedRemotely) mailStatus = (await this.sendQuoteEmail(order.code)) ? 'sent' : 'failed';
 
-    this.setState({ cart: {}, lastOrder: order, view: 'confirmation', errors: {}, editingCode: null, editingEmail: null, wasEdit: !!editingCode });
+    this.setState({ cart: {}, lastOrder: order, mailStatus, view: 'confirmation', errors: {}, editingCode: null, editingEmail: null, wasEdit: !!editingCode });
     window.scrollTo(0, 0);
+  }
+
+  // Chiama la funzione che spedisce il preventivo (al cliente, con copia
+  // all'amministrazione). Ritorna true/false invece di lanciare: chi chiama
+  // decide cosa dire.
+  async sendQuoteEmail(code) {
+    try {
+      const { data, error } = await window.__sb.functions.invoke('order-confirmation', { body: { code } });
+      if (error) throw error;
+      return !!(data && data.ok);
+    } catch (e) { return false; }
+  }
+  async resendQuote(code) {
+    const o = this.state.orders.find(x => x.code === code);
+    if (!o || this.state.resendBusy) return;
+    this.setState({ resendBusy: true, resendMsg: '' });
+    const ok = await this.sendQuoteEmail(code);
+    this.setState({
+      resendBusy: false,
+      resendMsg: ok
+        ? 'Preventivo rimandato a ' + ((o.customer || {}).email || 'cliente') + ', con copia a te.'
+        : 'Invio fallito. Controlla che la funzione order-confirmation sia pubblicata su Supabase e che la chiave Resend sia impostata.',
+    });
   }
 
   setLookupCode(v) { this.setState({ lookupCode: v }); }
@@ -2416,20 +2580,64 @@ class Component extends DCLogic {
     this.setState({ editingCode: null, editingEmail: null, cart: {}, customer: { name: '', surname: '', email: '', phone: '' } });
   }
 
-  adminAggregates() {
-    const map = {};
-    this.activeOrders().forEach(o => o.items.forEach(it => {
-      const key = it.sizeLabel ? `${it.name} — ${it.sizeLabel}` : it.name;
-      map[key] = (map[key] || 0) + it.qty;
+  // Riepilogo produzione: per ogni articolo, per ogni taglia, quanti pezzi
+  // sono stati ordinati, quanti di questi in ordini già pagati, e in quanti
+  // ordini compaiono. Gli articoli stanno nell'ordine del catalogo (col loro
+  // numero); quelli non più in catalogo in coda, per nome. Le righe vecchie
+  // senza id si agganciano per nome.
+  productionSummary() {
+    const filter = this.state.productionFilter || 'tutti';
+    const orders = this.activeOrders().filter(o =>
+      filter === 'tutti' ? true : (filter === 'pagati' ? o.paymentStatus === 'paid' : o.paymentStatus !== 'paid'));
+    const cat = this.getCatalog();
+    // Posizione nel catalogo per id: il catalogo di riserva viene ricreato a
+    // ogni chiamata, quindi confrontare gli oggetti non funzionerebbe.
+    const pos = {};
+    cat.forEach((p, i) => { pos[p.id] = i; });
+    const groups = {};
+    orders.forEach(o => (o.items || []).forEach(it => {
+      const p = (it.id && this.getProduct(it.id)) || cat.find(x => x.name === it.name) || null;
+      const key = p ? p.id : ('~' + it.name);
+      let g = groups[key];
+      if (!g) g = groups[key] = { product: p, name: p ? p.name : it.name, rows: {}, codes: {}, qty: 0, paid: 0 };
+      const size = it.size || '';
+      let r = g.rows[size];
+      if (!r) r = g.rows[size] = { size, qty: 0, paid: 0, codes: {} };
+      const q = Number(it.qty) || 0;
+      r.qty += q; g.qty += q;
+      if (o.paymentStatus === 'paid') { r.paid += q; g.paid += q; }
+      r.codes[o.code] = true; g.codes[o.code] = true;
     }));
-    return Object.entries(map).map(([label, qty]) => ({ label, qty }));
+    const list = Object.values(groups).sort((a, b) => {
+      const ia = a.product ? pos[a.product.id] : Infinity;
+      const ib = b.product ? pos[b.product.id] : Infinity;
+      if (ia !== ib) return ia === Infinity ? 1 : (ib === Infinity ? -1 : ia - ib);
+      return String(a.name).localeCompare(String(b.name));
+    });
+    list.forEach(g => {
+      const known = g.product && g.product.sizes ? g.product.sizes : null;
+      g.rowList = Object.values(g.rows).sort((a, b) => {
+        if (known) {
+          const ia = known.indexOf(a.size), ib = known.indexOf(b.size);
+          if (ia !== ib) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+        }
+        return String(a.size).localeCompare(String(b.size), undefined, { numeric: true });
+      });
+    });
+    return { orders, groups: list, pieces: list.reduce((s, g) => s + g.qty, 0) };
   }
   // Un ordine appartiene a un evento: filtrando qui, ordini, totali per
   // articolo, incassi e contabilità parlano tutti dello stesso periodo.
+  // 'in-corso' = tutti gli eventi aperti insieme.
   activeOrders() {
     const ev = this.state.adminEvent;
-    return this.state.orders.filter(o =>
-      !o.cancelledAt && (!ev || ev === 'tutti' || (o.eventId || '') === ev));
+    if (!ev || ev === 'tutti') return this.state.orders.filter(o => !o.cancelledAt);
+    if (ev === 'in-corso') {
+      const open = {};
+      this.currentEvents().forEach(e => { open[e.id] = true; });
+      return this.state.orders.filter(o => !o.cancelledAt && open[o.eventId || '']);
+    }
+    return this.state.orders.filter(o => !o.cancelledAt && (o.eventId || '') === ev);
   }
   adminRevenue() { return this.activeOrders().reduce((s, o) => s + o.total, 0); }
   amountToCollect() {
@@ -2522,6 +2730,7 @@ class Component extends DCLogic {
 
   renderVals() {
     const view = this.state.view;
+    const production = this.productionSummary();
     const cartEntries = this.cartEntries();
     const lastOrder = this.state.lastOrder;
     const lr = this.state.lookupResult;
@@ -2575,19 +2784,27 @@ class Component extends DCLogic {
       t: this.t(),
       isVetrina: this.state.mode === 'vetrina',
       showInquiry: this.state.mode === 'vetrina' && view === 'catalog',
-      // Sui preordini l'evento c'è sempre, quindi la lumaca resta. Sulla
-      // vetrina segue il titolo: se ne scrivi uno tuo, l'evento non c'entra più.
-      headerLogo: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
-        ? 'assets/logo-sunnycreations.png'
-        : (((this.state.events.find(e => e.isCurrent) || {}).logo) || 'assets/logo-sunnycreations.png'),
+      // Sui preordini l'evento è quello dell'invito. Sulla vetrina segue il
+      // titolo: se ne scrivi uno tuo, l'evento non c'entra più; se no c'è il
+      // logo dell'unico evento aperto, o quello del marchio quando gli eventi
+      // aperti sono più d'uno (ognuno mostra il suo nell'etichetta sotto).
+      headerLogo: (() => {
+        const custom = this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang];
+        if (custom) return 'assets/logo-sunnycreations.png';
+        if (this.state.mode === 'preordini' && this.state.invite && this.state.invite.eventLogo) return this.state.invite.eventLogo;
+        const cur = this.currentEvents();
+        return (cur.length === 1 && cur[0].logo) || 'assets/logo-sunnycreations.png';
+      })(),
       headerLogoStyle: (this.state.mode === 'vetrina' && this.state.settings['vetrina_title_' + this.state.lang])
         ? 'width:112px;height:112px;border-radius:50%;object-fit:cover;flex-shrink:0;'
         : 'width:110px;height:auto;flex-shrink:0;',
       // Finché non scrivi un titolo tuo, in evidenza c'è l'evento in corso:
-      // è quello che la gente sta cercando. Quando l'occasione cambia, basta
-      // scriverne uno nelle impostazioni e il logo dell'evento si toglie da sé.
+      // è quello che la gente sta cercando. Con più eventi aperti il titolo è
+      // il marchio e gli eventi stanno nelle etichette sotto.
       vetrinaTitle: this.state.settings['vetrina_title_' + this.state.lang]
-        || (this.state.events.find(e => e.isCurrent) || {}).name || 'SunnyCreations',
+        || (this.currentEvents().length === 1 ? this.currentEvents()[0].name : 'SunnyCreations'),
+      showEventChips: !this.state.settings['vetrina_title_' + this.state.lang] && this.currentEvents().length > 1,
+      currentEventChips: this.currentEvents().map(ev => ({ name: ev.name, logo: ev.logo || '', hasLogo: !!ev.logo })),
       vetrinaIntroText: this.state.settings['vetrina_intro_' + this.state.lang] || this.t().vetrinaIntro,
       isPreordini: this.state.mode === 'preordini',
       // Nell'area riservata le voci del cliente sono rumore: al loro posto
@@ -2624,10 +2841,10 @@ class Component extends DCLogic {
           ? 'color:var(--color-brand-green);'
           : (q.status === 'rejected' ? 'color:color-mix(in srgb, var(--color-text) 45%, transparent);' : 'color:#8a6d00;font-weight:600;'),
         eventId: this.state.inquiryEvent[q.id]
-          || (this.state.events.find(e => e.isCurrent) || {}).id || '',
+          || (this.primaryEvent() || {}).id || '',
         onEvent: (e) => this.setState(st => ({ inquiryEvent: { ...st.inquiryEvent, [q.id]: e.target.value } })),
         accept: () => this.acceptInquiry(q.id, this.state.inquiryEvent[q.id]
-          || (this.state.events.find(e => e.isCurrent) || {}).id || null),
+          || (this.primaryEvent() || {}).id || null),
         reject: () => this.rejectInquiry(q.id),
       })),
       newInquiryCount: this.state.inquiries.filter(q => q.status === 'new').length,
@@ -2643,7 +2860,11 @@ class Component extends DCLogic {
       consentMarketing: this.state.consentMarketing,
       onConsentMarketing: () => this.setState(st => ({ consentMarketing: !st.consentMarketing })),
       privacyHref: this.state.lang === 'en' ? 'privacy-en.html' : 'privacy.html',
-      eventTitle: (this.state.events.find(e => e.isCurrent) || {}).name || 'WKSF European Championship',
+      // Chi arriva da un invito vede l'evento a cui è stato invitato; senza,
+      // l'unico evento aperto, o il marchio se ne sono aperti più d'uno.
+      eventTitle: (this.state.invite && this.state.invite.eventName)
+        || (this.currentEvents().length === 1 ? this.currentEvents()[0].name : 'SunnyCreations'),
+      mailFailed: this.state.mailStatus === 'failed',
       showPrices: (this.state.settings.show_prices || '0') === '1',
       cartTotalLabel: this.money(this.cartTotal()),
       editingCode: this.state.editingCode,
@@ -2766,6 +2987,7 @@ class Component extends DCLogic {
         { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
         { id: 'ordini', label: 'Ordini' },
         { id: 'magazzino', label: 'Magazzino' },
+        { id: 'produzione', label: 'Produzione' },
         { id: 'prodotti', label: 'Prodotti' },
         { id: 'contabilita', label: 'Contabilità' },
         { id: 'impostazioni', label: 'Impostazioni' },
@@ -2780,6 +3002,7 @@ class Component extends DCLogic {
       isTabOrdini: this.state.adminTab === 'ordini',
       isTabRichieste: this.state.adminTab === 'richieste',
       isTabMagazzino: this.state.adminTab === 'magazzino',
+      isTabProduzione: this.state.adminTab === 'produzione',
       isTabProdotti: this.state.adminTab === 'prodotti',
       isTabContabilita: this.state.adminTab === 'contabilita',
       isTabImpostazioni: this.state.adminTab === 'impostazioni',
@@ -2788,6 +3011,7 @@ class Component extends DCLogic {
       onAdminEvent: (e) => this.setState({ adminEvent: e.target.value }),
       eventOptions: this.state.events
         .map(ev => ({ id: ev.id, label: ev.name + (ev.isCurrent ? ' — in corso' : '') }))
+        .concat(this.currentEvents().length > 1 ? [{ id: 'in-corso', label: 'Tutti gli eventi in corso' }] : [])
         .concat([{ id: 'tutti', label: 'Tutti gli eventi' }]),
       eventChoices: this.state.events.map(ev => ({ id: ev.id, label: ev.name })),
       hasSeveralEvents: this.state.events.length > 1,
@@ -2800,10 +3024,10 @@ class Component extends DCLogic {
         onLogo: (e) => this.onEventLogo(ev.id, e),
         removeLogo: () => this.removeEventLogo(ev.id),
         orderCount: this.state.orders.filter(o => (o.eventId || '') === ev.id && !o.cancelledAt).length,
-        currentLabel: ev.isCurrent ? 'In corso' : '',
-        currentStyle: ev.isCurrent ? 'color:var(--color-brand-green);' : 'display:none;',
-        canBeCurrent: !ev.isCurrent,
-        makeCurrent: () => this.makeEventCurrent(ev.id),
+        currentLabel: ev.isCurrent ? 'In corso' : 'Chiuso',
+        currentStyle: ev.isCurrent ? 'color:var(--color-brand-green);' : 'color:color-mix(in srgb, var(--color-text) 45%, transparent);',
+        toggleLabel: ev.isCurrent ? 'Chiudi' : 'Apri',
+        toggle: () => this.setEventOpen(ev.id, !ev.isCurrent),
         purge: () => this.purgeEvent(ev.id),
       })),
       newEventName: this.state.newEventName,
@@ -2866,6 +3090,7 @@ class Component extends DCLogic {
         const known = !!this.state.stock[p.id];
         return {
           name: p.name,
+          number: p.sortOrder ? p.sortOrder + '.' : '',
           variantName: this.variantLabel(p.id),
           unlimited: !known,
           bulkValue: this.state.bulkStock[p.id] === undefined ? '' : this.state.bulkStock[p.id],
@@ -2887,11 +3112,41 @@ class Component extends DCLogic {
           }),
         };
       }),
-      adminAggregates: this.adminAggregates(),
       adminRevenueLabel: this.money(this.adminRevenue()),
       adminOrderCount: this.activeOrders().length,
-      printAdmin: () => window.print(),
       printOrderDetail: () => this.printOrderDetail(),
+      printProduction: () => this.printOrderDetail(),
+      resendQuote: () => this.resendQuote(this.state.selectedOrderCode),
+      resendBusy: this.state.resendBusy,
+      resendLabel: this.state.resendBusy ? 'Invio…' : 'Rimanda preventivo',
+      resendMsg: this.state.resendMsg,
+      resendMsgStyle: 'font-size:13px;margin-bottom:var(--space-2);' + (this.state.resendMsg.indexOf('fallito') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
+      productionFilters: [
+        { id: 'tutti', label: 'Tutti gli ordini' },
+        { id: 'pagati', label: 'Solo pagati' },
+        { id: 'dapagare', label: 'Da pagare' },
+      ].map(f => ({
+        label: f.label,
+        select: () => this.setState({ productionFilter: f.id }),
+        style: (this.state.productionFilter || 'tutti') === f.id
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      productionScopeLabel: this.adminEventLabel() + ' · ' + ({ tutti: 'tutti gli ordini', pagati: 'solo ordini pagati', dapagare: 'ordini da pagare' }[this.state.productionFilter || 'tutti']),
+      productionDateLabel: new Date().toLocaleDateString('it-IT'),
+      productionHeadline: production.pieces + (production.pieces === 1 ? ' pezzo' : ' pezzi') + ' in ' + production.orders.length + (production.orders.length === 1 ? ' ordine' : ' ordini'),
+      productionEmpty: production.groups.length === 0,
+      productionGroups: production.groups.map(g => ({
+        title: (g.product && g.product.sortOrder ? g.product.sortOrder + '. ' : '') + g.name,
+        subtitle: g.product ? (g.product.collection || '') : 'non più in catalogo',
+        variantName: g.product ? this.variantLabel(g.product.id) : 'Taglia',
+        rows: g.rowList.map(r => ({
+          sizeLabel: r.size || 'Unica',
+          qty: r.qty, paid: r.paid, orders: Object.keys(r.codes).length,
+        })),
+        showTotal: g.rowList.length > 1,
+        total: g.qty, paid: g.paid, orders: Object.keys(g.codes).length,
+      })),
       collectionRows: (() => {
         const gruppi = [];
         this.getCatalog().forEach(p => {
@@ -2907,6 +3162,7 @@ class Component extends DCLogic {
           style: g.attivi === 0 ? 'opacity:.55;' : '',
           show: () => this.setCollectionActive(g.key, true),
           hide: () => this.setCollectionActive(g.key, false),
+          renumber: () => this.renumberCollection(g.key),
         }));
       })(),
       productRows: this.getCatalog().map(p => ({
