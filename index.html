@@ -1733,11 +1733,26 @@ class Component extends DCLogic {
     });
   }
   getVisibleCatalog() { return this.getCatalog().filter(p => p.active !== false); }
+  // Le colonne inglesi arrivano con lo schema del 22/08: finché non è stato
+  // eseguito, chiederle fa fallire TUTTA la lettura e la pagina cadrebbe
+  // sull'elenco di riserva (18 articoli scritti qui dentro) invece del
+  // catalogo vero. Quindi: se il database risponde "colonna inesistente",
+  // si rilegge senza, e si ricorda di non scriverle al salvataggio.
+  isMissingEnColumn(error) {
+    return /name_en|description_en|kicker_en/.test(String((error && error.message) || ''));
+  }
   async loadCatalogFromDb() {
     try {
-      const { data, error } = await window.__sb.from('products')
-        .select('id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label, name_en, description_en, kicker_en')
+      const base = 'id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label';
+      const query = (cols) => window.__sb.from('products').select(cols)
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
+      let { data, error } = await query(base + ', name_en, description_en, kicker_en');
+      if (error && this.isMissingEnColumn(error)) {
+        this.enColumns = false;
+        ({ data, error } = await query(base));
+      } else if (!error) {
+        this.enColumns = true;
+      }
       if (error || !Array.isArray(data) || !data.length) return;
       this.setState({
         dbReady: true,
@@ -1820,6 +1835,7 @@ class Component extends DCLogic {
       if (!p.descEn && p.desc) texts[p.id + '::desc'] = p.desc;
       if (!p.kickerEn && p.kicker) texts[p.id + '::kicker'] = p.kicker;
     });
+    if (this.enColumns === false) { this.setState({ translateBulkMsg: 'Traduzione non riuscita: il database non ha ancora le colonne inglesi (va eseguito supabase-schema.sql).' }); return; }
     const tr = await this.translateTexts(texts, 'product catalogue: names, categories, descriptions', 'translateBulkMsg');
     if (!tr) return;
     let n = 0;
@@ -2298,16 +2314,23 @@ class Component extends DCLogic {
 
     this.setState({ productBusy: true, productError: '' });
     try {
-      const { error } = await window.__sb.from('products').upsert({
+      const row = {
         id: product.id, name: product.name, kicker: product.kicker,
         description: product.desc, photo: product.photo, price: product.price,
         sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
         collection: product.collection,
         variant_label: product.variantLabel || null,
-        name_en: product.nameEn || null,
-        description_en: product.descEn || null,
-        kicker_en: product.kickerEn || null,
-      });
+      };
+      const en = { name_en: product.nameEn || null, description_en: product.descEn || null, kicker_en: product.kickerEn || null };
+      let { error } = await window.__sb.from('products').upsert(this.enColumns === false ? row : { ...row, ...en });
+      // Schema non ancora aggiornato: si salva tutto il resto, l'inglese no.
+      if (error && this.isMissingEnColumn(error)) {
+        this.enColumns = false;
+        ({ error } = await window.__sb.from('products').upsert(row));
+        if (!error && (product.nameEn || product.descEn || product.kickerEn)) {
+          this.setState({ productError: 'Salvato, ma i testi inglesi no: il database non ha ancora le colonne inglesi (va eseguito supabase-schema.sql).' });
+        }
+      }
       if (error) throw error;
       await this.loadCatalogFromDb();
     } catch (e) {
