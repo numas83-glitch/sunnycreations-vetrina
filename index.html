@@ -779,7 +779,7 @@
               <div class="card" style="padding:var(--space-3);margin-bottom:var(--space-3);gap:var(--space-2);">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);flex-wrap:wrap;">
                   <div>
-                    <div style="font-weight:600;">Versione inglese</div>
+                    <div style="font-weight:600;display:flex;align-items:center;gap:8px;">Versione inglese <span style="{{ formEnStyle }}">{{ formEnLabel }}</span></div>
                     <div class="text-muted" style="font-size:11px;">La legge chi apre il sito in inglese. Vuota = si mostra l'italiano. <em>Traduci</em> compila i tre campi dall'italiano: rileggi e correggi prima di salvare.</div>
                   </div>
                   <button type="button" class="btn btn-secondary" onClick="{{ translateProductForm }}" disabled="{{ translateBusy }}">{{ translateFormLabel }}</button>
@@ -901,7 +901,7 @@
                   <td>
                     {{ p.name }}
                     <div class="text-muted" style="font-size:11px;">{{ p.kicker }}</div>
-                    <div style="font-size:11px;{{ p.enStyle }}">{{ p.enLabel }}</div>
+                    <div style="margin-top:3px;"><span style="{{ p.enStyle }}">{{ p.enLabel }}</span><span class="text-muted" style="font-size:11px;margin-left:6px;">{{ p.enName }}</span></div>
                   </td>
                   <td class="text-muted" style="font-size:12px;">{{ p.collectionLabel }}</td>
                   <td>€ {{ p.priceLabel }}</td>
@@ -1829,8 +1829,26 @@ class Component extends DCLogic {
       translateMsg: 'Tradotto: rileggi i tre campi e poi Salva.',
     }));
   }
+  // Stato della versione inglese: 'full' se tutti i testi italiani presenti
+  // hanno il loro inglese, 'none' se nessuno, 'partial' nel mezzo.
+  enStatus(p) {
+    const pairs = [[p.name, p.nameEn], [p.desc, p.descEn], [p.kicker, p.kickerEn]]
+      .filter(([it]) => String(it || '').trim());
+    const done = pairs.filter(([, en]) => String(en || '').trim()).length;
+    const key = !pairs.length || done === pairs.length ? 'full' : (done === 0 ? 'none' : 'partial');
+    const pill = 'display:inline-block;font-size:10px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:999px;';
+    return {
+      key,
+      label: key === 'full' ? 'Inglese ✓' : (key === 'partial' ? 'Inglese parziale' : 'Inglese mancante'),
+      style: pill + (key === 'full'
+        ? 'background:color-mix(in srgb, var(--color-brand-green) 15%, transparent);color:var(--color-brand-green);'
+        : (key === 'partial'
+          ? 'background:#fff3cd;color:#8a6d00;'
+          : 'background:color-mix(in srgb, var(--color-brand-red) 12%, transparent);color:var(--color-brand-red);')),
+    };
+  }
   untranslatedProducts() {
-    return this.getCatalog().filter(p => !p.nameEn || (p.desc && !p.descEn) || (p.kicker && !p.kickerEn));
+    return this.getCatalog().filter(p => this.enStatus(p).key !== 'full');
   }
   // Tutti gli articoli senza inglese, in una chiamata sola; poi si salvano
   // uno per uno (sono pochi) e si ricarica il catalogo.
@@ -3419,8 +3437,9 @@ class Component extends DCLogic {
       })(),
       productRows: this.filteredAdminCatalog().map(p => ({
         ...p,
-        enLabel: p.nameEn ? 'EN: ' + p.nameEn : 'senza inglese',
-        enStyle: p.nameEn ? 'color:color-mix(in srgb, var(--color-text) 55%, transparent);' : 'color:#8a6d00;',
+        enLabel: this.enStatus(p).label,
+        enStyle: this.enStatus(p).style,
+        enName: p.nameEn || '',
         priceLabel: this.money(p.price),
         sizesLabel: (p.sizes || []).join(' · ') || 'Taglia unica',
         collectionLabel: p.collection || '—',
@@ -3462,7 +3481,9 @@ class Component extends DCLogic {
             : { background: 'transparent', color: 'var(--color-text)' },
         })),
       translateBusy: this.state.translateBusy,
-      translateFormLabel: this.state.translateBusy ? 'Traduco…' : 'Traduci in inglese',
+      translateFormLabel: this.state.translateBusy ? 'Traduco…' : (this.state.productForm && this.enStatus(this.state.productForm).key === 'full' ? 'Ritraduci dall\'italiano' : 'Traduci in inglese'),
+      formEnLabel: this.state.productForm ? this.enStatus(this.state.productForm).label : '',
+      formEnStyle: this.state.productForm ? this.enStatus(this.state.productForm).style : 'display:none;',
       translateProductForm: () => this.translateProductForm(),
       translateMsg: this.state.translateMsg,
       translateMsgStyle: 'font-size:12px;' + (this.state.translateMsg.indexOf('non riuscita') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
