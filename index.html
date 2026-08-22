@@ -1800,7 +1800,15 @@ class Component extends DCLogic {
       this.setState({ translateBusy: false });
       return data.translations;
     } catch (e) {
-      const m = String((e && e.message) || e || '');
+      // supabase-js nasconde il corpo della risposta dentro e.context: è lì
+      // che sta il motivo vero (chiave, quota, modello…), non in e.message.
+      let m = String((e && e.message) || e || '');
+      try {
+        if (e && e.context && typeof e.context.json === 'function') {
+          const body = await e.context.json();
+          if (body && body.error) m = String(body.error);
+        }
+      } catch (_) {}
       this.setState({
         translateBusy: false,
         [msgKey]: 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '. Controlla che la funzione translate sia pubblicata e che la chiave Gemini (GEMINI_API_KEY) sia impostata.',
