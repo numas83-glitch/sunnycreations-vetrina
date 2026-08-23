@@ -826,9 +826,9 @@
 
               <div class="field">
                 <label for="pphoto">Foto</label>
-                <div style="display:flex;gap:var(--space-3);align-items:center;">
+                <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
                   <sc-if value="{{ productFormHasPhoto }}" hint-placeholder-val="{{ true }}">
-                    <img src="{{ productForm.photo }}" alt="Anteprima" style="width:96px;height:72px;object-fit:cover;border:1px solid var(--color-divider);">
+                    <img src="{{ productForm.photo }}" alt="Anteprima" style="width:220px;max-width:100%;aspect-ratio:4/3;height:auto;object-fit:cover;border-radius:8px;border:1px solid var(--color-divider);">
                   </sc-if>
                   <input id="pphoto" class="input" type="file" accept="image/*" onChange="{{ onProductPhoto }}">
                 </div>
@@ -859,7 +859,7 @@
           </sc-if>
 
           <h4 style="margin-top:var(--space-6);">Collezioni</h4>
-          <p class="text-muted" style="margin-top:-6px;font-size:13px;">Finita un'occasione spegni il gruppo in un colpo: gli articoli restano qui con foto, prezzi e giacenze, e li riaccendi l'anno dopo.</p>
+          <p class="text-muted" style="margin-top:-6px;font-size:13px;">Finita un'occasione spegni il gruppo in un colpo: gli articoli restano qui con foto, prezzi e giacenze, e li riaccendi l'anno dopo. Con le frecce ↑ ↓ decidi quale collezione compare per prima in vetrina e nella pagina preordini: la prima è quella che il cliente vede a inizio pagina.</p>
           <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-6);">
             <sc-for list="{{ collectionRows }}" as="cl" hint-placeholder-count="2">
               <div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;{{ cl.style }}">
@@ -867,7 +867,9 @@
                   <div style="font-weight:600;">{{ cl.name }}</div>
                   <div class="text-muted" style="font-size:12px;">{{ cl.countLabel }}</div>
                 </div>
-                <div style="display:flex;gap:var(--space-2);">
+                <div style="display:flex;gap:var(--space-2);align-items:center;">
+                  <button type="button" class="btn btn-ghost" style="padding-left:8px;padding-right:8px;" disabled="{{ cl.upDisabled }}" onClick="{{ cl.up }}" title="Sposta più su: il cliente la vede prima">↑</button>
+                  <button type="button" class="btn btn-ghost" style="padding-left:8px;padding-right:8px;" disabled="{{ cl.downDisabled }}" onClick="{{ cl.down }}" title="Sposta più giù">↓</button>
                   <button type="button" class="btn btn-secondary" onClick="{{ cl.show }}">Mostra tutti</button>
                   <button type="button" class="btn btn-ghost" onClick="{{ cl.hide }}">Nascondi tutti</button>
                   <button type="button" class="btn btn-ghost" onClick="{{ cl.renumber }}" title="Riassegna i numeri 1, 2, 3… nell'ordine attuale">Rinumera</button>
@@ -895,7 +897,7 @@
                   <td class="text-muted">{{ p.sortOrder }}</td>
                   <td>
                     <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ true }}">
-                      <img src="{{ p.photo }}" alt="" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--color-divider);">
+                      <img src="{{ p.photo }}" alt="" style="width:72px;max-width:none;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider);">
                     </sc-if>
                   </td>
                   <td>
@@ -965,7 +967,7 @@
           <p><em>Duplica</em> apre una scheda nuova già compilata come quella di partenza — foto, prezzo, variante, collezione — con "(copia)" nel nome. Cambi quello che serve e salvi: è il modo rapido per lo stesso oggetto in più colori, o per la versione bambino di una maglietta. Le giacenze non si copiano: il prodotto nuovo parte senza.</p>
           <p><em>Elimina</em> lo cancella davvero, con le sue giacenze e la sua foto, e chiede conferma due volte. Gli <strong>ordini già ricevuti non cambiano</strong>: conservano nome, taglia e prezzo di allora, perché sono scritti dentro l'ordine e non letti dal catalogo. Se l'articolo compare in ordini passati te lo dice prima, così scegli consapevolmente.</p>
           <p><strong>La scelta non deve per forza essere una taglia.</strong> Nel modulo dell'articolo decidi come si chiama: Taglia per i vestiti, <em>Colore</em> per un asciugamano in più tinte, <em>Modello</em> per un portachiavi. I valori li scrivi tu separati da virgola, e le giacenze restano separate per ognuno. Così un asciugamano in cinque colori resta <strong>un solo prodotto</strong>, con una foto e un prezzo, invece di cinque schede da tenere allineate.</p>
-          <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi.</p>
+          <p>La <strong>collezione</strong> raggruppa gli articoli per occasione — "WKSF 2026", "Natale 2026". A evento finito, dal riquadro delle collezioni, <em>Nascondi tutti</em> li spegne in un colpo. Restano qui con foto, prezzi e giacenze, e l'anno dopo li riaccendi. Con le frecce <strong>↑ ↓</strong> dello stesso riquadro decidi quale collezione il cliente vede per prima in vetrina e nella pagina preordini; le collezioni mai spostate restano in ordine di nome.</p>
           <p>Ogni articolo ha un <strong>numero</strong>: un progressivo che si assegna da solo quando lo crei o lo duplichi (il prossimo libero nella sua collezione) e che <strong>riparte da 1 per ogni collezione</strong>. Nel catalogo gli articoli stanno raggruppati per collezione e, dentro, in ordine di numero; lo stesso numero compare nel riepilogo produzione e nel magazzino, così al telefono o al banco basta dire "il 3". Se sposti un articolo in un'altra collezione prende il primo numero libero di quella; se dopo qualche cancellazione restano dei buchi, <em>Rinumera</em> nel riquadro della collezione rimette 1, 2, 3… senza cambiare l'ordine.</p>
 
           <h4>Eventi</h4>
@@ -1535,9 +1537,11 @@ class Component extends DCLogic {
       if (savedPrices && typeof savedPrices === 'object') this.setState({ prices: savedPrices });
     } catch (e) {}
 
+    // Le impostazioni per prime: l'ordine delle collezioni (collection_order)
+    // serve a sortCatalog quando il catalogo arriva.
+    await this.loadSettingsFromDb();
     await this.loadCatalogFromDb();
     await this.loadEventsFromDb();
-    await this.loadSettingsFromDb();
 
     await this.loadStockFromDb();
 
@@ -1718,19 +1722,58 @@ class Component extends DCLogic {
   }
   // Il numero di un articolo riparte da 1 in ogni collezione: per non
   // mescolare il 3 di una collezione col 3 di un'altra, il catalogo sta
-  // raggruppato per collezione (in ordine di nome, quella vuota — gli
-  // articoli sempre in vetrina — per ultima) e dentro per numero.
+  // raggruppato per collezione e dentro per numero. L'ordine delle collezioni
+  // lo decide chi amministra con le frecce nel riquadro Collezioni (salvato
+  // nelle impostazioni); quelle mai spostate vanno per nome, la vuota — gli
+  // articoli sempre in vetrina — per ultima.
+  collectionOrder() {
+    try {
+      const v = JSON.parse(this.state.settings.collection_order || '[]');
+      return Array.isArray(v) ? v.map(String) : [];
+    } catch (e) { return []; }
+  }
+  compareCollections(a, b) {
+    if (a === b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    const ord = this.collectionOrder();
+    const ra = ord.indexOf(a), rb = ord.indexOf(b);
+    if (ra !== rb) {
+      if (ra < 0) return 1;
+      if (rb < 0) return -1;
+      return ra - rb;
+    }
+    return a.localeCompare(b);
+  }
+  // Le collezioni presenti in catalogo, nell'ordine in cui appaiono al cliente.
+  sortedCollectionKeys() {
+    const keys = [];
+    this.getCatalog().forEach(p => { const c = p.collection || ''; if (keys.indexOf(c) < 0) keys.push(c); });
+    return keys.sort((a, b) => this.compareCollections(a, b));
+  }
   sortCatalog(list) {
     const key = p => (p.collection || '');
     return list.slice().sort((a, b) => {
-      const ka = key(a), kb = key(b);
-      if (ka !== kb) {
-        if (!ka) return 1;
-        if (!kb) return -1;
-        return ka.localeCompare(kb);
-      }
+      const cc = this.compareCollections(key(a), key(b));
+      if (cc) return cc;
       return ((a.sortOrder || 0) - (b.sortOrder || 0)) || String(a.name).localeCompare(String(b.name));
     });
+  }
+  // Frecce ↑/↓ del riquadro Collezioni: l'ordine nuovo vale subito qui e viene
+  // salvato nelle impostazioni, così vetrina e preordini lo seguono.
+  async moveCollection(collection, delta) {
+    const keys = this.sortedCollectionKeys().filter(c => c);
+    const i = keys.indexOf(collection), j = i + delta;
+    if (i < 0 || j < 0 || j >= keys.length) return;
+    keys.splice(i, 1);
+    keys.splice(j, 0, collection);
+    const value = JSON.stringify(keys);
+    this.setState(s => ({ settings: { ...s.settings, collection_order: value } }));
+    this.setState(s => ({ catalog: this.sortCatalog(s.catalog) }));
+    try {
+      const { error } = await window.__sb.from('settings').upsert([{ key: 'collection_order', value }]);
+      if (error) throw error;
+    } catch (e) { /* niente rete: l'ordine vale comunque su questo dispositivo */ }
   }
   getVisibleCatalog() { return this.getCatalog().filter(p => p.active !== false); }
   // Le colonne inglesi arrivano con lo schema del 22/08: finché non è stato
@@ -3425,11 +3468,17 @@ class Component extends DCLogic {
           if (!g) { g = { key: c, name: c || 'Senza collezione', tot: 0, attivi: 0 }; gruppi.push(g); }
           g.tot++; if (p.active !== false) g.attivi++;
         });
-        return gruppi.map(g => ({
+        gruppi.sort((a, b) => this.compareCollections(a.key, b.key));
+        const nonVuote = gruppi.filter(g => g.key).length;
+        return gruppi.map((g, i) => ({
           name: g.name,
           countLabel: g.attivi + ' su ' + g.tot + ' in catalogo',
           allOff: g.attivi === 0,
           style: g.attivi === 0 ? 'opacity:.55;' : '',
+          upDisabled: !g.key || i === 0,
+          downDisabled: !g.key || i >= nonVuote - 1,
+          up: () => this.moveCollection(g.key, -1),
+          down: () => this.moveCollection(g.key, +1),
           show: () => this.setCollectionActive(g.key, true),
           hide: () => this.setCollectionActive(g.key, false),
           renumber: () => this.renumberCollection(g.key),
