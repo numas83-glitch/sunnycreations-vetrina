@@ -1657,6 +1657,10 @@ class Component extends DCLogic {
       const settings = {};
       data.forEach(r => { settings[r.key] = r.value || ''; });
       this.setState({ settings, settingsDirty: false });
+      // Se il catalogo era già in pagina (all'avvio la sessione admin si
+      // ripristina tardi e le impostazioni complete arrivano dopo), l'ordine
+      // delle collezioni appena letto va applicato subito.
+      this.setState(s => ({ catalog: this.sortCatalog(s.catalog) }));
     } catch (e) {}
   }
   async loadEventsFromDb() {
