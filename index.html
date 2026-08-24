@@ -750,7 +750,8 @@
           </sc-if>
 
           <sc-if value="{{ hasProductForm }}" hint-placeholder-val="{{ false }}">
-            <div class="card blueprint elev-sm" style="padding:var(--space-4);margin-bottom:var(--space-4);">
+            <div style="position:fixed;inset:0;background:rgba(20,20,25,0.55);z-index:90;overflow-y:auto;padding:var(--space-4);box-sizing:border-box;">
+            <div class="card blueprint elev-sm" style="padding:var(--space-4);max-width:760px;margin:var(--space-4) auto;">
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
               <div class="card-kicker">{{ productFormTitle }}</div>
 
@@ -855,6 +856,7 @@
                 <button type="button" class="btn btn-ghost" onClick="{{ closeProductForm }}">Annulla</button>
                 <button type="button" class="btn btn-primary" onClick="{{ saveProduct }}" disabled="{{ productBusy }}">{{ productSaveLabel }}</button>
               </div>
+            </div>
             </div>
           </sc-if>
 
@@ -2278,7 +2280,6 @@ class Component extends DCLogic {
       },
       productError: '', productBusy: false,
     });
-    try { window.scrollTo(0, 0); } catch (e) {}
   }
   updateProductForm(field, value) {
     this.setState(s => {
