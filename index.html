@@ -750,8 +750,7 @@
           </sc-if>
 
           <sc-if value="{{ hasProductForm }}" hint-placeholder-val="{{ false }}">
-            <div style="position:fixed;inset:0;background:rgba(20,20,25,0.55);z-index:90;overflow-y:auto;padding:var(--space-4);box-sizing:border-box;">
-            <div class="card blueprint elev-sm" style="padding:var(--space-4);max-width:760px;margin:var(--space-4) auto;">
+            <div class="card blueprint elev-sm" style="padding:var(--space-4);margin-bottom:var(--space-4);">
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
               <div class="card-kicker">{{ productFormTitle }}</div>
 
@@ -856,7 +855,6 @@
                 <button type="button" class="btn btn-ghost" onClick="{{ closeProductForm }}">Annulla</button>
                 <button type="button" class="btn btn-primary" onClick="{{ saveProduct }}" disabled="{{ productBusy }}">{{ productSaveLabel }}</button>
               </div>
-            </div>
             </div>
           </sc-if>
 
@@ -1204,10 +1202,18 @@
   <sc-if value="{{ showInquiry }}" hint-placeholder-val="{{ false }}">
     <div style="max-width:640px;width:100%;margin:0 auto;padding:0 var(--space-4) var(--space-8);box-sizing:border-box;">
       <sc-if value="{{ inquirySent }}" hint-placeholder-val="{{ false }}">
-        <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
-          <div class="card-title">{{ t.inquirySentTitle }}</div>
-          <p class="card-body" style="margin:0;">{{ t.inquirySentText }}</p>
-        </div>
+        <sc-if value="{{ inquiryMailed }}" hint-placeholder-val="{{ true }}">
+          <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
+            <div class="card-title">{{ t.inquirySentTitle }}</div>
+            <p class="card-body" style="margin:0;">{{ t.inquirySentText }} <a href="mailto:sunnycreationshm@gmail.com" style="white-space:nowrap;">sunnycreationshm@gmail.com</a>.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ inquiryNotMailed }}" hint-placeholder-val="{{ false }}">
+          <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-red);">
+            <div class="card-title">{{ t.inquiryNotMailedTitle }}</div>
+            <p class="card-body" style="margin:0;">{{ t.inquiryNotMailedText }} <a href="mailto:sunnycreationshm@gmail.com" style="white-space:nowrap;">sunnycreationshm@gmail.com</a>.</p>
+          </div>
+        </sc-if>
       </sc-if>
 
       <sc-if value="{{ inquiryOpen }}" hint-placeholder-val="{{ true }}">
@@ -1299,6 +1305,7 @@ class Component extends DCLogic {
     inquiryConsent: false,
     inquiryBusy: false,
     inquirySent: false,
+    inquiryMailed: true,   // false se la richiesta e' salvata ma l'avviso via mail non e' partito
     inquiryError: '',
     inquiries: [],
     inquiryEvent: {},   // per ogni richiesta, l'evento a cui assegnarla
@@ -1434,8 +1441,10 @@ class Component extends DCLogic {
       inquiryName: 'Come ti chiami', inquiryEmail: 'La tua email',
       inquiryMessage: 'Cosa ti interessa', inquiryMessageHint: 'Scrivi pure che articoli ti attirano, le taglie, o qualsiasi domanda.',
       inquirySend: 'Invia la richiesta', inquirySending: 'Invio…',
-      inquirySentTitle: 'Richiesta ricevuta',
-      inquirySentText: 'Grazie: ti rispondo io appena possibile, all\u2019indirizzo che mi hai lasciato.',
+      inquirySentTitle: 'Richiesta inviata',
+      inquirySentText: 'Grazie: ti rispondo io all\u2019indirizzo che mi hai lasciato. Se non ricevi una mail di contatto entro 24/48 ore, rimanda la richiesta oppure scrivi a',
+      inquiryNotMailedTitle: 'Richiesta registrata',
+      inquiryNotMailedText: 'La richiesta \u00e8 salvata, ma l\u2019avviso automatico non \u00e8 partito: per essere sicuro che la veda, scrivimi direttamente a',
       inquiryFailed: 'Non sono riuscito a inviare la richiesta. Riprova fra poco.',
       inviteNeededTitle: 'Questa pagina si apre su invito',
       inviteNeededText: 'Il preordine si fa dal link personale che ricevi via email dopo aver chiesto informazioni. Se il tuo link è scaduto, scrivimi di nuovo e te ne mando uno nuovo.',
@@ -1497,8 +1506,10 @@ class Component extends DCLogic {
       inquiryName: 'Your name', inquiryEmail: 'Your email',
       inquiryMessage: 'What are you interested in', inquiryMessageHint: 'Feel free to name the items, the sizes, or ask anything.',
       inquirySend: 'Send request', inquirySending: 'Sending…',
-      inquirySentTitle: 'Request received',
-      inquirySentText: 'Thank you: I will get back to you as soon as I can, at the address you left.',
+      inquirySentTitle: 'Request sent',
+      inquirySentText: 'Thank you: I will get back to you at the address you left. If you do not receive an email from me within 24/48 hours, send the request again or write to',
+      inquiryNotMailedTitle: 'Request saved',
+      inquiryNotMailedText: 'Your request is saved, but the automatic notification did not go out: to make sure I see it, please write to me directly at',
       inquiryFailed: 'I could not send the request. Please try again shortly.',
       inviteNeededTitle: 'This page opens by invitation',
       inviteNeededText: 'Pre-orders are placed from the personal link you receive by email after asking for information. If your link has expired, write again and I will send a new one.',
@@ -1615,11 +1626,14 @@ class Component extends DCLogic {
     if (!this.state.inquiryConsent) { this.setState({ inquiryError: t.privacyRequired }); return; }
     this.setState({ inquiryBusy: true, inquiryError: '' });
     try {
-      const { error } = await window.__sb.functions.invoke('inquiry-new', {
+      const { data, error } = await window.__sb.functions.invoke('inquiry-new', {
         body: { name, email, message, lang: this.state.lang },
       });
       if (error) throw error;
-      this.setState({ inquiryBusy: false, inquirySent: true, inquiry: { name: '', email: '', message: '' }, inquiryConsent: false });
+      // La funzione salva sempre la richiesta; se l'avviso via mail non e'
+      // partito (limite Resend, chiave scaduta...) lo dice con mailed:false.
+      const mailed = !(data && data.mailed === false);
+      this.setState({ inquiryBusy: false, inquirySent: true, inquiryMailed: mailed, inquiry: { name: '', email: '', message: '' }, inquiryConsent: false });
     } catch (e) {
       this.setState({ inquiryBusy: false, inquiryError: t.inquiryFailed });
     }
@@ -2280,6 +2294,7 @@ class Component extends DCLogic {
       },
       productError: '', productBusy: false,
     });
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
   updateProductForm(field, value) {
     this.setState(s => {
@@ -3144,6 +3159,8 @@ class Component extends DCLogic {
       sendInquiry: () => this.sendInquiry(),
       inquiryBusy: this.state.inquiryBusy,
       inquirySent: this.state.inquirySent,
+      inquiryMailed: this.state.inquiryMailed,
+      inquiryNotMailed: !this.state.inquiryMailed,
       inquiryError: this.state.inquiryError,
       inquirySendLabel: this.state.inquiryBusy ? this.t().inquirySending : this.t().inquirySend,
       inquiryRows: this.state.inquiries.map(q => ({
