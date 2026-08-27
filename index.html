@@ -523,6 +523,16 @@
 
       <sc-if value="{{ isTabOrdini }}" hint-placeholder-val="{{ true }}">
         <div>
+        <div class="no-print-on-order" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-3);margin-bottom:var(--space-4);">
+          <sc-for list="{{ visitBoxes }}" as="v" hint-placeholder-count="4">
+            <div class="card" style="padding:var(--space-3) var(--space-4);">
+              <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;">{{ v.label }}</div>
+              <div style="font-size:26px;font-weight:700;line-height:1.2;">{{ v.all }}</div>
+              <div class="text-muted" style="font-size:12px;">vetrina {{ v.vetrina }} · preordini {{ v.preordini }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Le tue aperture dell'area riservata non contano.</p>
         <h3 class="no-print-on-order" style="margin-top:0;">Ordini</h3>
         <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
           <sc-for list="{{ orderFilters }}" as="f" hint-placeholder-count="4">
@@ -1308,6 +1318,7 @@ class Component extends DCLogic {
     inquiryMailed: true,   // false se la richiesta e' salvata ma l'avviso via mail non e' partito
     inquiryError: '',
     inquiries: [],
+    visits: [],        // righe di visits_daily (day, host, count), solo admin
     inquiryEvent: {},   // per ogni richiesta, l'evento a cui assegnarla
     consentPrivacy: false,
     consentMarketing: false,
@@ -1557,6 +1568,7 @@ class Component extends DCLogic {
     await this.loadEventsFromDb();
 
     await this.loadStockFromDb();
+    this.countVisit();
 
     // restore an existing admin session
     try {
@@ -1704,8 +1716,51 @@ class Component extends DCLogic {
     const e = this.state.events.find(x => x.id === ev);
     return e ? e.name : ev;
   }
+  // ── Contatore visite ───────────────────────────────────────────────────
+  // Una visita = un'apertura della pagina per sessione del browser (il flag
+  // sta in sessionStorage e muore con la scheda). Niente cookie, niente IP:
+  // il server tiene solo un numero al giorno per vetrina e per preordini.
+  async countVisit() {
+    try {
+      if (/(^|[#&])admin\b/i.test(String(window.location.hash || ''))) return false;
+      const ss = window.sessionStorage;
+      if (ss && ss.getItem('sunnycreations_visited')) return false;
+      const { error } = await window.__sb.rpc('count_visit', { p_host: this.state.mode });
+      if (error) return false;
+      if (ss) ss.setItem('sunnycreations_visited', '1');
+      return true;
+    } catch (e) { return false; }
+  }
+  async loadVisitsFromDb() {
+    try {
+      const { data, error } = await window.__sb.from('visits_daily').select('day, host, count');
+      if (!error && Array.isArray(data)) this.setState({ visits: data });
+    } catch (e) {}
+  }
+  visitStats(rows, today) {
+    const mk = () => ({ all: 0, vetrina: 0, preordini: 0 });
+    const out = { today: mk(), d7: mk(), d30: mk(), total: mk() };
+    const t = new Date(today + 'T00:00:00Z').getTime();
+    (rows || []).forEach(r => {
+      const n = Number(r.count) || 0;
+      const host = r.host === 'preordini' ? 'preordini' : 'vetrina';
+      const age = Math.round((t - new Date(String(r.day).slice(0, 10) + 'T00:00:00Z').getTime()) / 864e5);
+      const add = (b) => { b.all += n; b[host] += n; };
+      add(out.total);
+      if (age < 30) add(out.d30);
+      if (age < 7) add(out.d7);
+      if (age === 0) add(out.today);
+    });
+    return out;
+  }
+  todayKey() {
+    // Stessa data del server (current_date in UTC), così "oggi" coincide.
+    return new Date().toISOString().slice(0, 10);
+  }
+
   async loadAdminData() {
     await this.loadMfaFactors();
+    await this.loadVisitsFromDb();
     await this.loadInquiriesFromDb();
     await this.loadSettingsFromDb();
     await this.loadEventsFromDb();
@@ -3335,6 +3390,11 @@ class Component extends DCLogic {
           : { background: 'transparent', color: 'var(--color-text)' },
       })),
       isTabOrdini: this.state.adminTab === 'ordini',
+      visitBoxes: (() => {
+        const v = this.visitStats(this.state.visits, this.todayKey());
+        return [['Visite oggi', v.today], ['Ultimi 7 giorni', v.d7], ['Ultimi 30 giorni', v.d30], ['Da sempre', v.total]]
+          .map(([label, b]) => ({ label, all: b.all, vetrina: b.vetrina, preordini: b.preordini }));
+      })(),
       isTabRichieste: this.state.adminTab === 'richieste',
       isTabMagazzino: this.state.adminTab === 'magazzino',
       isTabProduzione: this.state.adminTab === 'produzione',
