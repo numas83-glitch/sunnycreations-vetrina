@@ -532,7 +532,7 @@
             </div>
           </sc-for>
         </div>
-        <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Le tue aperture dell'area riservata non contano.</p>
+        <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Il browser da cui sei entrato in admin non conta, nemmeno quando apre la vetrina.</p>
         <h3 class="no-print-on-order" style="margin-top:0;">Ordini</h3>
         <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
           <sc-for list="{{ orderFilters }}" as="f" hint-placeholder-count="4">
@@ -1725,11 +1725,23 @@ class Component extends DCLogic {
       if (/(^|[#&])admin\b/i.test(String(window.location.hash || ''))) return false;
       const ss = window.sessionStorage;
       if (ss && ss.getItem('sunnycreations_visited')) return false;
+      // Il browser dell'amministratore non conta: sessione attiva, oppure il
+      // segno lasciato al primo sblocco dell'area riservata (vale anche dopo).
+      try { if (localStorage.getItem('sunnycreations_admin_device')) return false; } catch (e) {}
+      try {
+        if (window.__sb.auth) {
+          const { data } = await window.__sb.auth.getSession();
+          if (data && data.session) return false;
+        }
+      } catch (e) {}
       const { error } = await window.__sb.rpc('count_visit', { p_host: this.state.mode });
       if (error) return false;
       if (ss) ss.setItem('sunnycreations_visited', '1');
       return true;
     } catch (e) { return false; }
+  }
+  markAdminDevice() {
+    try { localStorage.setItem('sunnycreations_admin_device', '1'); } catch (e) {}
   }
   async loadVisitsFromDb() {
     try {
@@ -1759,6 +1771,7 @@ class Component extends DCLogic {
   }
 
   async loadAdminData() {
+    this.markAdminDevice();
     await this.loadMfaFactors();
     await this.loadVisitsFromDb();
     await this.loadInquiriesFromDb();
