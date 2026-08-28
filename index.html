@@ -620,6 +620,9 @@
       <sc-if value="{{ isTabMagazzino }}" hint-placeholder-val="{{ false }}">
         <div>
           <h3 class="no-print-on-order" style="margin-top:0;">Giacenze</h3>
+          <sc-if value="{{ stockMsg }}" hint-placeholder-val="{{ false }}">
+            <div class="no-print-on-order" style="color:var(--color-brand-red);font-size:13px;margin-bottom:var(--space-3);">{{ stockMsg }}</div>
+          </sc-if>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile. I totali ordinati per articolo e taglia stanno nella scheda <strong>Produzione</strong>.</p>
           <sc-if value="{{ showAdminFilters }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:var(--space-3);">
@@ -1391,6 +1394,7 @@ class Component extends DCLogic {
     productError: '',
     productBusy: false,
     restock: {},
+    stockMsg: '',        // avviso rosso del Magazzino quando un salvataggio non passa
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
     adminPassInput: '',
@@ -2033,12 +2037,18 @@ class Component extends DCLogic {
           if (body && body.error) m = String(body.error);
         }
       } catch (_) {}
-      this.setState({
-        translateBusy: false,
-        [msgKey]: 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '. Controlla che la funzione translate sia pubblicata e che la chiave Gemini (GEMINI_API_KEY) sia impostata.',
-      });
+      this.setState({ translateBusy: false, [msgKey]: this.translateFailureText(m) });
       return null;
     }
+  }
+  // Il motivo arriva dalla funzione translate come prefisso: dire "riprova"
+  // quando Google è sovraccarico, e parlare di chiave solo quando c'entra.
+  translateFailureText(m) {
+    m = String(m || '');
+    const base = 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '.';
+    if (/modello_sovraccarico|errore_gemini \(503\)/.test(m)) return base + ' Google è sovraccarico in questo momento: ho già riprovato con più modelli. Attendi qualche minuto e riprova.';
+    if (/quota_esaurita/.test(m)) return base + ' La quota gratuita di Gemini per oggi è finita: riprova domani o attendi qualche minuto.';
+    return base + ' Controlla che la funzione translate sia pubblicata e che la chiave Gemini (GEMINI_API_KEY) sia impostata.';
   }
   async translateProductForm() {
     const f = this.state.productForm;
@@ -2359,9 +2369,22 @@ class Component extends DCLogic {
       return { stock };
     });
     try {
-      await window.__sb.from('product_stock')
+      const { error } = await window.__sb.from('product_stock')
         .upsert({ product_id: id, size: size || '', qty }, { onConflict: 'product_id,size' });
-    } catch (e) {}
+      if (error) throw error;
+      this.setState({ stockMsg: '' });
+    } catch (e) { await this.stockSaveFailed(e); }
+  }
+  // Il salvataggio non è passato (sessione scaduta, permessi, rete): la
+  // pagina torna ai numeri del server e lo dice, invece di mostrare un
+  // valore che il database non ha.
+  async stockSaveFailed(e) {
+    const why = String((e && e.message) || e || '');
+    await this.loadStockFromDb();
+    this.setState({
+      stockMsg: 'Quantità NON salvata sul server' + (why ? ' (' + why + ')' : '') +
+        ': qui sotto vedi i numeri che il database ha davvero. Riprova; se succede ancora, esci dall\'area riservata e rientra.',
+    });
   }
   setRestockInput(id, size, value) {
     this.setState(s => ({ restock: { ...s.restock, [`${id}::${size || ''}`]: value } }));
@@ -2380,8 +2403,10 @@ class Component extends DCLogic {
       return { stock, restock: { ...s.restock, [key]: '' } };
     });
     try {
-      await window.__sb.rpc('add_stock', { p_id: id, p_size: size || '', p_delta: delta });
-    } catch (e) {}
+      const { error } = await window.__sb.rpc('add_stock', { p_id: id, p_size: size || '', p_delta: delta });
+      if (error) throw error;
+      this.setState({ stockMsg: '' });
+    } catch (e) { await this.stockSaveFailed(e); }
   }
 
   // ── Pannello prodotti ──────────────────────────────────────────────────
@@ -3673,6 +3698,7 @@ class Component extends DCLogic {
       summaryToCollect: this.money(this.amountToCollect()),
       summaryCollected: this.money(this.amountCollected()),
       summaryLowStock: this.lowStockCount(),
+      stockMsg: this.state.stockMsg || '',
       stockGroups: this.filteredAdminCatalog().map(p => {
         const sizes = p.sizes && p.sizes.length ? p.sizes : [''];
         const known = !!this.state.stock[p.id];
