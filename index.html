@@ -1206,7 +1206,7 @@
       <sc-if value="{{ isTabContabilita }}" hint-placeholder-val="{{ false }}">
         <div>
         <h3 class="no-print-on-order" style="margin-top:var(--space-6);">Contabilità — solo per te</h3>
-        <p class="no-print-on-order text-muted" style="margin-top:-6px;">Imposta il costo materiale per unità di ogni articolo (e un eventuale costo del tuo tempo/beneficenza) per calcolare quanto resta all'evento.</p>
+        <p class="no-print-on-order text-muted" style="margin-top:-6px;">Imposta il costo materiale per unità di ogni articolo (vale per tutti gli eventi) e gli altri costi dell'evento scelto in cima: si salvano da soli appena esci dal campo, e servono a calcolare quanto resta all'evento.</p>
         <table class="table no-print-on-order">
           <thead><tr><th>Articolo</th><th>Venduti</th><th>Ricavo</th><th>Costo materiale/unità</th><th>Costo totale</th></tr></thead>
           <tbody>
@@ -1223,7 +1223,10 @@
         </table>
         <div class="no-print-on-order field" style="max-width:280px;margin-top:var(--space-3);">
           <label for="extracost">Altri costi (stampa, spedizioni…)</label>
-          <input id="extracost" class="input" type="number" min="0" step="1" value="{{ extraCost }}" onChange="{{ onExtraCost }}">
+          <input id="extracost" class="input" type="number" min="0" step="1" value="{{ extraCost }}" disabled="{{ extraCostLocked }}" onChange="{{ onExtraCost }}">
+          <sc-if value="{{ extraCostLocked }}" hint-placeholder-val="{{ false }}">
+            <div class="text-muted" style="font-size:11px;margin-top:4px;">Somma di tutti gli eventi. Per modificarli scegli un evento nel menù in cima.</div>
+          </sc-if>
         </div>
         <div class="no-print-on-order card blueprint elev-sm" style="margin-top:var(--space-4);padding:var(--space-4);max-width:420px;">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
@@ -1374,8 +1377,6 @@ class Component extends DCLogic {
     translateMsg: '',       // esito nel modulo articolo
     translateBulkMsg: '',   // esito della traduzione in blocco
     translateSettingsMsg: '',
-    unitCosts: {},
-    extraCost: 0,
     adminUnlocked: false,
     adminTab: 'ordini',
     settings: {},
@@ -3187,11 +3188,53 @@ class Component extends DCLogic {
     this.activeOrders().forEach(o => o.items.forEach(it => { map[it.name] = (map[it.name] || 0) + it.qty; }));
     return map;
   }
+  // I costi della contabilità vivono nelle impostazioni (tabella settings,
+  // chiavi riservate all'admin: la vetrina legge solo quelle in whitelist).
+  // Il costo materiale è per articolo e vale per tutti gli eventi; gli "altri
+  // costi" (stampa, spedizioni) sono per evento, come ordini e incassi.
+  unitCostsMap() {
+    try {
+      const m = JSON.parse(this.state.settings.unit_costs || '{}');
+      return m && typeof m === 'object' ? m : {};
+    } catch (e) { return {}; }
+  }
+  unitCostOf(id) { return Number(this.unitCostsMap()[id]) || 0; }
+  async setUnitCost(id, value) {
+    const map = { ...this.unitCostsMap(), [id]: Number(value) || 0 };
+    await this.saveSettingNow('unit_costs', JSON.stringify(map));
+  }
+  extraCostKey() {
+    const ev = this.state.adminEvent;
+    return ev && ev !== 'tutti' && ev !== 'in-corso' ? 'extra_cost:' + ev : '';
+  }
+  extraCostTotal() {
+    const ev = this.state.adminEvent;
+    const val = (k) => Number(this.state.settings[k]) || 0;
+    if (!ev || ev === 'tutti') {
+      return Object.keys(this.state.settings).filter(k => k.indexOf('extra_cost:') === 0).reduce((s, k) => s + val(k), 0);
+    }
+    if (ev === 'in-corso') return this.currentEvents().reduce((s, e) => s + val('extra_cost:' + e.id), 0);
+    return val('extra_cost:' + ev);
+  }
+  async setExtraCost(value) {
+    const key = this.extraCostKey();
+    if (!key) return;
+    await this.saveSettingNow(key, String(Number(value) || 0));
+  }
+  // Salvataggio immediato di una singola impostazione (come Rinumera e
+  // l'ordine delle collezioni): niente pulsante da ricordarsi di premere.
+  async saveSettingNow(key, value) {
+    this.setState(s => ({ settings: { ...s.settings, [key]: value } }));
+    try {
+      const { error } = await window.__sb.from('settings').upsert([{ key, value }]);
+      if (error) throw error;
+    } catch (e) { /* niente rete: il valore resta su questo dispositivo */ }
+  }
   totalMaterialCost() {
     const sold = this.productQtySold();
-    return this.getCatalog().reduce((sum, p) => sum + (sold[p.name] || 0) * (this.state.unitCosts[p.id] ?? 0), 0);
+    return this.getCatalog().reduce((sum, p) => sum + (sold[p.name] || 0) * this.unitCostOf(p.id), 0);
   }
-  totalCost() { return this.totalMaterialCost() + (Number(this.state.extraCost) || 0); }
+  totalCost() { return this.totalMaterialCost() + this.extraCostTotal(); }
 
   money(n) { return n.toFixed(2).replace('.', ','); }
 
@@ -3828,7 +3871,7 @@ class Component extends DCLogic {
         const sold = this.productQtySold();
         return this.getCatalog().map(p => {
           const qty = sold[p.name] || 0;
-          const unitCost = this.state.unitCosts[p.id] ?? 0;
+          const unitCost = this.unitCostOf(p.id);
           const revenue = qty * this.getPrice(p.id);
           return {
             label: p.name,
@@ -3836,12 +3879,14 @@ class Component extends DCLogic {
             revenueLabel: this.money(revenue),
             unitCost,
             costLabel: this.money(qty * unitCost),
-            onCost: (e) => this.setState(s => ({ unitCosts: { ...s.unitCosts, [p.id]: Number(e.target.value) || 0 } })),
+            onCost: (e) => this.setUnitCost(p.id, e.target.value),
           };
         });
       })(),
-      extraCost: this.state.extraCost,
-      onExtraCost: (e) => this.setState({ extraCost: Number(e.target.value) || 0 }),
+      extraCost: this.extraCostTotal(),
+      extraCostEditable: !!this.extraCostKey(),
+      extraCostLocked: !this.extraCostKey(),
+      onExtraCost: (e) => this.setExtraCost(e.target.value),
       totalCostLabel: this.money(this.totalCost()),
       surplusLabel: this.money(Math.max(0, this.adminRevenue() - this.totalCost())),
     };
