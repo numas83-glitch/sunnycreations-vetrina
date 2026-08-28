@@ -2134,10 +2134,16 @@ class Component extends DCLogic {
   // state.selection elenca una voce per prodotto: senza questo, il primo
   // prodotto aggiunto e non elencato lì farebbe esplodere setSelectionQty.
   getSelection(id) {
-    const cur = this.state.selection[id];
-    if (cur) return cur;
+    const cur = this.state.selection[id] || { qty: 1 };
     const p = this.getProduct(id);
-    return { size: p && p.sizes ? p.sizes[0] : undefined, qty: 1 };
+    const sizes = p && Array.isArray(p.sizes) && p.sizes.length ? p.sizes : null;
+    // La selezione salvata (anche quella predefinita scritta qui sotto per gli
+    // articoli storici) può non combaciare più con le varianti dell'articolo:
+    // a un articolo si aggiungono colori dopo, o se ne toglie uno. Vale solo
+    // una variante che esiste davvero, altrimenti la prima — mai la chiave
+    // vuota, che nel magazzino non c'è e farebbe risultare "Esaurito".
+    const size = sizes ? (sizes.indexOf(cur.size) >= 0 ? cur.size : sizes[0]) : undefined;
+    return { ...cur, size };
   }
   getPrice(id) { const v = this.state.prices[id]; return typeof v === 'number' && !isNaN(v) ? v : this.getProduct(id).price; }
 
