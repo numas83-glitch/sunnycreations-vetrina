@@ -821,7 +821,7 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);flex-wrap:wrap;">
                   <div>
                     <div style="font-weight:600;display:flex;align-items:center;gap:8px;">Versione inglese <span style="{{ formEnStyle }}">{{ formEnLabel }}</span></div>
-                    <div class="text-muted" style="font-size:11px;">La legge chi apre il sito in inglese. Vuota = si mostra l'italiano. <em>Traduci</em> compila i tre campi dall'italiano: rileggi e correggi prima di salvare.</div>
+                    <div class="text-muted" style="font-size:11px;">La legge chi apre il sito in inglese. Vuota = si mostra l'italiano. <em>Traduci</em> compila i campi dall'italiano: rileggi e correggi prima di salvare.</div>
                   </div>
                   <button type="button" class="btn btn-secondary" onClick="{{ translateProductForm }}" disabled="{{ translateBusy }}">{{ translateFormLabel }}</button>
                 </div>
@@ -833,6 +833,10 @@
                   <div class="field" style="margin:0;">
                     <label for="pkickeren">Categoria — inglese</label>
                     <input id="pkickeren" class="input" type="text" placeholder="Apparel, Accessories, Gift ideas…" value="{{ productForm.kickerEn }}" onChange="{{ onProductKickerEn }}">
+                  </div>
+                  <div class="field" style="margin:0;">
+                    <label for="pvarianten">Come si chiama la scelta — inglese</label>
+                    <input id="pvarianten" class="input" type="text" placeholder="Size, Colour, Weight…" value="{{ productForm.variantLabelEn }}" onChange="{{ onProductVariantEn }}">
                   </div>
                 </div>
                 <div class="field" style="margin:0;">
@@ -2061,7 +2065,7 @@ class Component extends DCLogic {
       const query = (cols) => window.__sb.from('products').select(cols)
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       let en = true, ph = true;
-      const cols = () => base + (en ? ', name_en, description_en, kicker_en' : '') + (ph ? ', photos' : '');
+      const cols = () => base + (en ? ', name_en, description_en, kicker_en, variant_label_en' : '') + (ph ? ', photos' : '');
       let { data, error } = await query(cols());
       for (let giro = 0; error && giro < 2; giro++) {
         const manca = { en: en && this.isMissingEnColumn(error), ph: ph && this.isMissingPhotosColumn(error) };
@@ -2091,6 +2095,7 @@ class Component extends DCLogic {
           nameEn: (r.name_en || '').trim(),
           descEn: (r.description_en || '').trim(),
           kickerEn: (r.kicker_en || '').trim(),
+          variantLabelEn: (r.variant_label_en || '').trim(),
         }))),
       });
     } catch (e) {}
@@ -2152,20 +2157,21 @@ class Component extends DCLogic {
   async translateProductForm() {
     const f = this.state.productForm;
     if (!f) return;
-    const tr = await this.translateTexts({ name: f.name, kicker: f.kicker, desc: f.desc }, 'product card: name, category, description', 'translateMsg');
+    const tr = await this.translateTexts({ name: f.name, kicker: f.kicker, desc: f.desc, variant: f.variantLabel }, 'product card: name, category, description, label of the option the customer picks (e.g. Taglia = Size, Peso = Weight)', 'translateMsg');
     if (!tr) return;
     this.setState(st => ({
       productForm: { ...st.productForm,
         nameEn: tr.name !== undefined ? tr.name : st.productForm.nameEn,
         kickerEn: tr.kicker !== undefined ? tr.kicker : st.productForm.kickerEn,
-        descEn: tr.desc !== undefined ? tr.desc : st.productForm.descEn },
-      translateMsg: 'Tradotto: rileggi i tre campi e poi Salva.',
+        descEn: tr.desc !== undefined ? tr.desc : st.productForm.descEn,
+        variantLabelEn: tr.variant !== undefined ? tr.variant : st.productForm.variantLabelEn },
+      translateMsg: 'Tradotto: rileggi i campi e poi Salva.',
     }));
   }
   // Stato della versione inglese: 'full' se tutti i testi italiani presenti
   // hanno il loro inglese, 'none' se nessuno, 'partial' nel mezzo.
   enStatus(p) {
-    const pairs = [[p.name, p.nameEn], [p.desc, p.descEn], [p.kicker, p.kickerEn]]
+    const pairs = [[p.name, p.nameEn], [p.desc, p.descEn], [p.kicker, p.kickerEn], [p.variantLabel, p.variantLabelEn]]
       .filter(([it]) => String(it || '').trim());
     const done = pairs.filter(([, en]) => String(en || '').trim()).length;
     const key = !pairs.length || done === pairs.length ? 'full' : (done === 0 ? 'none' : 'partial');
@@ -2193,9 +2199,10 @@ class Component extends DCLogic {
       if (!p.nameEn && p.name) texts[p.id + '::name'] = p.name;
       if (!p.descEn && p.desc) texts[p.id + '::desc'] = p.desc;
       if (!p.kickerEn && p.kicker) texts[p.id + '::kicker'] = p.kicker;
+      if (!p.variantLabelEn && p.variantLabel) texts[p.id + '::variant'] = p.variantLabel;
     });
     if (this.enColumns === false) { this.setState({ translateBulkMsg: 'Traduzione non riuscita: il database non ha ancora le colonne inglesi (va eseguito supabase-schema.sql).' }); return; }
-    const tr = await this.translateTexts(texts, 'product catalogue: names, categories, descriptions', 'translateBulkMsg');
+    const tr = await this.translateTexts(texts, 'product catalogue: names, categories, descriptions, labels of the option the customer picks (::variant, e.g. Taglia = Size, Peso = Weight)', 'translateBulkMsg');
     if (!tr) return;
     let n = 0;
     for (const p of list) {
@@ -2203,12 +2210,13 @@ class Component extends DCLogic {
         nameEn: tr[p.id + '::name'] !== undefined ? tr[p.id + '::name'] : p.nameEn,
         descEn: tr[p.id + '::desc'] !== undefined ? tr[p.id + '::desc'] : p.descEn,
         kickerEn: tr[p.id + '::kicker'] !== undefined ? tr[p.id + '::kicker'] : p.kickerEn,
+        variantLabelEn: tr[p.id + '::variant'] !== undefined ? tr[p.id + '::variant'] : p.variantLabelEn,
       };
-      if (upd.nameEn === p.nameEn && upd.descEn === p.descEn && upd.kickerEn === p.kickerEn) continue;
+      if (upd.nameEn === p.nameEn && upd.descEn === p.descEn && upd.kickerEn === p.kickerEn && upd.variantLabelEn === p.variantLabelEn) continue;
       n++;
       try {
         const { error } = await window.__sb.from('products')
-          .update({ name_en: upd.nameEn || null, description_en: upd.descEn || null, kicker_en: upd.kickerEn || null }).eq('id', p.id);
+          .update({ name_en: upd.nameEn || null, description_en: upd.descEn || null, kicker_en: upd.kickerEn || null, variant_label_en: upd.variantLabelEn || null }).eq('id', p.id);
         if (error) throw error;
       } catch (e) {
         this.applyCatalogLocally({ ...p, ...upd });
@@ -2601,8 +2609,8 @@ class Component extends DCLogic {
       productForm: product
         ? { ...product, isNew: false, sizesText: (product.sizes || []).join(', '), photoSaved: product.photo || '', collection: product.collection || '', variantLabel: product.variantLabel || '',
             extraPhotos: (product.photos || []).filter(Boolean),
-            nameEn: product.nameEn || '', descEn: product.descEn || '', kickerEn: product.kickerEn || '' }
-        : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', extraPhotos: [], price: 0, nameEn: '', descEn: '', kickerEn: '',
+            nameEn: product.nameEn || '', descEn: product.descEn || '', kickerEn: product.kickerEn || '', variantLabelEn: product.variantLabelEn || '' }
+        : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', extraPhotos: [], price: 0, nameEn: '', descEn: '', kickerEn: '', variantLabelEn: '',
             sizesText: '', variantLabel: '', priceUnit: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(this.lastCollection()), isNew: true },
       productError: '', productBusy: false,
     });
@@ -2758,6 +2766,7 @@ class Component extends DCLogic {
       nameEn: String(f.nameEn || '').trim(),
       descEn: String(f.descEn || '').trim(),
       kickerEn: String(f.kickerEn || '').trim(),
+      variantLabelEn: String(f.variantLabelEn || '').trim(),
       photo: f.photoSaved || '',
       photos: (f.extraPhotos || []).filter(u => typeof u === 'string' && u && !/^data:/.test(u)).slice(0, 3),
       price,
@@ -2776,7 +2785,7 @@ class Component extends DCLogic {
         variant_label: product.variantLabel || null,
         price_unit: product.priceUnit || null,
       };
-      const en = { name_en: product.nameEn || null, description_en: product.descEn || null, kicker_en: product.kickerEn || null };
+      const en = { name_en: product.nameEn || null, description_en: product.descEn || null, kicker_en: product.kickerEn || null, variant_label_en: product.variantLabelEn || null };
       const rowOf = () => ({ ...row,
         ...(this.enColumns === false ? {} : en),
         ...(this.photosColumn === false ? {} : { photos: product.photos }) });
@@ -2790,7 +2799,7 @@ class Component extends DCLogic {
         if (mancaEn) this.enColumns = false;
         if (mancaPh) this.photosColumn = false;
         ({ error } = await window.__sb.from('products').upsert(rowOf()));
-        if (!error && mancaEn && (product.nameEn || product.descEn || product.kickerEn)) {
+        if (!error && mancaEn && (product.nameEn || product.descEn || product.kickerEn || product.variantLabelEn)) {
           this.setState({ productError: 'Salvato, ma i testi inglesi no: il database non ha ancora le colonne inglesi (va eseguito supabase-schema.sql).' });
         }
         if (!error && mancaPh && product.photos.length) {
@@ -3417,6 +3426,7 @@ class Component extends DCLogic {
   // variante Colore, Modello, Gusto. Le giacenze non cambiano di una riga.
   variantLabel(id) {
     const p = this.getProduct(id);
+    if (p && this.isEn() && p.variantLabelEn) return p.variantLabelEn;
     return (p && p.variantLabel) ? p.variantLabel : this.t().size;
   }
 
@@ -4018,6 +4028,7 @@ class Component extends DCLogic {
       translateSettingsMsgStyle: 'font-size:12px;margin-top:4px;' + (this.state.translateSettingsMsg.indexOf('non riuscita') >= 0 ? 'color:var(--color-brand-red);' : 'color:var(--color-brand-green);'),
       onProductNameEn: (e) => this.updateProductForm('nameEn', e.target.value),
       onProductKickerEn: (e) => this.updateProductForm('kickerEn', e.target.value),
+      onProductVariantEn: (e) => this.updateProductForm('variantLabelEn', e.target.value),
       onProductDescEn: (e) => this.updateProductForm('descEn', e.target.value),
       productForm: this.state.productForm || {},
       hasProductForm: !!this.state.productForm,
