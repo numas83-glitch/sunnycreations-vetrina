@@ -117,9 +117,9 @@
 
       <sc-if value="{{ inviteMissing }}" hint-placeholder-val="{{ false }}">
         <div class="card" style="padding:var(--space-6);margin-bottom:var(--space-6);border-left:4px solid var(--color-accent);">
-          <div class="card-title">{{ t.inviteNeededTitle }}</div>
-          <p class="card-body">{{ t.inviteNeededText }}</p>
-          <a class="btn btn-primary" style="align-self:flex-start;text-decoration:none;" href="{{ vetrinaUrl }}">{{ t.inviteGoVetrina }}</a>
+          <div class="card-title">{{ inviteCardTitle }}</div>
+          <p class="card-body">{{ inviteCardText }}</p>
+          <a class="btn btn-primary" style="align-self:flex-start;text-decoration:none;" href="{{ inviteCardHref }}">{{ inviteCardButton }}</a>
         </div>
       </sc-if>
 
@@ -1261,7 +1261,7 @@
   </sc-if>
 
   <sc-if value="{{ showInquiry }}" hint-placeholder-val="{{ false }}">
-    <div style="max-width:640px;width:100%;margin:0 auto;padding:0 var(--space-4) var(--space-8);box-sizing:border-box;">
+    <div id="richiesta" style="max-width:640px;width:100%;margin:0 auto;padding:0 var(--space-4) var(--space-8);box-sizing:border-box;">
       <sc-if value="{{ inquirySent }}" hint-placeholder-val="{{ false }}">
         <sc-if value="{{ inquiryInvited }}" hint-placeholder-val="{{ false }}">
           <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
@@ -1381,6 +1381,7 @@ class Component extends DCLogic {
     mode: 'preordini',
     invite: null,          // { token, email } quando si arriva da un invito valido
     inviteChecked: false,
+    inviteExpired: false,  // true se si arriva da un link d'invito scaduto o non valido
     inquiry: { name: '', email: '', message: '' },
     inquiryConsent: false,
     inquiryBusy: false,
@@ -1533,6 +1534,9 @@ class Component extends DCLogic {
       inviteNeededTitle: 'Questa pagina si apre su invito',
       inviteNeededText: 'Il preordine si fa dal link personale che ricevi via email dopo aver chiesto informazioni. Se il tuo link è scaduto, scrivimi di nuovo e te ne mando uno nuovo.',
       inviteGoVetrina: 'Vai alla vetrina',
+      inviteExpiredTitle: 'Il tuo link è scaduto',
+      inviteExpiredText: 'Questo link per il preordine non è più valido. Manda una nuova richiesta dalla vetrina: ti arriva via email un link nuovo.',
+      inviteNewRequest: 'Invia una nuova richiesta',
       inviteEmailNote: 'L\u2019invito è intestato a questo indirizzo.',
       soldOutOf: 'disponibili', youAsked: 'ne hai chiesti', sizeWord: 'taglia',
       noLongerAvailable: 'non è più disponibile nella quantità richiesta.',
@@ -1600,6 +1604,9 @@ class Component extends DCLogic {
       inviteNeededTitle: 'This page opens by invitation',
       inviteNeededText: 'Pre-orders are placed from the personal link you receive by email after asking for information. If your link has expired, write again and I will send a new one.',
       inviteGoVetrina: 'Go to the showcase',
+      inviteExpiredTitle: 'Your link has expired',
+      inviteExpiredText: 'This pre-order link is no longer valid. Send a new request from the showcase and you will receive a new link by email.',
+      inviteNewRequest: 'Send a new request',
       inviteEmailNote: 'The invitation is tied to this address.',
       soldOutOf: 'available', youAsked: 'you asked for', sizeWord: 'size',
       noLongerAvailable: 'is no longer available in the quantity requested.',
@@ -1681,6 +1688,9 @@ class Component extends DCLogic {
       const inv = h.match(/invito=([A-Za-z0-9_\-]+)/i);
       if (inv) await this.checkInvite(decodeURIComponent(inv[1]));
       else this.setState({ inviteChecked: true });
+      // Dal link scaduto si arriva in vetrina su #richiesta: porta al modulo.
+      // shortcut: attesa fissa per il disegno del catalogo; se la pagina si allunga dopo, il modulo può scivolare un po' più in basso.
+      if (/(^|[#&])richiesta\b/i.test(h)) setTimeout(() => { const el = document.getElementById('richiesta'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 900);
       const m = h.match(/pay=([A-Za-z0-9-]+)/i);
       const e = h.match(/[?&#]e=([^&]+)/i);
       if (m) {
@@ -1707,7 +1717,8 @@ class Component extends DCLogic {
         return;
       }
     } catch (e) {}
-    this.setState({ invite: null, inviteChecked: true });
+    // C'era un link ma non vale piu' (check_invite non distingue scaduto da inesistente).
+    this.setState({ invite: null, inviteChecked: true, inviteExpired: true });
   }
 
   // ── Richieste di informazioni ──────────────────────────────────────────
@@ -3473,6 +3484,10 @@ class Component extends DCLogic {
       // Si prenota solo con un invito valido in mano.
       canOrder: this.state.mode === 'preordini' && !!this.state.invite,
       inviteMissing: this.state.mode === 'preordini' && this.state.inviteChecked && !this.state.invite,
+      inviteCardTitle: this.state.inviteExpired ? this.t().inviteExpiredTitle : this.t().inviteNeededTitle,
+      inviteCardText: this.state.inviteExpired ? this.t().inviteExpiredText : this.t().inviteNeededText,
+      inviteCardButton: this.state.inviteExpired ? this.t().inviteNewRequest : this.t().inviteGoVetrina,
+      inviteCardHref: 'https://vetrina.sunnycreations.it/' + (this.state.inviteExpired ? '#richiesta' : ''),
       showcaseOnly: !(this.state.mode === 'preordini' && !!this.state.invite),
       inquiryOpen: !this.state.inquirySent,
       hasInvite: !!this.state.invite,
