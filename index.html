@@ -537,6 +537,9 @@
                         <button type="button" class="btn btn-ghost" onClick="{{ q.reject }}">Archivia</button>
                       </span>
                     </sc-if>
+                    <sc-if value="{{ q.isHandled }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" class="btn btn-ghost" style="font-size:12px;" onClick="{{ q.remove }}">Elimina</button>
+                    </sc-if>
                   </td>
                 </tr>
               </sc-for>
@@ -995,7 +998,7 @@
 
           <h4>Ogni giorno: la scheda Richieste</h4>
           <p>È l'unica che devi guardare con regolarità. Accanto ad <em>Accetta e invita</em> c'è il menù dell'evento: <strong>scegli lì</strong> se è roba della manifestazione o un lavoretto ordinario, perché l'ordine nascerà dentro quell'evento e non dovrai spostarlo dopo.</p>
-          <p><em>Archivia</em> non scrive niente a nessuno: serve per le richieste a cui rispondi di persona, o a cui non vuoi rispondere.</p>
+          <p><em>Archivia</em> non scrive niente a nessuno: serve per le richieste a cui rispondi di persona, o a cui non vuoi rispondere. Le richieste già gestite (invitate o archiviate) hanno anche <em>Elimina</em>, per tenere corta la lista: il link già mandato resta valido e gli ordini non cambiano.</p>
 
           <h4>Ordini e pagamenti</h4>
           <p>Ogni ordine passa per tre stati: <strong>da pagare</strong> (grigio), <strong>pagamento dichiarato</strong> (giallo, l'ha detto il cliente) e <strong>pagato</strong> (verde, l'hai confermato tu). Giallo non vuol dire incassato: vuol dire che qualcuno sostiene di aver pagato.</p>
@@ -1734,7 +1737,7 @@ class Component extends DCLogic {
   async loadInquiriesFromDb() {
     try {
       const { data, error } = await window.__sb.from('inquiries')
-        .select('id, name, email, message, lang, status, created_at')
+        .select('id, name, email, message, lang, status, created_at, handled_at, invites(event_id)')
         .order('created_at', { ascending: false });
       if (error || !Array.isArray(data)) return;
       this.setState({ inquiries: data });
@@ -1759,6 +1762,27 @@ class Component extends DCLogic {
   autoInviteEvent() {
     const id = this.state.settings.auto_invite_event || '';
     return this.currentEvents().find(e => e.id === id) || null;
+  }
+  // Cancellazione definitiva della richiesta. L'eventuale invito resta valido
+  // (invites.inquiry_id diventa null) e gli ordini non si toccano.
+  async deleteInquiry(id) {
+    if (!window.confirm('Eliminare per sempre questa richiesta? Il link eventualmente mandato resta valido e gli ordini non cambiano.')) return;
+    try {
+      const { error } = await window.__sb.from('inquiries').delete().eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      window.alert('Non sono riuscito a eliminarla: ' + ((e && e.message) || e));
+    }
+    await this.loadInquiriesFromDb();
+  }
+  inquiryStatusLabel(q) {
+    if (q.status === 'rejected') return 'Archiviata';
+    if (q.status !== 'accepted') return 'Da leggere';
+    // shortcut: "automatico" = accettata entro un minuto dall'arrivo; nessun campo dedicato nel DB.
+    const auto = q.handled_at && (new Date(q.handled_at) - new Date(q.created_at)) < 60e3;
+    const evId = ((q.invites || [])[0] || {}).event_id;
+    const ev = this.state.events.find(e => e.id === evId);
+    return (auto ? 'Invito automatico' : 'Invito inviato') + (ev ? ' \u00b7 ' + ev.name : '');
   }
   async rejectInquiry(id) {
     if (!window.confirm('Archiviare la richiesta senza rispondere?')) return;
@@ -3483,7 +3507,8 @@ class Component extends DCLogic {
         dateLabel: new Date(q.created_at).toLocaleString('it-IT'),
         langLabel: q.lang === 'en' ? 'EN' : 'IT',
         isNew: q.status === 'new',
-        statusLabel: q.status === 'accepted' ? 'Invito inviato' : (q.status === 'rejected' ? 'Archiviata' : 'Da leggere'),
+        isHandled: q.status !== 'new',
+        statusLabel: this.inquiryStatusLabel(q),
         statusStyle: q.status === 'accepted'
           ? 'color:var(--color-brand-green);'
           : (q.status === 'rejected' ? 'color:color-mix(in srgb, var(--color-text) 45%, transparent);' : 'color:#8a6d00;font-weight:600;'),
@@ -3493,6 +3518,7 @@ class Component extends DCLogic {
         accept: () => this.acceptInquiry(q.id, this.state.inquiryEvent[q.id]
           || (this.primaryEvent() || {}).id || null),
         reject: () => this.rejectInquiry(q.id),
+        remove: () => this.deleteInquiry(q.id),
       })),
       newInquiryCount: this.state.inquiries.filter(q => q.status === 'new').length,
       langOptions: [{ id: 'it', label: 'IT' }, { id: 'en', label: 'EN' }].map(l => ({
