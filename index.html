@@ -896,6 +896,9 @@
                 <div class="field">
                   <label for="pprice">Prezzo €</label>
                   <input id="pprice" class="input" type="number" min="0" step="0.5" value="{{ productForm.price }}" onChange="{{ onProductPrice }}">
+                  <label for="ppriceunit" style="margin-top:8px;">Il prezzo è per (unità)</label>
+                  <input id="ppriceunit" class="input" type="text" placeholder="a pezzo" style="max-width:120px;" value="{{ productForm.priceUnit }}" onChange="{{ onProductPriceUnit }}">
+                  <div class="text-muted" style="font-size:11px;margin-top:4px;">{{ productPriceUnitHint }}</div>
                 </div>
                 <div class="field">
                   <label for="porder">Numero (posizione nel catalogo)</label>
@@ -2054,7 +2057,7 @@ class Component extends DCLogic {
   }
   async loadCatalogFromDb() {
     try {
-      const base = 'id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label';
+      const base = 'id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label, price_unit';
       const query = (cols) => window.__sb.from('products').select(cols)
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       let en = true, ph = true;
@@ -2084,6 +2087,7 @@ class Component extends DCLogic {
           sortOrder: Number(r.sort_order) || 0,
           collection: r.collection || '',
           variantLabel: (r.variant_label || '').trim(),
+          priceUnit: (r.price_unit || '').trim(),
           nameEn: (r.name_en || '').trim(),
           descEn: (r.description_en || '').trim(),
           kickerEn: (r.kicker_en || '').trim(),
@@ -2251,6 +2255,22 @@ class Component extends DCLogic {
     return { ...cur, size };
   }
   getPrice(id) { const v = this.state.prices[id]; return typeof v === 'number' && !isNaN(v) ? v : this.getProduct(id).price; }
+  // Prezzo di una variante: con priceUnit (es. 'kg') il prezzo e' per unita'
+  // e la variante dice quante: kettlebell "16" a 5,50/kg → 88,00.
+  // Variante non numerica: vale il prezzo pieno, come per gli altri articoli.
+  unitPrice(id, size) {
+    const p = this.getProduct(id), base = this.getPrice(id);
+    if (!p || !p.priceUnit || size == null) return base;
+    const n = parseFloat(String(size).replace(',', '.'));
+    return isFinite(n) && n > 0 ? Math.round(base * n * 100) / 100 : base;
+  }
+  // Testo del prezzo dopo "€ " nel catalogo.
+  priceText(id, size) {
+    const p = this.getProduct(id);
+    if (!p || !p.priceUnit) return this.money(this.getPrice(id));
+    const per = this.money(this.getPrice(id)) + (this.isEn() ? ' per ' : ' al ') + p.priceUnit;
+    return size ? per + ' \u00b7 ' + size + ' ' + p.priceUnit + ' = \u20ac ' + this.money(this.unitPrice(id, size)) : per;
+  }
 
   // ── Giacenze ───────────────────────────────────────────────────────────
   // Un prodotto assente da state.stock è illimitato; una taglia assente da
@@ -2583,7 +2603,7 @@ class Component extends DCLogic {
             extraPhotos: (product.photos || []).filter(Boolean),
             nameEn: product.nameEn || '', descEn: product.descEn || '', kickerEn: product.kickerEn || '' }
         : { id: '', name: '', kicker: '', desc: '', photo: '', photoSaved: '', extraPhotos: [], price: 0, nameEn: '', descEn: '', kickerEn: '',
-            sizesText: '', variantLabel: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(this.lastCollection()), isNew: true },
+            sizesText: '', variantLabel: '', priceUnit: '', collection: this.lastCollection(), active: true, sortOrder: this.nextSortOrder(this.lastCollection()), isNew: true },
       productError: '', productBusy: false,
     });
   }
@@ -2733,6 +2753,7 @@ class Component extends DCLogic {
       kicker: String(f.kicker || '').trim(),
       collection: String(f.collection || '').trim(),
       variantLabel: String(f.variantLabel || '').trim(),
+      priceUnit: String(f.priceUnit || '').trim().slice(0, 12),
       desc: String(f.desc || '').trim(),
       nameEn: String(f.nameEn || '').trim(),
       descEn: String(f.descEn || '').trim(),
@@ -2753,6 +2774,7 @@ class Component extends DCLogic {
         sizes: product.sizes, active: product.active, sort_order: product.sortOrder,
         collection: product.collection,
         variant_label: product.variantLabel || null,
+        price_unit: product.priceUnit || null,
       };
       const en = { name_en: product.nameEn || null, description_en: product.descEn || null, kicker_en: product.kickerEn || null };
       const rowOf = () => ({ ...row,
@@ -3030,8 +3052,8 @@ class Component extends DCLogic {
       const product = this.getProduct(id);
       const displayName = this.displayName(product);
       if (!product) return null;
-      const price = this.getPrice(id);
-      return { key, product, displayName, size: size || null, qty, price, lineTotal: price * qty };
+      const price = this.unitPrice(id, size || null);
+      return { key, product, displayName, size: size || null, qty, price, lineTotal: Math.round(price * qty * 100) / 100 };
     }).filter(Boolean);
   }
   cartTotal() { return this.cartEntries().reduce((sum, e) => sum + e.lineTotal, 0); }
@@ -3078,7 +3100,7 @@ class Component extends DCLogic {
       name: e.product.name,
       nameEn: e.product.nameEn || '',
       size: e.size,
-      sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}` : '',
+      sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}${e.product.priceUnit ? ' ' + e.product.priceUnit : ''}` : '',
       qty: e.qty,
       price: e.price,
       lineTotal: e.lineTotal,
@@ -3649,7 +3671,7 @@ class Component extends DCLogic {
                     : { background: 'transparent', color: 'var(--color-text)' }),
             };
           }),
-          priceLabel: this.money(this.getPrice(p.id)),
+          priceLabel: this.priceText(p.id, sel.size),
           sizesText: (p.sizes && p.sizes.length) ? p.sizes.join(' · ') : '',
           variantName: this.variantLabel(p.id),
           hasSizes: !!(p.sizes && p.sizes.length),
@@ -3662,7 +3684,7 @@ class Component extends DCLogic {
 
       cartEntries: cartEntries.map(e => ({
         ...e,
-        sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}` : '',
+        sizeLabel: e.size ? `${this.variantLabel(e.product.id)} ${e.size}${e.product.priceUnit ? ' ' + e.product.priceUnit : ''}` : '',
         cannotIncrease: e.qty >= this.availableOf(e.product.id, e.size),
         lineTotalLabel: this.money(e.lineTotal),
         inc: () => this.changeCartQty(e.key, 1),
@@ -3937,7 +3959,7 @@ class Component extends DCLogic {
         enLabel: this.enStatus(p).label,
         enStyle: this.enStatus(p).style,
         enName: p.nameEn || '',
-        priceLabel: this.money(p.price),
+        priceLabel: this.money(p.price) + (p.priceUnit ? ' / ' + p.priceUnit : ''),
         sizesLabel: (p.sizes || []).join(' · ') || 'Taglia unica',
         collectionLabel: p.collection || '—',
         hasPhoto: !!p.photo,
@@ -4012,6 +4034,17 @@ class Component extends DCLogic {
       onProductCollection: (e) => this.updateProductForm('collection', e.target.value),
       onProductDesc: (e) => this.updateProductForm('desc', e.target.value),
       onProductPrice: (e) => this.updateProductForm('price', e.target.value),
+      onProductPriceUnit: (e) => this.updateProductForm('priceUnit', e.target.value),
+      productPriceUnitHint: (() => {
+        const f = this.state.productForm;
+        if (!f || !String(f.priceUnit || '').trim()) return 'Vuoto: il prezzo è a pezzo, uguale per tutti i valori. Scrivi kg se il prezzo è al chilo: i valori fra cui scegliere devono essere il peso (8, 10, 12…).';
+        const u = String(f.priceUnit).trim(), pr = Number(f.price) || 0;
+        const first = this.parseSizes(f.sizesText || '') || [];
+        const n = parseFloat(String(first[0] || '').replace(',', '.'));
+        return 'Prezzo al ' + u + '. ' + (isFinite(n) && n > 0
+          ? 'Esempio: ' + first[0] + ' ' + u + ' = € ' + this.money(Math.round(pr * n * 100) / 100) + '.'
+          : 'Attenzione: i valori fra cui scegliere devono essere numeri (il peso), se no vale il prezzo pieno.');
+      })(),
       onProductSizes: (e) => this.updateProductForm('sizesText', e.target.value),
       onProductVariant: (e) => this.updateProductForm('variantLabel', e.target.value),
       variantPresets: ['Taglia', 'Colore', 'Modello', 'Gusto'].map(v => ({
@@ -4051,7 +4084,10 @@ class Component extends DCLogic {
         return this.getCatalog().map(p => {
           const qty = sold[p.name] || 0;
           const unitCost = this.unitCostOf(p.id);
-          const revenue = qty * this.getPrice(p.id);
+          // A peso ogni riga ha il suo prezzo: si sommano le righe vere.
+          const revenue = p.priceUnit
+            ? this.activeOrders().reduce((s, o) => s + o.items.filter(it => it.name === p.name).reduce((a, it) => a + (Number(it.lineTotal) || 0), 0), 0)
+            : qty * this.getPrice(p.id);
           return {
             label: p.name,
             qty,
