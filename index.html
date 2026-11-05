@@ -500,7 +500,22 @@
       <sc-if value="{{ isTabRichieste }}" hint-placeholder-val="{{ false }}">
         <div>
           <h3 style="margin-top:0;">Richieste di informazioni</h3>
-          <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido 14 giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta. <strong>L'evento lo scegli qui</strong>: l'ordine che nascerà da questo invito finirà lì dentro, senza che tu debba smistarlo dopo.</p>
+          <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido {{ inviteDays }} giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta. <strong>L'evento lo scegli qui</strong>: l'ordine che nascerà da questo invito finirà lì dentro, senza che tu debba smistarlo dopo.</p>
+          <div class="card" style="padding:var(--space-4);margin-bottom:var(--space-4);display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:flex-end;">
+            <div class="field" style="margin:0;">
+              <label for="autoinv">Invito automatico</label>
+              <select id="autoinv" class="input" style="min-width:200px;" value="{{ autoInviteValue }}" onChange="{{ onAutoInvite }}">
+                <sc-for list="{{ autoInviteChoices }}" as="ac" hint-placeholder-count="2">
+                  <option value="{{ ac.id }}">{{ ac.label }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div class="field" style="margin:0;">
+              <label for="invdays">Il link vale (giorni)</label>
+              <input id="invdays" class="input" type="number" min="1" max="90" style="width:90px;" value="{{ inviteDays }}" onChange="{{ onInviteDays }}">
+            </div>
+            <div class="text-muted" style="font-size:11px;flex:1 1 260px;">{{ autoInviteHint }}</div>
+          </div>
           <table class="table">
             <thead><tr><th>Quando</th><th>Chi</th><th>Messaggio</th><th>Stato</th><th>Evento e risposta</th></tr></thead>
             <tbody>
@@ -971,8 +986,8 @@
             <div style="display:flex;flex-direction:column;gap:var(--space-3);">
               <div><strong>1. Qualcuno guarda la vetrina.</strong> Su <em>vetrina.sunnycreations.it</em> vede le creazioni con foto, descrizioni e taglie. Non ci sono prezzi né pulsanti per ordinare: può solo scriverti.</div>
               <div><strong>2. Ti manda una richiesta.</strong> Ti arriva una mail e la richiesta compare qui, nella scheda <em>Richieste</em>, col numero di quelle da leggere sulla linguetta.</div>
-              <div><strong>3. Tu decidi.</strong> Scegli l'evento a cui appartiene e premi <em>Accetta e invita</em>: parte una mail con il link per prenotare. Oppure <em>Archivia</em>, e non parte niente.</div>
-              <div><strong>4. La persona prenota.</strong> Dal suo link sceglie articoli, taglie e quantità. Il link vale 14 giorni ed è legato alla sua email: girato a un altro non funziona.</div>
+              <div><strong>3. Tu decidi.</strong> Scegli l'evento a cui appartiene e premi <em>Accetta e invita</em>: parte una mail con il link per prenotare. Oppure <em>Archivia</em>, e non parte niente. Durante un evento puoi accendere l'<em>Invito automatico</em> in cima alla scheda Richieste: il link parte subito, senza aspettarti. Quando non è acceso, alla persona arriva comunque una mail che conferma che la richiesta è arrivata.</div>
+              <div><strong>4. La persona prenota.</strong> Dal suo link sceglie articoli, taglie e quantità. Il link vale {{ inviteDays }} giorni ed è legato alla sua email: girato a un altro non funziona.</div>
               <div><strong>5. Riceve il preventivo</strong> con prezzi, totale, listino e come pagare — e a te arriva una copia con i suoi recapiti. Se cambia idea, dalla mail può riaprire l'ordine e correggere le quantità. Se una mail non è partita, da <em>Dettagli</em> la rimandi con <em>Rimanda preventivo</em>.</div>
               <div><strong>6. Dichiara il pagamento</strong> premendo <em>Ho pagato</em> nella mail. Tu lo confermi qui quando vedi i soldi arrivare.</div>
             </div>
@@ -1245,13 +1260,19 @@
   <sc-if value="{{ showInquiry }}" hint-placeholder-val="{{ false }}">
     <div style="max-width:640px;width:100%;margin:0 auto;padding:0 var(--space-4) var(--space-8);box-sizing:border-box;">
       <sc-if value="{{ inquirySent }}" hint-placeholder-val="{{ false }}">
-        <sc-if value="{{ inquiryMailed }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ inquiryInvited }}" hint-placeholder-val="{{ false }}">
+          <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
+            <div class="card-title">{{ t.inquiryInvitedTitle }}</div>
+            <p class="card-body" style="margin:0;">{{ t.inquiryInvitedText }} <a href="mailto:sunnycreationshm@gmail.com" style="white-space:nowrap;">sunnycreationshm@gmail.com</a>.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ inquiryShowSent }}" hint-placeholder-val="{{ true }}">
           <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-green);">
             <div class="card-title">{{ t.inquirySentTitle }}</div>
             <p class="card-body" style="margin:0;">{{ t.inquirySentText }} <a href="mailto:sunnycreationshm@gmail.com" style="white-space:nowrap;">sunnycreationshm@gmail.com</a>.</p>
           </div>
         </sc-if>
-        <sc-if value="{{ inquiryNotMailed }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ inquiryShowNotMailed }}" hint-placeholder-val="{{ false }}">
           <div class="card" style="padding:var(--space-6);border-left:4px solid var(--color-brand-red);">
             <div class="card-title">{{ t.inquiryNotMailedTitle }}</div>
             <p class="card-body" style="margin:0;">{{ t.inquiryNotMailedText }} <a href="mailto:sunnycreationshm@gmail.com" style="white-space:nowrap;">sunnycreationshm@gmail.com</a>.</p>
@@ -1361,6 +1382,7 @@ class Component extends DCLogic {
     inquiryConsent: false,
     inquiryBusy: false,
     inquirySent: false,
+    inquiryInvited: false, // true se e' partito subito l'invito automatico
     inquiryMailed: true,   // false se la richiesta e' salvata ma l'avviso via mail non e' partito
     inquiryError: '',
     inquiries: [],
@@ -1500,6 +1522,8 @@ class Component extends DCLogic {
       inquirySend: 'Invia la richiesta', inquirySending: 'Invio…',
       inquirySentTitle: 'Richiesta inviata',
       inquirySentText: 'Grazie: ti rispondo io all\u2019indirizzo che mi hai lasciato. Se non ricevi una mail di contatto entro 24/48 ore, rimanda la richiesta oppure scrivi a',
+      inquiryInvitedTitle: 'Controlla la posta',
+      inquiryInvitedText: 'Ti ho appena mandato via email il link personale per fare il preordine. Se non lo trovi, guarda anche nello spam, oppure scrivi a',
       inquiryNotMailedTitle: 'Richiesta registrata',
       inquiryNotMailedText: 'La richiesta \u00e8 salvata, ma l\u2019avviso automatico non \u00e8 partito: per essere sicuro che la veda, scrivimi direttamente a',
       inquiryFailed: 'Non sono riuscito a inviare la richiesta. Riprova fra poco.',
@@ -1565,6 +1589,8 @@ class Component extends DCLogic {
       inquirySend: 'Send request', inquirySending: 'Sending…',
       inquirySentTitle: 'Request sent',
       inquirySentText: 'Thank you: I will get back to you at the address you left. If you do not receive an email from me within 24/48 hours, send the request again or write to',
+      inquiryInvitedTitle: 'Check your inbox',
+      inquiryInvitedText: 'I have just emailed you your personal link to place a pre-order. If you cannot find it, check your spam folder too, or write to',
       inquiryNotMailedTitle: 'Request saved',
       inquiryNotMailedText: 'Your request is saved, but the automatic notification did not go out: to make sure I see it, please write to me directly at',
       inquiryFailed: 'I could not send the request. Please try again shortly.',
@@ -1700,7 +1726,7 @@ class Component extends DCLogic {
       // La funzione salva sempre la richiesta; se l'avviso via mail non e'
       // partito (limite Resend, chiave scaduta...) lo dice con mailed:false.
       const mailed = !(data && data.mailed === false);
-      this.setState({ inquiryBusy: false, inquirySent: true, inquiryMailed: mailed, inquiry: { name: '', email: '', message: '' }, inquiryConsent: false });
+      this.setState({ inquiryBusy: false, inquirySent: true, inquiryMailed: mailed, inquiryInvited: !!(data && data.invited), inquiry: { name: '', email: '', message: '' }, inquiryConsent: false });
     } catch (e) {
       this.setState({ inquiryBusy: false, inquiryError: t.inquiryFailed });
     }
@@ -1717,15 +1743,22 @@ class Component extends DCLogic {
   async acceptInquiry(id, eventId) {
     try {
       const { data, error } = await window.__sb.rpc('create_invite', {
-        p_inquiry_id: id, p_days: 14, p_event_id: eventId || null,
+        p_inquiry_id: id, p_days: this.inviteDays(), p_event_id: eventId || null,
       });
       if (error) throw error;
       await window.__sb.functions.invoke('invite-send', { body: { token: data } });
-      window.alert("Invito inviato: la persona riceve il link per il preordine, valido 14 giorni.");
+      window.alert("Invito inviato: la persona riceve il link per il preordine, valido " + this.inviteDays() + " giorni.");
     } catch (e) {
       window.alert("Non sono riuscito a mandare l'invito: " + ((e && e.message) || e));
     }
     await this.loadInquiriesFromDb();
+  }
+  // Durata del link d'invito, scelta nella scheda Richieste (1-90, di base 14).
+  inviteDays() { return Math.min(90, Math.max(1, parseInt(this.state.settings.invite_days, 10) || 14)); }
+  // L'invito automatico vale solo su un evento ancora aperto.
+  autoInviteEvent() {
+    const id = this.state.settings.auto_invite_event || '';
+    return this.currentEvents().find(e => e.id === id) || null;
   }
   async rejectInquiry(id) {
     if (!window.confirm('Archiviare la richiesta senza rispondere?')) return;
@@ -2807,6 +2840,7 @@ class Component extends DCLogic {
   // Apre o chiude un evento senza toccare gli altri: più eventi possono
   // stare aperti insieme.
   async setEventOpen(id, open) {
+    if (!open && this.state.settings.auto_invite_event === id) await this.saveSettingNow('auto_invite_event', '');
     try {
       const { error } = await window.__sb.rpc('set_event_open', { p_id: id, p_open: !!open });
       if (error) throw error;
@@ -3430,8 +3464,18 @@ class Component extends DCLogic {
       sendInquiry: () => this.sendInquiry(),
       inquiryBusy: this.state.inquiryBusy,
       inquirySent: this.state.inquirySent,
-      inquiryMailed: this.state.inquiryMailed,
-      inquiryNotMailed: !this.state.inquiryMailed,
+      inquiryInvited: this.state.inquiryInvited,
+      inquiryShowSent: !this.state.inquiryInvited && this.state.inquiryMailed,
+      inquiryShowNotMailed: !this.state.inquiryInvited && !this.state.inquiryMailed,
+      inviteDays: this.inviteDays(),
+      onInviteDays: (e) => this.saveSettingNow('invite_days', String(Math.min(90, Math.max(1, parseInt(e.target.value, 10) || 14)))),
+      autoInviteValue: (this.autoInviteEvent() || {}).id || '',
+      autoInviteChoices: [{ id: '', label: 'Spento' }]
+        .concat(this.currentEvents().map(ev => ({ id: ev.id, label: 'Acceso: ' + ev.name }))),
+      onAutoInvite: (e) => this.saveSettingNow('auto_invite_event', e.target.value),
+      autoInviteHint: this.autoInviteEvent()
+        ? 'Acceso: chi scrive riceve subito il link per il preordine, e l\u2019ordine finisce in \u00ab' + this.autoInviteEvent().name + '\u00bb. Si spegne da solo quando chiudi l\u2019evento.'
+        : 'Spento: rispondi tu con Accetta e invita. Chi scrive riceve comunque una mail che conferma che la richiesta \u00e8 arrivata.',
       inquiryError: this.state.inquiryError,
       inquirySendLabel: this.state.inquiryBusy ? this.t().inquirySending : this.t().inquirySend,
       inquiryRows: this.state.inquiries.map(q => ({
