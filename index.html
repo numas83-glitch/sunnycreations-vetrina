@@ -2110,7 +2110,13 @@ class Component extends DCLogic {
     if (!Object.keys(toSend).length) { this.setState({ [msgKey]: 'Niente da tradurre: i campi italiani sono vuoti.' }); return null; }
     this.setState({ translateBusy: true, [msgKey]: '' });
     try {
-      const { data, error } = await window.__sb.functions.invoke('translate', { body: { texts: toSend, context: context || '' } });
+      // getSession rinnova il token se e' scaduto (scheda rimasta in sospeso,
+      // tipico su iPhone); senza sessione la funzione risponderebbe non_autorizzato.
+      const { data: sd } = await window.__sb.auth.getSession();
+      const tok = sd && sd.session && sd.session.access_token;
+      if (!tok) throw new Error('non_autorizzato');
+      const { data, error } = await window.__sb.functions.invoke('translate', {
+        body: { texts: toSend, context: context || '' }, headers: { Authorization: 'Bearer ' + tok } });
       if (error) throw error;
       if (!data || !data.translations) throw new Error((data && data.error) || 'risposta vuota');
       this.setState({ translateBusy: false });
@@ -2136,6 +2142,7 @@ class Component extends DCLogic {
     const base = 'Traduzione non riuscita' + (m ? ' (' + m + ')' : '') + '.';
     if (/modello_sovraccarico|errore_gemini \(503\)/.test(m)) return base + ' Google è sovraccarico in questo momento: ho già riprovato con più modelli. Attendi qualche minuto e riprova.';
     if (/quota_esaurita/.test(m)) return base + ' La quota gratuita di Gemini per oggi è finita: riprova domani o attendi qualche minuto.';
+    if (/non_autorizzato/.test(m)) return 'Traduzione non riuscita: il tuo accesso all\u2019area riservata \u00e8 scaduto. Premi Esci, rientra e riprova.';
     return base + ' Controlla che la funzione translate sia pubblicata e che la chiave Gemini (GEMINI_API_KEY) sia impostata.';
   }
   async translateProductForm() {
