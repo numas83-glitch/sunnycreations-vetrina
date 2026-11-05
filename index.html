@@ -1188,6 +1188,23 @@
             <div style="color:var(--color-brand-red);font-size:13px;">{{ mfaError }}</div>
           </sc-if>
 
+          <h4 style="margin-top:var(--space-6);">Cambia la tua password</h4>
+          <p class="text-muted" style="margin-top:-6px;">Cambia la password dell'account con cui sei entrato ({{ adminSignedEmail }}). Gli altri amministratori non cambiano: ognuno si cambia la sua. Almeno 8 caratteri.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end;">
+            <div class="field" style="margin:0;">
+              <label for="newpass1">Nuova password</label>
+              <input id="newpass1" class="input" type="password" autocomplete="new-password" value="{{ newPass1 }}" onChange="{{ onNewPass1 }}">
+            </div>
+            <div class="field" style="margin:0;">
+              <label for="newpass2">Ripetila</label>
+              <input id="newpass2" class="input" type="password" autocomplete="new-password" value="{{ newPass2 }}" onChange="{{ onNewPass2 }}">
+            </div>
+            <button type="button" class="btn btn-primary" onClick="{{ changePassword }}" disabled="{{ passBusy }}">Cambia password</button>
+          </div>
+          <sc-if value="{{ passMsg }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;margin-top:6px;{{ passMsgStyle }}">{{ passMsg }}</div>
+          </sc-if>
+
           <h3 style="margin-top:var(--space-8);">Eventi</h3>
           <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. <strong>Più eventi possono essere in corso insieme</strong>: in vetrina compaiono tutti quelli aperti, e quando accetti una richiesta scegli in quale va l'ordine. Finita una manifestazione premi <em>Chiudi</em>: non si cancella niente, cambiando voce nel menù in alto ritrovi tutto. Il <strong>logo</strong> che carichi qui compare in testata finché l'evento è in corso (se gli eventi aperti sono più d'uno, in testata va il logo del marchio e ognuno mostra il suo accanto al nome).</p>
 
@@ -1424,6 +1441,8 @@ class Component extends DCLogic {
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
     adminPassInput: '',
+    newPass1: '', newPass2: '', passBusy: false, passMsg: '', passOk: false,
+    adminSignedEmail: '',
     adminPassError: '',
     mfaStage: '',          // '' = email e password, 'code' = codice a sei cifre
     mfaFactorId: '',
@@ -1895,6 +1914,7 @@ class Component extends DCLogic {
 
   async loadAdminData() {
     this.markAdminDevice();
+    this.loadSignedEmail();
     await this.loadMfaFactors();
     await this.loadVisitsFromDb();
     await this.loadInquiriesFromDb();
@@ -2424,9 +2444,35 @@ class Component extends DCLogic {
     await this.loadMfaFactors();
   }
 
+  // Ognuno cambia la propria: Supabase aggiorna l'utente della sessione aperta.
+  async changePassword() {
+    const a = this.state.newPass1, b = this.state.newPass2;
+    if (a.length < 8) { this.setState({ passMsg: 'Almeno 8 caratteri.', passOk: false }); return; }
+    if (a !== b) { this.setState({ passMsg: 'Le due password non coincidono.', passOk: false }); return; }
+    this.setState({ passBusy: true, passMsg: '' });
+    try {
+      const { error } = await window.__sb.auth.updateUser({ password: a });
+      if (error) throw error;
+      this.setState({ passBusy: false, passOk: true, newPass1: '', newPass2: '',
+        passMsg: 'Password cambiata. Dalla prossima volta entri con quella nuova.' });
+    } catch (e) {
+      const m = String((e && e.message) || e);
+      this.setState({ passBusy: false, passOk: false, passMsg: /different/i.test(m)
+        ? 'È uguale a quella di adesso: scegline una diversa.'
+        : 'Non sono riuscito a cambiarla: ' + m });
+    }
+  }
+  async loadSignedEmail() {
+    try {
+      const { data } = await window.__sb.auth.getUser();
+      this.setState({ adminSignedEmail: (data && data.user && data.user.email) || '' });
+    } catch (e) {}
+  }
+
   async lockAdmin() {
     try { await window.__sb.auth.signOut(); } catch (e) {}
-    this.setState({ adminUnlocked: false, view: 'catalog', selectedOrderCode: null, mfaStage: '', mfaCode: '', mfaEnroll: null, mfaMustEnroll: false });
+    this.setState({ adminUnlocked: false, view: 'catalog', selectedOrderCode: null, mfaStage: '', mfaCode: '', mfaEnroll: null, mfaMustEnroll: false,
+      newPass1: '', newPass2: '', passMsg: '', adminSignedEmail: '' });
   }
 
   async setStock(id, size, value) {
@@ -3447,6 +3493,15 @@ class Component extends DCLogic {
       cancelMfaEnroll: () => this.setState({ mfaEnroll: null, mfaEnrollCode: '', mfaError: '' }),
       removeMfa: () => this.removeMfa(this.state.mfaFactors[0] && this.state.mfaFactors[0].id),
       mfaError: this.state.mfaError,
+      newPass1: this.state.newPass1,
+      newPass2: this.state.newPass2,
+      onNewPass1: (e) => this.setState({ newPass1: e.target.value, passMsg: '' }),
+      onNewPass2: (e) => this.setState({ newPass2: e.target.value, passMsg: '' }),
+      changePassword: () => this.changePassword(),
+      passBusy: this.state.passBusy,
+      passMsg: this.state.passMsg,
+      passMsgStyle: this.state.passOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);',
+      adminSignedEmail: this.state.adminSignedEmail || 'questo account',
       adminButtonLabel: this.state.adminBusy ? 'Accesso in corso…' : 'Accedi',
       unlockAdmin: () => this.unlockAdmin(),
       lockAdmin: () => this.lockAdmin(),
