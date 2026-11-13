@@ -3,6 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="apple-touch-icon" href="icon-180.png">
+<script>
+  // Solo l'admin si installa sulla schermata Home: un cliente che salva la
+  // vetrina non deve ritrovarsi il login dell'admin.
+  if (/(^|[#&])admin\b/i.test(location.hash)) {
+    [['link', { rel: 'manifest', href: 'manifest.webmanifest' }],
+     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
+     ['meta', { name: 'mobile-web-app-capable', content: 'yes' }],
+     ['meta', { name: 'apple-mobile-web-app-title', content: 'Sunny Admin' }],
+     ['meta', { name: 'theme-color', content: '#24244c' }]
+    ].forEach(([tag, attrs]) => { const el = document.createElement(tag); Object.assign(el, attrs); document.head.appendChild(el); });
+  }
+</script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -29,6 +42,29 @@
     a:hover { color: var(--color-brand-red); }
     @media print {
       body.printing-order .no-print-on-order { display: none !important; }
+    }
+    /* Telefono (si decide dalla larghezza, non dal dispositivo): ogni riga diventa una scheda. */
+    @media (max-width: 600px) {
+      .grid4 { grid-template-columns: 1fr 1fr !important; }
+      .hide-phone { display: none; }
+      .nav { gap: 8px; }
+      .nav a { white-space: nowrap; }
+      .nav .seg { flex-wrap: nowrap; }
+      .nav .brand-script { font-size: 24px; }
+      .head-wrap { flex-wrap: wrap; gap: 8px; }
+      .table.stack thead { display: none; }
+      .table.stack, .table.stack tbody, .table.stack tr, .table.stack td { display: block; }
+      .table.stack tr { border: 1px solid var(--color-neutral-200); border-radius: 12px; padding: 8px 14px; margin-bottom: 10px; background: var(--color-surface); }
+      .table.stack tbody tr:hover { background: var(--color-surface); }
+      .table.stack td { border: 0; padding: 4px 0; max-width: none !important; white-space: normal !important; }
+      .table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--color-neutral-500); }
+      .table.stack td.actions, .table.stack td.actions > span { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+      .table.stack .btn { min-height: 44px; }
+      .table.stack select { width: 100%; min-width: 0 !important; min-height: 44px; }
+      .table.stack.items td { display: inline; padding: 0 6px 0 0; }
+      .table.stack.items td:first-child { display: block; font-weight: 600; }
+      .table.stack.items tr { padding: 8px 10px; }
+      .table.stack.items td[data-label]::before { display: inline; margin-right: 3px; }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -59,7 +95,7 @@
       </span>
     </sc-if>
     <sc-if value="{{ isAdminView }}" hint-placeholder-val="{{ false }}">
-      <a href="{{ vetrinaUrl }}" target="_blank" rel="noopener">Vedi la vetrina ↗</a>
+      <a href="{{ vetrinaUrl }}" target="_blank" rel="noopener"><span class="hide-phone">Vedi la </span>vetrina ↗</a>
     </sc-if>
     <div class="seg" style="margin-left:var(--space-2);">
       <sc-for list="{{ langOptions }}" as="lo" hint-placeholder-count="2">
@@ -461,7 +497,7 @@
         <button type="button" class="btn btn-ghost" onClick="{{ lockAdmin }}">Esci</button>
       </div>
 
-      <div class="no-print-on-order" style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin:var(--space-4) 0;">
+      <div class="no-print-on-order grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin:var(--space-4) 0;">
         <div class="card" style="gap:2px;">
           <div class="card-kicker">Ordini</div>
           <div style="font-family:var(--font-heading);font-size:28px;line-height:1;">{{ summaryOrderCount }}</div>
@@ -501,7 +537,7 @@
         <div>
           <h3 style="margin-top:0;">Richieste di informazioni</h3>
           <p class="text-muted" style="margin-top:-6px;">Chi visita la vetrina non può ordinare: può solo scriverti. Accettando parte l'invito con il link al preordine, valido {{ inviteDays }} giorni e intestato alla sua email — è la tua autorizzazione che apre la trattativa, e resta scritta. <strong>L'evento lo scegli qui</strong>: l'ordine che nascerà da questo invito finirà lì dentro, senza che tu debba smistarlo dopo.</p>
-          <div class="card" style="padding:var(--space-4);margin-bottom:var(--space-4);display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:flex-end;">
+          <div class="card" style="padding:var(--space-4);margin-bottom:var(--space-4);display:flex;flex-direction:row;flex-wrap:wrap;gap:var(--space-4);align-items:flex-end;">
             <div class="field" style="margin:0;">
               <label for="autoinv">Invito automatico</label>
               <select id="autoinv" class="input" style="min-width:200px;" value="{{ autoInviteValue }}" onChange="{{ onAutoInvite }}">
@@ -516,18 +552,18 @@
             </div>
             <div class="text-muted" style="font-size:11px;flex:1 1 260px;">{{ autoInviteHint }}</div>
           </div>
-          <table class="table">
+          <table class="table stack">
             <thead><tr><th>Quando</th><th>Chi</th><th>Messaggio</th><th>Stato</th><th>Evento e risposta</th></tr></thead>
             <tbody>
               <sc-for list="{{ inquiryRows }}" as="q" hint-placeholder-count="3">
                 <tr>
-                  <td style="white-space:nowrap;">{{ q.dateLabel }}<div class="text-muted" style="font-size:11px;">{{ q.langLabel }}</div></td>
-                  <td>{{ q.name }}<div class="text-muted" style="font-size:11px;">{{ q.email }}</div></td>
-                  <td style="max-width:280px;white-space:pre-wrap;">{{ q.message }}</td>
-                  <td style="{{ q.statusStyle }}">{{ q.statusLabel }}</td>
-                  <td style="white-space:nowrap;">
+                  <td data-label="Quando" style="white-space:nowrap;">{{ q.dateLabel }}<div class="text-muted" style="font-size:11px;">{{ q.langLabel }}</div></td>
+                  <td data-label="Chi">{{ q.name }}<div class="text-muted" style="font-size:11px;">{{ q.email }}</div></td>
+                  <td data-label="Messaggio" style="max-width:280px;white-space:pre-wrap;">{{ q.message }}</td>
+                  <td data-label="Stato" style="{{ q.statusStyle }}">{{ q.statusLabel }}</td>
+                  <td class="actions" style="white-space:nowrap;">
                     <sc-if value="{{ q.isNew }}" hint-placeholder-val="{{ true }}">
-                      <span style="display:flex;align-items:center;gap:6px;">
+                      <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <select class="input" style="min-width:150px;font-size:13px;" value="{{ q.eventId }}" onChange="{{ q.onEvent }}">
                           <sc-for list="{{ eventChoices }}" as="ec" hint-placeholder-count="2">
                             <option value="{{ ec.id }}">{{ ec.label }}</option>
@@ -550,7 +586,7 @@
 
       <sc-if value="{{ isTabOrdini }}" hint-placeholder-val="{{ true }}">
         <div>
-        <div class="no-print-on-order" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-3);margin-bottom:var(--space-4);">
+        <div class="no-print-on-order grid4" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-3);margin-bottom:var(--space-4);">
           <sc-for list="{{ visitBoxes }}" as="v" hint-placeholder-count="4">
             <div class="card" style="padding:var(--space-3) var(--space-4);">
               <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;">{{ v.label }}</div>
@@ -566,16 +602,16 @@
             <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
           </sc-for>
         </div>
-        <table class="table no-print-on-order">
+        <table class="table stack no-print-on-order">
           <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Evento</th><th></th></tr></thead>
           <tbody>
             <sc-for list="{{ adminOrders }}" as="o" hint-placeholder-count="3">
               <tr>
-                <td>{{ o.code }}</td>
-                <td>{{ o.customer.name }} {{ o.customer.surname }}</td>
-                <td>{{ o.dateLabel }}</td>
-                <td>€ {{ o.totalLabel }}</td>
-                <td style="{{ o.statusStyle }}">{{ o.statusLabel }}</td>
+                <td data-label="Codice">{{ o.code }}</td>
+                <td data-label="Cliente">{{ o.customer.name }} {{ o.customer.surname }}</td>
+                <td data-label="Data">{{ o.dateLabel }}</td>
+                <td data-label="Totale">€ {{ o.totalLabel }}</td>
+                <td data-label="Pagamento" style="{{ o.statusStyle }}">{{ o.statusLabel }}</td>
                 <td>
                   <sc-if value="{{ hasSeveralEvents }}" hint-placeholder-val="{{ true }}">
                     <select class="input" style="min-width:150px;font-size:13px;" value="{{ o.eventId }}" onChange="{{ o.moveTo }}">
@@ -585,7 +621,7 @@
                     </select>
                   </sc-if>
                 </td>
-                <td style="white-space:nowrap;">
+                <td class="actions" style="white-space:nowrap;">
                   <button type="button" class="btn btn-ghost" onClick="{{ o.viewDetail }}">Dettagli</button>
                   <sc-if value="{{ o.isNotPaid }}" hint-placeholder-val="{{ true }}">
                     <button type="button" class="btn btn-ghost" onClick="{{ o.markPaid }}">Segna pagato</button>
@@ -598,8 +634,8 @@
         </table>
 
         <sc-if value="{{ selectedOrder }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:var(--space-6);">
-            <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
+          <div id="order-detail" style="margin-top:var(--space-6);scroll-margin-top:80px;">
+            <div class="no-print-on-order head-wrap" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2);">
               <h3 style="margin:0;">Scheda preparazione — {{ selectedOrder.code }}</h3>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
                 <button type="button" class="btn btn-ghost" onClick="{{ resendQuote }}" disabled="{{ resendBusy }}">{{ resendLabel }}</button>
@@ -617,12 +653,12 @@
               <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
               <div class="card-kicker">Ordine {{ selectedOrder.code }} — {{ selectedOrder.dateLabel }}</div>
               <div class="card-title">{{ selectedOrder.customer.name }} {{ selectedOrder.customer.surname }}</div>
-              <p class="card-body" style="margin-bottom:var(--space-3);">{{ selectedOrder.customer.email }} · {{ selectedOrder.customer.phone }}</p>
-              <table class="table">
+              <p class="card-body" style="margin-bottom:var(--space-3);"><a href="mailto:{{ selectedOrder.customer.email }}">{{ selectedOrder.customer.email }}</a> · <a href="tel:{{ selectedOrder.customer.phone }}">{{ selectedOrder.customer.phone }}</a></p>
+              <table class="table stack items">
                 <thead><tr><th>Articolo</th><th>Taglia</th><th>Quantità</th><th>Prezzo</th><th>Totale</th></tr></thead>
                 <tbody>
                   <sc-for list="{{ selectedOrderItems }}" as="item" hint-placeholder-count="2">
-                    <tr><td>{{ item.name }}</td><td>{{ item.sizeLabel }}</td><td>{{ item.qty }}</td><td>€ {{ item.priceLabel }}</td><td>€ {{ item.lineTotalLabel }}</td></tr>
+                    <tr><td>{{ item.name }}</td><td>{{ item.sizeLabel }}</td><td data-label="Q.tà">{{ item.qty }}</td><td data-label="Prezzo">€ {{ item.priceLabel }}</td><td data-label="Totale">€ {{ item.lineTotalLabel }}</td></tr>
                   </sc-for>
                 </tbody>
               </table>
@@ -2989,7 +3025,7 @@ class Component extends DCLogic {
   async moveOrderToEvent(code, eventId) {
     try {
       const { error } = await window.__sb.from('orders').update({ event_id: eventId }).eq('code', code);
-      if (error) throw error;
+      if (error) { this.orderSaveFailed(error); this.setState({ orders: this.state.orders.slice() }); return; }
     } catch (e) {}
     const orders = this.state.orders.map(o => o.code === code ? { ...o, eventId } : o);
     this.saveOrders(orders);
@@ -3020,12 +3056,19 @@ class Component extends DCLogic {
     this.setState(st => ({ bulkStock: { ...st.bulkStock, [id]: '' } }));
   }
 
+  // Il database ha risposto di no (rete debole, accesso scaduto): niente
+  // cambio locale, altrimenti lo schermo mostra ciò che il database non ha.
+  // Solo se il database manca del tutto (eccezione, prototipo) resta il locale.
+  orderSaveFailed(error) {
+    window.alert('Il cambiamento non è stato salvato: ' + ((error && error.message) || error) +
+      '. Controlla la connessione e riprova; se continua, esci e rientra.');
+  }
   async markPaid(code) {
     const paidAt = new Date().toISOString();
     try {
       const { error } = await window.__sb.from('orders')
         .update({ payment_status: 'paid', paid_at: paidAt }).eq('code', code);
-      if (error) throw error;
+      if (error) return this.orderSaveFailed(error);
     } catch (e) {}
     const orders = this.state.orders.map(o => o.code === code ? { ...o, paymentStatus: 'paid', paidAt } : o);
     this.saveOrders(orders);
@@ -3037,7 +3080,7 @@ class Component extends DCLogic {
     if (!window.confirm(`Annullare l'ordine ${code}? Le quantità tornano disponibili.`)) return;
     try {
       const { error } = await window.__sb.rpc('cancel_order', { p_code: code });
-      if (error) throw error;
+      if (error) return this.orderSaveFailed(error);
       await this.loadStockFromDb();
       await this.loadOrdersFromDb();
       this.setState({ selectedOrderCode: null });
@@ -3766,7 +3809,7 @@ class Component extends DCLogic {
           isNotPaid: (o.paymentStatus || 'pending') !== 'paid',
           eventId: o.eventId || '',
           moveTo: (e) => this.moveOrderToEvent(o.code, e.target.value),
-          viewDetail: () => this.setState({ selectedOrderCode: o.code }),
+          viewDetail: () => { this.setState({ selectedOrderCode: o.code }); setTimeout(() => { const el = document.getElementById('order-detail'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 50); },
           markPaid: () => this.markPaid(o.code),
           cancel: () => this.cancelOrder(o.code),
         })),
