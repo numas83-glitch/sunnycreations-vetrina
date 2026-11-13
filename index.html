@@ -1248,6 +1248,25 @@
             <div style="font-size:13px;margin-top:6px;{{ passMsgStyle }}">{{ passMsg }}</div>
           </sc-if>
 
+          <h4 style="margin-top:var(--space-6);">Notifiche su questo dispositivo</h4>
+          <p class="text-muted" style="margin-top:-6px;">Un avviso sul telefono a ogni nuovo ordine e a ogni nuova richiesta di informazioni. Si attiva su ogni dispositivo separatamente; le mail continuano ad arrivare. L'avviso dice solo il codice e il totale, non il nome del cliente.</p>
+          <sc-if value="{{ pushSupported }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <sc-if value="{{ pushOff }}" hint-placeholder-val="{{ true }}">
+                <button type="button" class="btn btn-primary" onClick="{{ enablePush }}" disabled="{{ pushBusy }}">Attiva le notifiche</button>
+              </sc-if>
+              <sc-if value="{{ pushOn }}" hint-placeholder-val="{{ false }}">
+                <button type="button" class="btn btn-ghost" onClick="{{ disablePush }}" disabled="{{ pushBusy }}">Spegni le notifiche su questo dispositivo</button>
+              </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ pushUnsupported }}" hint-placeholder-val="{{ false }}">
+            <div class="text-muted" style="font-size:13px;">{{ pushUnsupportedText }}</div>
+          </sc-if>
+          <sc-if value="{{ pushMsg }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;margin-top:6px;">{{ pushMsg }}</div>
+          </sc-if>
+
           <h3 style="margin-top:var(--space-8);">Eventi</h3>
           <p class="text-muted" style="margin-top:-6px;">Ogni ordine appartiene a un evento. <strong>Più eventi possono essere in corso insieme</strong>: in vetrina compaiono tutti quelli aperti, e quando accetti una richiesta scegli in quale va l'ordine. Finita una manifestazione premi <em>Chiudi</em>: non si cancella niente, cambiando voce nel menù in alto ritrovi tutto. Il <strong>logo</strong> che carichi qui compare in testata finché l'evento è in corso (se gli eventi aperti sono più d'uno, in testata va il logo del marchio e ognuno mostra il suo accanto al nome).</p>
 
@@ -1485,6 +1504,7 @@ class Component extends DCLogic {
     adminEmail: '',
     adminPassInput: '',
     newPass1: '', newPass2: '', passBusy: false, passMsg: '', passOk: false,
+    pushOn: false, pushBusy: false, pushMsg: '',
     adminSignedEmail: '',
     adminPassError: '',
     mfaStage: '',          // '' = email e password, 'code' = codice a sei cifre
@@ -1689,6 +1709,12 @@ class Component extends DCLogic {
         if (e.key === 'ArrowRight') this.zoomStep(1);
         else if (e.key === 'ArrowLeft') this.zoomStep(-1);
         else if (e.key === 'Escape') this.closeZoom();
+      });
+    } catch (e) {}
+    // Tornando sull'app (anche toccando una notifica) l'admin rilegge ordini e richieste.
+    try {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && this.state.adminUnlocked) { this.loadInquiriesFromDb(); this.loadOrdersFromDb(); }
       });
     } catch (e) {}
     // Su preordini.* si prenota, ovunque altro si guarda e basta. Un file
@@ -1957,6 +1983,7 @@ class Component extends DCLogic {
 
   async loadAdminData() {
     this.markAdminDevice();
+    this.checkPush();
     this.loadSignedEmail();
     await this.loadMfaFactors();
     await this.loadVisitsFromDb();
@@ -2513,6 +2540,57 @@ class Component extends DCLogic {
     if (!window.confirm('Togliere l\'autenticatore? Da quel momento per entrare basterà la password.')) return;
     try { await window.__sb.auth.mfa.unenroll({ factorId }); } catch (e) {}
     await this.loadMfaFactors();
+  }
+
+  // Notifiche push: ognuno iscrive il proprio dispositivo. Su iPhone esistono
+  // solo nell'app aggiunta alla schermata Home (iOS 16.4+), non in Safari.
+  pushSupport() {
+    try { return !!(navigator.serviceWorker && window.PushManager && window.Notification); } catch (e) { return false; }
+  }
+  async checkPush() {
+    if (!this.pushSupport()) return;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      this.setState({ pushOn: !!(reg && await reg.pushManager.getSubscription()) });
+    } catch (e) {}
+  }
+  async enablePush() {
+    this.setState({ pushBusy: true, pushMsg: '' });
+    try {
+      // Per primo: il permesso va chiesto dentro il tocco sul pulsante.
+      const perm = await window.Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('permesso negato. Riattivalo nelle impostazioni del telefono, alla voce Notifiche di questa app');
+      const reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      // Chiave pubblica VAPID (la privata è solo nei secret di Supabase).
+      const VAPID_PUBLIC_KEY = 'BLBcClw0kRVVtg6v_IYt2igdB6MFivRK3vKY2uuGcsRZkilY_R1q5NKdAx1A0FgwRZtQlELgInXnKW5u_G3MZrE';
+      const b64 = VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/');
+      const key = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      const j = sub.toJSON();
+      const { error } = await window.__sb.from('push_subscriptions').upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+      // Non salvata = nessuno la userebbe: meglio spenta che finta accesa.
+      if (error) { await sub.unsubscribe(); throw error; }
+      this.setState({ pushOn: true, pushMsg: 'Notifiche attive su questo dispositivo.' });
+    } catch (e) {
+      this.setState({ pushOn: false, pushMsg: 'Notifiche non attivate: ' + ((e && e.message) || e) });
+    }
+    this.setState({ pushBusy: false });
+  }
+  async disablePush() {
+    this.setState({ pushBusy: true, pushMsg: '' });
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) {
+        await window.__sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        await sub.unsubscribe();
+      }
+      this.setState({ pushOn: false, pushMsg: 'Notifiche spente su questo dispositivo.' });
+    } catch (e) {
+      this.setState({ pushMsg: 'Non riuscito: ' + ((e && e.message) || e) });
+    }
+    this.setState({ pushBusy: false });
   }
 
   // Ognuno cambia la propria: Supabase aggiorna l'utente della sessione aperta.
@@ -3582,6 +3660,17 @@ class Component extends DCLogic {
       changePassword: () => this.changePassword(),
       passBusy: this.state.passBusy,
       passMsg: this.state.passMsg,
+      pushSupported: this.pushSupport(),
+      pushUnsupported: !this.pushSupport(),
+      pushUnsupportedText: /iPhone|iPad/.test(navigator.userAgent || '')
+        ? "Su iPhone le notifiche arrivano solo dall'app sulla schermata Home: in Safari premi Condividi → «Aggiungi alla schermata Home», poi apri l'admin da quell'icona e torna qui."
+        : 'Questo browser non supporta le notifiche push.',
+      pushOn: this.state.pushOn,
+      pushOff: !this.state.pushOn,
+      pushBusy: this.state.pushBusy,
+      pushMsg: this.state.pushMsg,
+      enablePush: () => this.enablePush(),
+      disablePush: () => this.disablePush(),
       passMsgStyle: this.state.passOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);',
       adminSignedEmail: this.state.adminSignedEmail || 'questo account',
       adminButtonLabel: this.state.adminBusy ? 'Accesso in corso…' : 'Accedi',
