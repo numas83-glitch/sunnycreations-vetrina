@@ -603,15 +603,21 @@
           </sc-for>
         </div>
         <table class="table stack no-print-on-order">
-          <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Evento</th><th></th></tr></thead>
+          <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Pronto</th><th>Evento</th><th></th></tr></thead>
           <tbody>
             <sc-for list="{{ adminOrders }}" as="o" hint-placeholder-count="3">
               <tr>
                 <td data-label="Codice">{{ o.code }}</td>
                 <td data-label="Cliente">{{ o.customer.name }} {{ o.customer.surname }}</td>
                 <td data-label="Data">{{ o.dateLabel }}</td>
-                <td data-label="Totale">€ {{ o.totalLabel }}</td>
+                <td data-label="Totale" style="white-space:nowrap;">€ {{ o.totalLabel }}<sc-if value="{{ o.hasDiscount }}" hint-placeholder-val="{{ false }}"><div class="text-muted" style="font-size:11px;">{{ o.discountNote }}</div></sc-if></td>
                 <td data-label="Pagamento" style="{{ o.statusStyle }}">{{ o.statusLabel }}</td>
+                <td data-label="Pronto">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked="{{ o.isReady }}" onChange="{{ o.toggleReady }}" style="width:17px;height:17px;accent-color:var(--color-brand-green);"> <span style="font-size:12px;">{{ o.readyLabel }}</span></label>
+                  <sc-if value="{{ o.canMailReady }}" hint-placeholder-val="{{ false }}">
+                    <button type="button" class="btn btn-ghost" style="font-size:12px;padding:2px 6px;" onClick="{{ o.mailReady }}">Manda avviso</button>
+                  </sc-if>
+                </td>
                 <td>
                   <sc-if value="{{ hasSeveralEvents }}" hint-placeholder-val="{{ true }}">
                     <select class="input" style="min-width:150px;font-size:13px;" value="{{ o.eventId }}" onChange="{{ o.moveTo }}">
@@ -666,6 +672,13 @@
                 <span>Totale</span><span>€ {{ selectedOrder.totalLabel }}</span>
               </div>
             </div>
+            <div class="no-print-on-order card" style="margin-top:var(--space-3);max-width:420px;">
+              <div class="field" style="margin:0;">
+                <label for="order-discount">Sconto riservato (€) — solo contabilità, il cliente non lo vede</label>
+                <input id="order-discount" class="input" type="number" min="0" step="0.5" style="max-width:120px;" value="{{ selectedDiscount }}" onChange="{{ onSelectedDiscount }}">
+                <div class="text-muted" style="font-size:12px;margin-top:4px;">Incasso reale: € {{ selectedNetLabel }}. Il cliente continua a vedere e ricevere il totale pieno.</div>
+              </div>
+            </div>
           </div>
         </sc-if>
         </div>
@@ -673,11 +686,67 @@
 
       <sc-if value="{{ isTabMagazzino }}" hint-placeholder-val="{{ false }}">
         <div>
-          <h3 class="no-print-on-order" style="margin-top:0;">Giacenze</h3>
+          <h3 class="no-print-on-order" style="margin-top:0;">Capi vergini</h3>
+          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Il materiale da personalizzare (es. «Maglia bianca», taglia XL). Lo stesso capo può diventare articoli diversi: con <strong>Produci</strong> i pezzi passano dai vergini all'articolo in vendita. <strong>Scarta</strong> toglie i pezzi difettosi, qui o nelle giacenze più sotto. Ogni movimento finisce nel registro in fondo.</p>
+          <sc-if value="{{ blankMsg }}" hint-placeholder-val="{{ false }}">
+            <div class="no-print-on-order" style="{{ blankMsgStyle }}">{{ blankMsg }}</div>
+          </sc-if>
+          <sc-for list="{{ blankGroups }}" as="bg" hint-placeholder-count="2">
+            <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+              <div class="card-title">{{ bg.name }}</div>
+              <table class="table">
+                <thead><tr><th>Taglia</th><th>Vergini</th><th>Carica</th><th>Scarta</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ bg.rows }}" as="br" hint-placeholder-count="4">
+                    <tr>
+                      <td>{{ br.sizeLabel }}</td>
+                      <td style="{{ br.qtyStyle }}">{{ br.qty }}</td>
+                      <td style="white-space:nowrap;"><input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="+" value="{{ br.loadValue }}" onChange="{{ br.onLoadIn }}"> <button type="button" class="btn btn-secondary" onClick="{{ br.load }}">Carica</button></td>
+                      <td style="white-space:nowrap;"><input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="−" value="{{ br.scrapValue }}" onChange="{{ br.onScrapIn }}"> <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ br.scrap }}">Scarta</button></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-for>
+          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+            <div class="card-title">Nuovo capo vergine</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input class="input" type="text" style="max-width:220px;" placeholder="es. Maglia bianca" value="{{ newBlankName }}" onChange="{{ onNewBlankName }}">
+              <input class="input" type="text" style="max-width:220px;" placeholder="taglie: S, M, L, XL (vuoto = unica)" value="{{ newBlankSizes }}" onChange="{{ onNewBlankSizes }}">
+              <button type="button" class="btn btn-secondary" onClick="{{ createBlank }}">Crea</button>
+            </div>
+          </div>
+          <sc-if value="{{ hasBlanks }}" hint-placeholder-val="{{ true }}">
+            <div class="card no-print-on-order" style="margin-bottom:var(--space-6);">
+              <div class="card-title">Produci</div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Toglie i pezzi dai vergini e li aggiunge all'articolo in vendita, in un colpo solo.</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select class="input" style="max-width:240px;" value="{{ produceProduct }}" onChange="{{ onProduceProduct }}">
+                  <sc-for list="{{ produceProducts }}" as="pp" hint-placeholder-count="3"><option value="{{ pp.id }}">{{ pp.label }}</option></sc-for>
+                </select>
+                <sc-if value="{{ produceHasSizes }}" hint-placeholder-val="{{ true }}">
+                  <select class="input" style="max-width:110px;" value="{{ produceSize }}" onChange="{{ onProduceSize }}">
+                    <sc-for list="{{ produceSizes }}" as="ps" hint-placeholder-count="3"><option value="{{ ps.id }}">{{ ps.label }}</option></sc-for>
+                  </select>
+                </sc-if>
+                <span class="text-muted" style="font-size:12px;">dal vergine</span>
+                <select class="input" style="max-width:200px;" value="{{ produceBlank }}" onChange="{{ onProduceBlank }}">
+                  <sc-for list="{{ produceBlanks }}" as="pb" hint-placeholder-count="2"><option value="{{ pb.id }}">{{ pb.label }}</option></sc-for>
+                </select>
+                <select class="input" style="max-width:110px;" value="{{ produceBlankSize }}" onChange="{{ onProduceBlankSize }}">
+                  <sc-for list="{{ produceBlankSizes }}" as="pbs" hint-placeholder-count="3"><option value="{{ pbs.id }}">{{ pbs.label }}</option></sc-for>
+                </select>
+                <input class="input" type="number" min="1" step="1" style="max-width:90px;" placeholder="pezzi" value="{{ produceQty }}" onChange="{{ onProduceQty }}">
+                <button type="button" class="btn btn-primary" onClick="{{ doProduce }}">Produci</button>
+              </div>
+            </div>
+          </sc-if>
+          <h3 class="no-print-on-order">Giacenze</h3>
           <sc-if value="{{ stockMsg }}" hint-placeholder-val="{{ false }}">
             <div class="no-print-on-order" style="color:var(--color-brand-red);font-size:13px;margin-bottom:var(--space-3);">{{ stockMsg }}</div>
           </sc-if>
-          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile. I totali ordinati per articolo e taglia stanno nella scheda <strong>Produzione</strong>.</p>
+          <p class="no-print-on-order text-muted" style="margin-top:-6px;">Quantità disponibile per ogni taglia. Il campo "+" aggiunge le unità appena prodotte senza sovrascrivere quelle già a magazzino. Un articolo senza giacenze impostate è sempre disponibile. Un numero <strong>negativo</strong> sono pezzi già ordinati e ancora da produrre: carica i pezzi pronti con <strong>Aggiungi</strong> o <strong>Produci</strong> (non riscrivere il numero) e gli ordini si scalano da soli. I totali ordinati per articolo e taglia stanno nella scheda <strong>Produzione</strong>.</p>
           <sc-if value="{{ showAdminFilters }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:var(--space-3);">
               <sc-if value="{{ hasSeveralCollections }}" hint-placeholder-val="{{ true }}">
@@ -715,7 +784,7 @@
                 <button type="button" class="btn btn-ghost" onClick="{{ g.addAll }}">Aggiungi</button>
               </div>
               <table class="table">
-                <thead><tr><th>{{ g.variantName }}</th><th>Disponibili</th><th>Stato</th><th>Aggiungi</th></tr></thead>
+                <thead><tr><th>{{ g.variantName }}</th><th>Disponibili</th><th>Stato</th><th>Aggiungi</th><th>Scarta</th></tr></thead>
                 <tbody>
                   <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="6">
                     <tr>
@@ -726,12 +795,27 @@
                         <input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="+" value="{{ r.restockValue }}" onChange="{{ r.onRestock }}">
                         <button type="button" class="btn btn-secondary" onClick="{{ r.add }}">Aggiungi</button>
                       </td>
+                      <td style="white-space:nowrap;"><input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="−" value="{{ r.scrapValue }}" onChange="{{ r.onScrapIn }}"> <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ r.scrap }}">Scarta</button></td>
                     </tr>
                   </sc-for>
                 </tbody>
               </table>
             </div>
           </sc-for>
+          <h3 class="no-print-on-order">Registro movimenti</h3>
+          <sc-if value="{{ noMoves }}" hint-placeholder-val="{{ false }}">
+            <p class="text-muted no-print-on-order">Ancora nessun movimento: compaiono qui carichi, produzioni e scarti (gli ultimi 50).</p>
+          </sc-if>
+          <sc-if value="{{ hasMoves }}" hint-placeholder-val="{{ true }}">
+            <table class="table stack no-print-on-order">
+              <thead><tr><th>Quando</th><th>Movimento</th><th>Cosa</th><th>Pezzi</th><th>Motivo</th><th>Chi</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ moveRows }}" as="mv" hint-placeholder-count="3">
+                  <tr><td data-label="Quando">{{ mv.when }}</td><td data-label="Movimento" style="{{ mv.kindStyle }}">{{ mv.kind }}</td><td data-label="Cosa">{{ mv.what }}</td><td data-label="Pezzi">{{ mv.qty }}</td><td data-label="Motivo">{{ mv.note }}</td><td data-label="Chi">{{ mv.who }}</td></tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -1331,6 +1415,7 @@
         <div class="no-print-on-order card blueprint elev-sm" style="margin-top:var(--space-4);padding:var(--space-4);max-width:420px;">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Ricavo totale</span><strong>€ {{ adminRevenueLabel }}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Sconti riservati</span><strong>− € {{ discountTotalLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Costi materiali + altri</span><strong>€ {{ totalCostLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:4px;border-top:1px solid var(--color-divider);font-size:18px;"><span>A copertura evento / beneficenza</span><strong style="color:var(--color-brand-green);">€ {{ surplusLabel }}</strong></div>
         </div>
@@ -1500,6 +1585,12 @@ class Component extends DCLogic {
     productBusy: false,
     restock: {},
     stockMsg: '',        // avviso rosso del Magazzino quando un salvataggio non passa
+    blanks: [],          // righe di blank_stock: { name, size, qty } (solo admin)
+    moves: [],           // ultime righe di stock_moves
+    blankIn: {},         // campi "Carica"/"Scarta": { 'c::nome::taglia' | 's::vergine|finito::chiave::taglia': '3' }
+    blankMsg: '', blankMsgOk: true,
+    newBlankName: '', newBlankSizes: '',
+    produce: { product: '', size: '', blank: '', blankSize: '', qty: '' },
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
     adminPassInput: '',
@@ -1991,6 +2082,7 @@ class Component extends DCLogic {
     await this.loadSettingsFromDb();
     await this.loadEventsFromDb();
     await this.loadOrdersFromDb();
+    await this.loadBlanksFromDb();
   }
   async loadOrdersFromDb() {
     try {
@@ -2005,6 +2097,9 @@ class Component extends DCLogic {
             paymentMethod: o.payment_method || null,
             paymentDeclaredAt: o.payment_declared_at || null,
             paidAt: o.paid_at || null,
+            readyAt: o.ready_at || null,
+            readyMailedAt: o.ready_mailed_at || null,
+            lang: o.lang || 'it',
           })) });
       }
     } catch (e) {}
@@ -2662,7 +2757,8 @@ class Component extends DCLogic {
     const next = (current === Infinity ? 0 : current) + delta;
     this.setState(s => {
       const stock = { ...s.stock };
-      stock[id] = { ...(stock[id] || {}), [size || '']: Math.max(0, next) };
+      // come add_stock sul server: non sotto zero, ma i pezzi dovuti agli ordini (negativi) restano
+      stock[id] = { ...(stock[id] || {}), [size || '']: Math.max(Math.min(current === Infinity ? 0 : current, 0), next) };
       return { stock, restock: { ...s.restock, [key]: '' } };
     });
     try {
@@ -3141,6 +3237,132 @@ class Component extends DCLogic {
     window.alert('Il cambiamento non è stato salvato: ' + ((error && error.message) || error) +
       '. Controlla la connessione e riprova; se continua, esci e rientra.');
   }
+  // ── Ordine pronto e avviso al cliente ─────────────────────────────────
+  // La spunta si salva sempre; la mail parte solo se l'admin conferma
+  // (a volte la consegna è a mano e l'avviso non serve).
+  async setReady(code, on) {
+    const readyAt = on ? new Date().toISOString() : null;
+    try {
+      const { error } = await window.__sb.from('orders').update({ ready_at: readyAt }).eq('code', code);
+      if (error) return this.orderSaveFailed(error);
+    } catch (e) { return this.orderSaveFailed(e); }
+    this.setState(s => ({ orders: s.orders.map(o => o.code === code ? { ...o, readyAt } : o) }));
+    if (!on) return;
+    const o = this.state.orders.find(x => x.code === code) || {};
+    const c = o.customer || {};
+    const unpaid = (o.paymentStatus || 'pending') === 'pending';
+    if (!window.confirm(`Ordine ${code} pronto.\n\nMandare la mail a ${c.name || ''} ${c.surname || ''} (${c.email || ''}) per avvisare che è pronto` +
+      (unpaid ? ' e ricordare di completare il pagamento' : '') + `?\nLingua della mail: ${o.lang === 'en' ? 'inglese' : 'italiano'}.`)) return;
+    await this.sendReadyMail(code);
+  }
+  async sendReadyMail(code) {
+    try {
+      const { data: sd } = await window.__sb.auth.getSession();
+      const tok = sd && sd.session && sd.session.access_token;
+      if (!tok) throw new Error('sessione scaduta: esci e rientra');
+      const { data, error } = await window.__sb.functions.invoke('order-ready', {
+        body: { code }, headers: { Authorization: 'Bearer ' + tok } });
+      if (error) {
+        let why = error.message;
+        try { const b = await error.context.json(); if (b && b.error) why = b.error; } catch (e2) {}
+        throw new Error(why);
+      }
+      if (!data || !data.ok) throw new Error((data && data.error) || 'risposta vuota');
+      this.setState(s => ({ orders: s.orders.map(o => o.code === code ? { ...o, readyMailedAt: data.mailedAt } : o) }));
+      return true;
+    } catch (e) {
+      window.alert('Avviso NON inviato: ' + ((e && e.message) || e) + '. La spunta «pronto» è salvata: puoi riprovare con «Manda avviso».');
+      return false;
+    }
+  }
+  // ── Sconto riservato ──────────────────────────────────────────────────
+  // Sta in settings ('discount:<codice>', chiave mai in whitelist pubblica)
+  // e non sulla riga dell'ordine, che il cliente rilegge per intero.
+  discountOf(code) { return Math.max(0, Number(this.state.settings['discount:' + code]) || 0); }
+  netTotal(o) { return Math.max(0, o.total - this.discountOf(o.code)); }
+  discountTotal() { return this.activeOrders().reduce((s, o) => s + Math.min(o.total, this.discountOf(o.code)), 0); }
+  async setDiscount(code, value) {
+    const o = this.state.orders.find(x => x.code === code);
+    if (!o) return;
+    const n = Math.round(Math.min(o.total, Math.max(0, Number(String(value).replace(',', '.')) || 0)) * 100) / 100;
+    if (!(await this.saveSettingNow('discount:' + code, String(n)))) {
+      window.alert('Sconto NON salvato sul server. Controlla la connessione; se continua, esci e rientra.');
+    }
+  }
+  // ── Capi vergini, produzione, scarti ──────────────────────────────────
+  async loadBlanksFromDb() {
+    try {
+      const [b, m] = await Promise.all([
+        window.__sb.from('blank_stock').select('name, size, qty').order('name').order('size'),
+        window.__sb.from('stock_moves').select('*').order('at', { ascending: false }).limit(50),
+      ]);
+      if (!b.error && Array.isArray(b.data)) this.setState({ blanks: b.data.map(r => ({ name: r.name, size: r.size || '', qty: Number(r.qty) })) });
+      if (!m.error && Array.isArray(m.data)) this.setState({ moves: m.data });
+    } catch (e) {}
+  }
+  blankNames() { return [...new Set(this.state.blanks.map(b => b.name))]; }
+  blankSizesOf(name) { return this.state.blanks.filter(b => b.name === name).map(b => b.size); }
+  setBlankIn(key, v) { this.setState(s => ({ blankIn: { ...s.blankIn, [key]: v } })); }
+  blankInQty(key) { return Math.floor(Number(this.state.blankIn[key]) || 0); }
+  async stockRpc(fn, args, okMsg) {
+    let ok = true;
+    try {
+      const { error } = await window.__sb.rpc(fn, args);
+      if (error) throw error;
+      this.setState({ blankMsg: okMsg, blankMsgOk: true });
+    } catch (e) {
+      ok = false;
+      const m = String((e && e.message) || e);
+      const why = /insufficient/.test(m) ? 'non ci sono abbastanza pezzi'
+        : (/non_autorizzato|JWT/i.test(m) ? 'sessione scaduta, esci e rientra' : m);
+      this.setState({ blankMsg: 'NON salvato: ' + why + '.', blankMsgOk: false });
+    }
+    await Promise.all([this.loadBlanksFromDb(), this.loadStockFromDb()]);
+    return ok;
+  }
+  async createBlank() {
+    const name = String(this.state.newBlankName || '').trim();
+    const sizes = String(this.state.newBlankSizes || '').split(',').map(x => x.trim()).filter(Boolean);
+    if (!name) { this.setState({ blankMsg: 'Scrivi il nome del capo vergine.', blankMsgOk: false }); return; }
+    for (const size of (sizes.length ? sizes : [''])) {
+      if (!(await this.stockRpc('blank_add', { p_name: name, p_size: size, p_qty: 0 }, `Creato «${name}»: ora carica i pezzi.`))) return;
+    }
+    this.setState({ newBlankName: '', newBlankSizes: '' });
+  }
+  async loadBlank(name, size) {
+    const key = `c::${name}::${size}`, q = this.blankInQty(key);
+    if (q <= 0) return;
+    if (await this.stockRpc('blank_add', { p_name: name, p_size: size, p_qty: q }, `Caricati ${q} × ${name} ${size}.`)) this.setBlankIn(key, '');
+  }
+  async scrapPieces(kind, id, size, label) {
+    const key = `s::${kind}::${id}::${size}`, q = this.blankInQty(key);
+    if (q <= 0) return;
+    const note = window.prompt(`Scartare ${q} × ${label}? Scrivi il motivo (facoltativo) e conferma.`, 'difettoso');
+    if (note === null) return;
+    if (await this.stockRpc('scrap_stock', { p_kind: kind, p_key: id, p_size: size, p_qty: q, p_note: note },
+      `Scartati ${q} × ${label}.`)) this.setBlankIn(key, '');
+  }
+  setProduce(patch) {
+    this.setState(s => {
+      const p = { ...s.produce, ...patch };
+      const prod = this.getCatalog().find(x => x.id === p.product);
+      const sizes = prod && prod.sizes && prod.sizes.length ? prod.sizes : [''];
+      if (!sizes.includes(p.size)) p.size = sizes[0];
+      // taglia del vergine: quella dell'articolo se il capo ce l'ha
+      const bs = s.blanks.filter(b => b.name === p.blank).map(b => b.size);
+      if ('product' in patch || 'size' in patch || 'blank' in patch) p.blankSize = bs.includes(p.size) ? p.size : (bs[0] || '');
+      return { produce: p };
+    });
+  }
+  async doProduce() {
+    const p = this.state.produce, q = Math.floor(Number(p.qty) || 0);
+    const prod = this.getCatalog().find(x => x.id === p.product);
+    if (!prod || !p.blank || q <= 0) { this.setState({ blankMsg: 'Scegli articolo, capo vergine e numero di pezzi.', blankMsgOk: false }); return; }
+    if (await this.stockRpc('produce_stock', { p_blank: p.blank, p_blank_size: p.blankSize, p_product: p.product, p_size: p.size, p_qty: q },
+      `Prodotti ${q} × ${prod.name}${p.size ? ' ' + p.size : ''}: tolti dai vergini «${p.blank}${p.blankSize ? ' ' + p.blankSize : ''}».`)) {
+      this.setState(s => ({ produce: { ...s.produce, qty: '' } }));
+    }
+  }
   async markPaid(code) {
     const paidAt = new Date().toISOString();
     try {
@@ -3474,10 +3696,10 @@ class Component extends DCLogic {
   }
   adminRevenue() { return this.activeOrders().reduce((s, o) => s + o.total, 0); }
   amountToCollect() {
-    return this.activeOrders().filter(o => o.paymentStatus !== 'paid').reduce((s, o) => s + o.total, 0);
+    return this.activeOrders().filter(o => o.paymentStatus !== 'paid').reduce((s, o) => s + this.netTotal(o), 0);
   }
   amountCollected() {
-    return this.activeOrders().filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + o.total, 0);
+    return this.activeOrders().filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + this.netTotal(o), 0);
   }
   lowStockCount() {
     let n = 0;
@@ -3533,7 +3755,8 @@ class Component extends DCLogic {
     try {
       const { error } = await window.__sb.from('settings').upsert([{ key, value }]);
       if (error) throw error;
-    } catch (e) { /* niente rete: il valore resta su questo dispositivo */ }
+      return true;
+    } catch (e) { /* niente rete: il valore resta su questo dispositivo */ return false; }
   }
   totalMaterialCost() {
     const sold = this.productQtySold();
@@ -3901,6 +4124,13 @@ class Component extends DCLogic {
           viewDetail: () => { this.setState({ selectedOrderCode: o.code }); setTimeout(() => { const el = document.getElementById('order-detail'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 50); },
           markPaid: () => this.markPaid(o.code),
           cancel: () => this.cancelOrder(o.code),
+          hasDiscount: this.discountOf(o.code) > 0,
+          discountNote: 'incasso ' + this.money(this.netTotal(o)),
+          isReady: !!o.readyAt,
+          readyLabel: o.readyAt ? (o.readyMailedAt ? 'avvisato ' + new Date(o.readyMailedAt).toLocaleDateString('it-IT') : 'pronto') : '',
+          canMailReady: !!o.readyAt && !o.readyMailedAt,
+          toggleReady: (e) => this.setReady(o.code, !!e.target.checked),
+          mailReady: () => this.sendReadyMail(o.code),
         })),
       adminTabs: [
         { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
@@ -4027,17 +4257,82 @@ class Component extends DCLogic {
             return {
               sizeLabel: size || 'Unica',
               qty,
-              statusLabel: qty <= 0 ? 'esaurito' : (qty <= 2 ? 'sotto scorta' : ''),
+              statusLabel: qty < 0 ? `esaurito · ${-qty} da produrre per ordini già ricevuti` : (qty === 0 ? 'esaurito' : (qty <= 2 ? 'sotto scorta' : '')),
               statusStyle: qty <= 2 ? 'color:var(--color-brand-red);' : '',
               onQty: (e) => this.setStock(p.id, size, e.target.value),
               restockValue: this.state.restock[`${p.id}::${size || ''}`] || '',
               onRestock: (e) => this.setRestockInput(p.id, size, e.target.value),
               add: () => this.addStock(p.id, size),
+              scrapValue: this.state.blankIn[`s::finito::${p.id}::${size}`] || '',
+              onScrapIn: (e) => this.setBlankIn(`s::finito::${p.id}::${size}`, e.target.value),
+              scrap: () => this.scrapPieces('finito', p.id, size, p.name + (size ? ' ' + size : '')),
             };
           }),
         };
       }),
       adminRevenueLabel: this.money(this.adminRevenue()),
+      blankMsg: this.state.blankMsg || '',
+      blankMsgStyle: (this.state.blankMsgOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);') + 'font-size:13px;margin-bottom:var(--space-3);',
+      blankGroups: this.blankNames().map(name => ({
+        name,
+        rows: this.state.blanks.filter(b => b.name === name).map(b => {
+          const ck = `c::${name}::${b.size}`, sk = `s::vergine::${name}::${b.size}`;
+          return {
+            sizeLabel: b.size || 'Unica',
+            qty: b.qty,
+            qtyStyle: b.qty <= 2 ? 'color:var(--color-brand-red);' : '',
+            loadValue: this.state.blankIn[ck] || '',
+            onLoadIn: (e) => this.setBlankIn(ck, e.target.value),
+            load: () => this.loadBlank(name, b.size),
+            scrapValue: this.state.blankIn[sk] || '',
+            onScrapIn: (e) => this.setBlankIn(sk, e.target.value),
+            scrap: () => this.scrapPieces('vergine', name, b.size, name + (b.size ? ' ' + b.size : '')),
+          };
+        }),
+      })),
+      hasBlanks: this.state.blanks.length > 0,
+      newBlankName: this.state.newBlankName,
+      onNewBlankName: (e) => this.setState({ newBlankName: e.target.value }),
+      newBlankSizes: this.state.newBlankSizes,
+      onNewBlankSizes: (e) => this.setState({ newBlankSizes: e.target.value }),
+      createBlank: () => this.createBlank(),
+      produceProduct: this.state.produce.product,
+      produceProducts: [{ id: '', label: 'Articolo…' }].concat(this.getCatalog().map(p => ({ id: p.id, label: p.name }))),
+      onProduceProduct: (e) => this.setProduce({ product: e.target.value }),
+      produceHasSizes: (() => { const p = this.getCatalog().find(x => x.id === this.state.produce.product); return !!(p && p.sizes && p.sizes.length); })(),
+      produceSize: this.state.produce.size,
+      produceSizes: (() => { const p = this.getCatalog().find(x => x.id === this.state.produce.product); return (p && p.sizes || []).map(x => ({ id: x, label: x })); })(),
+      onProduceSize: (e) => this.setProduce({ size: e.target.value }),
+      produceBlank: this.state.produce.blank,
+      produceBlanks: [{ id: '', label: 'Capo vergine…' }].concat(this.blankNames().map(n => ({ id: n, label: n }))),
+      onProduceBlank: (e) => this.setProduce({ blank: e.target.value }),
+      produceBlankSize: this.state.produce.blankSize,
+      produceBlankSizes: this.state.blanks.filter(b => b.name === this.state.produce.blank).map(b => ({ id: b.size, label: (b.size || 'Unica') + ' (' + b.qty + ')' })),
+      onProduceBlankSize: (e) => this.setProduce({ blankSize: e.target.value }),
+      produceQty: this.state.produce.qty,
+      onProduceQty: (e) => this.setProduce({ qty: e.target.value }),
+      doProduce: () => this.doProduce(),
+      hasMoves: this.state.moves.length > 0,
+      noMoves: this.state.moves.length === 0,
+      moveRows: this.state.moves.map(m => {
+        const prod = this.getCatalog().find(x => x.id === m.product_id);
+        const pName = (prod ? prod.name : (m.product_id || '')) + (m.size ? ' ' + m.size : '');
+        const bName = (m.blank || '') + (m.blank_size ? ' ' + m.blank_size : '');
+        const kinds = { carico: 'Carico vergini', produzione: 'Produzione', scarto_vergine: 'Scarto vergine', scarto_finito: 'Scarto finito' };
+        return {
+          when: new Date(m.at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+          kind: kinds[m.kind] || m.kind,
+          kindStyle: /^scarto/.test(m.kind) ? 'color:var(--color-brand-red);' : '',
+          what: m.kind === 'produzione' ? bName + ' → ' + pName : (m.kind === 'scarto_finito' ? pName : bName),
+          qty: m.qty,
+          note: m.note || '',
+          who: String(m.by_email || '').split('@')[0],
+        };
+      }),
+      selectedDiscount: this.state.selectedOrderCode ? (this.discountOf(this.state.selectedOrderCode) || '') : '',
+      onSelectedDiscount: (e) => this.setDiscount(this.state.selectedOrderCode, e.target.value),
+      selectedNetLabel: (() => { const o = this.state.orders.find(x => x.code === this.state.selectedOrderCode); return o ? this.money(this.netTotal(o)) : ''; })(),
+      discountTotalLabel: this.money(this.discountTotal()),
       adminOrderCount: this.activeOrders().length,
       printOrderDetail: () => this.printOrderDetail(),
       printProduction: () => this.printOrderDetail(),
@@ -4246,7 +4541,7 @@ class Component extends DCLogic {
       extraCostLocked: !this.extraCostKey(),
       onExtraCost: (e) => this.setExtraCost(e.target.value),
       totalCostLabel: this.money(this.totalCost()),
-      surplusLabel: this.money(Math.max(0, this.adminRevenue() - this.totalCost())),
+      surplusLabel: this.money(Math.max(0, this.adminRevenue() - this.discountTotal() - this.totalCost())),
     };
   }
 }
