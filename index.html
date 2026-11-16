@@ -696,7 +696,7 @@
               <button type="button" aria-expanded="{{ bg.open }}" onClick="{{ bg.toggle }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">{{ bg.name }}</span><span class="text-muted" style="font-size:12px;white-space:nowrap;">{{ bg.summary }} {{ bg.arrow }}</span></button>
               <sc-if value="{{ bg.open }}" hint-placeholder-val="{{ false }}">
               <table class="table">
-                <thead><tr><th>Taglia</th><th>Vergini</th><th>Carica</th><th>Scarta</th></tr></thead>
+                <thead><tr><th>Taglia</th><th>Vergini</th><th>Carica</th><th>Scarta</th><th></th></tr></thead>
                 <tbody>
                   <sc-for list="{{ bg.rows }}" as="br" hint-placeholder-count="4">
                     <tr>
@@ -704,10 +704,16 @@
                       <td style="{{ br.qtyStyle }}">{{ br.qty }}</td>
                       <td style="white-space:nowrap;"><input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="+" value="{{ br.loadValue }}" onChange="{{ br.onLoadIn }}"> <button type="button" class="btn btn-secondary" onClick="{{ br.load }}">Carica</button></td>
                       <td style="white-space:nowrap;"><input class="input" type="number" min="0" step="1" style="max-width:80px;" placeholder="−" value="{{ br.scrapValue }}" onChange="{{ br.onScrapIn }}"> <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ br.scrap }}">Scarta</button></td>
+                      <td><button type="button" class="btn btn-ghost" style="font-size:12px;" aria-label="Togli la taglia {{ br.sizeLabel }}" onClick="{{ br.removeSize }}">Togli</button></td>
                     </tr>
                   </sc-for>
                 </tbody>
               </table>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--space-2);">
+                <button type="button" class="btn btn-secondary" onClick="{{ bg.rename }}">Rinomina</button>
+                <button type="button" class="btn btn-secondary" onClick="{{ bg.addSize }}">Aggiungi taglia</button>
+                <button type="button" class="btn btn-ghost" style="color:var(--color-brand-red);" onClick="{{ bg.remove }}">Elimina capo</button>
+              </div>
               </sc-if>
             </div>
           </sc-for>
@@ -3355,6 +3361,32 @@ class Component extends DCLogic {
     if (await this.stockRpc('scrap_stock', { p_kind: kind, p_key: id, p_size: size, p_qty: q, p_note: note },
       `Scartati ${q} × ${label}.`)) this.setBlankIn(key, '');
   }
+  async renameBlank(name) {
+    const v = window.prompt(`Nuovo nome per «${name}»:`, name);
+    if (v === null || !v.trim() || v.trim() === name) return;
+    const nv = v.trim();
+    if (await this.stockRpc('blank_rename', { p_old: name, p_new: nv }, `Rinominato in «${nv}».`)) {
+      this.setState(s => ({ openGroups: { ...s.openGroups, ['b::' + nv]: true },
+        produce: s.produce.blank === name ? { ...s.produce, blank: nv } : s.produce }));
+    } else if (/nome_esistente/.test(this.state.blankMsg)) {
+      this.setState({ blankMsg: `NON rinominato: esiste già un capo «${nv}».` });
+    }
+  }
+  async addBlankSize(name) {
+    const v = window.prompt(`Taglie da aggiungere a «${name}» (separate da virgola):`, '');
+    if (v === null) return;
+    const sizes = v.split(',').map(x => x.trim()).filter(Boolean);
+    for (const size of sizes) {
+      if (!(await this.stockRpc('blank_add', { p_name: name, p_size: size, p_qty: 0 }, `Taglie aggiunte a «${name}».`))) return;
+    }
+  }
+  async deleteBlank(name, size) {
+    const rows = this.state.blanks.filter(b => b.name === name && (size === null || b.size === size));
+    const pezzi = rows.reduce((a, b) => a + b.qty, 0);
+    const what = size === null ? `il capo «${name}» con tutte le sue taglie` : `la taglia ${size || 'Unica'} di «${name}»`;
+    if (!window.confirm(`Eliminare ${what}?` + (pezzi ? `\n\nCi sono ancora ${pezzi} pezzi: finiranno nel registro come scarto «eliminato».` : ''))) return;
+    await this.stockRpc('blank_delete', { p_name: name, p_size: size }, size === null ? `Eliminato «${name}».` : `Tolta la taglia ${size || 'Unica'} di «${name}».`);
+  }
   setProduce(patch) {
     this.setState(s => {
       const p = { ...s.produce, ...patch };
@@ -4301,6 +4333,9 @@ class Component extends DCLogic {
         open: !!this.state.openGroups['b::' + name],
         arrow: this.state.openGroups['b::' + name] ? '▾' : '▸',
         toggle: () => this.toggleGroup('b::' + name),
+        rename: () => this.renameBlank(name),
+        addSize: () => this.addBlankSize(name),
+        remove: () => this.deleteBlank(name, null),
         summary: (() => { const r = this.state.blanks.filter(b => b.name === name); const t = r.reduce((a, b) => a + b.qty, 0);
           return t + ' pezzi' + (r.length > 1 ? ' · ' + r.length + ' taglie' : ''); })(),
         rows: this.state.blanks.filter(b => b.name === name).map(b => {
@@ -4315,6 +4350,7 @@ class Component extends DCLogic {
             scrapValue: this.state.blankIn[sk] || '',
             onScrapIn: (e) => this.setBlankIn(sk, e.target.value),
             scrap: () => this.scrapPieces('vergine', name, b.size, name + (b.size ? ' ' + b.size : '')),
+            removeSize: () => this.deleteBlank(name, b.size),
           };
         }),
       })),
