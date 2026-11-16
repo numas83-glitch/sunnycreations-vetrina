@@ -823,11 +823,15 @@
             <p class="text-muted no-print-on-order">Ancora nessun movimento: compaiono qui carichi, produzioni e scarti (gli ultimi 50).</p>
           </sc-if>
           <sc-if value="{{ hasMoves }}" hint-placeholder-val="{{ true }}">
+            <p class="text-muted no-print-on-order" style="margin-top:-6px;font-size:13px;">Sbagliato qualcosa (es. prodotto sull'articolo sbagliato)? <strong>Annulla</strong> sulla riga rimette tutto com'era: i pezzi tornano da dove sono partiti.</p>
+          </sc-if>
+          <sc-if value="{{ hasMoves }}" hint-placeholder-val="{{ true }}">
             <table class="table stack no-print-on-order">
-              <thead><tr><th>Quando</th><th>Movimento</th><th>Cosa</th><th>Pezzi</th><th>Motivo</th><th>Chi</th></tr></thead>
+              <thead><tr><th>Quando</th><th>Movimento</th><th>Cosa</th><th>Pezzi</th><th>Motivo</th><th>Chi</th><th></th></tr></thead>
               <tbody>
                 <sc-for list="{{ moveRows }}" as="mv" hint-placeholder-count="3">
-                  <tr><td data-label="Quando">{{ mv.when }}</td><td data-label="Movimento" style="{{ mv.kindStyle }}">{{ mv.kind }}</td><td data-label="Cosa">{{ mv.what }}</td><td data-label="Pezzi">{{ mv.qty }}</td><td data-label="Motivo">{{ mv.note }}</td><td data-label="Chi">{{ mv.who }}</td></tr>
+                  <tr style="{{ mv.rowStyle }}"><td data-label="Quando">{{ mv.when }}</td><td data-label="Movimento" style="{{ mv.kindStyle }}">{{ mv.kind }}</td><td data-label="Cosa">{{ mv.what }}</td><td data-label="Pezzi">{{ mv.qty }}</td><td data-label="Motivo">{{ mv.note }}</td><td data-label="Chi">{{ mv.who }}</td>
+                    <td><sc-if value="{{ mv.canUndo }}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-ghost" style="font-size:12px;" onClick="{{ mv.undo }}">Annulla</button></sc-if><sc-if value="{{ mv.undone }}" hint-placeholder-val="{{ false }}"><span class="text-muted" style="font-size:12px;">annullato</span></sc-if></td></tr>
                 </sc-for>
               </tbody>
             </table>
@@ -3387,6 +3391,19 @@ class Component extends DCLogic {
     if (!window.confirm(`Eliminare ${what}?` + (pezzi ? `\n\nCi sono ancora ${pezzi} pezzi: finiranno nel registro come scarto «eliminato».` : ''))) return;
     await this.stockRpc('blank_delete', { p_name: name, p_size: size }, size === null ? `Eliminato «${name}».` : `Tolta la taglia ${size || 'Unica'} di «${name}».`);
   }
+  async undoMove(m) {
+    const prod = this.getCatalog().find(x => x.id === m.product_id);
+    const pName = (prod ? prod.name : (m.product_id || '')) + (m.size ? ' ' + m.size : '');
+    const bName = (m.blank || '') + (m.blank_size ? ' ' + m.blank_size : '');
+    const what = {
+      carico: `togliere i ${m.qty} pezzi caricati su «${bName}»`,
+      produzione: `togliere ${m.qty} pezzi da «${pName}» e rimetterli nei vergini «${bName}»`,
+      scarto_vergine: `rimettere i ${m.qty} pezzi scartati in «${bName}»`,
+      scarto_finito: `rimettere i ${m.qty} pezzi scartati in «${pName}»`,
+    }[m.kind] || 'annullare il movimento';
+    if (!window.confirm(`Annullare questo movimento?\n\nVuol dire ${what}.`)) return;
+    await this.stockRpc('undo_move', { p_id: m.id }, 'Movimento annullato: ' + what.replace(/^togliere/, 'tolti').replace(/^rimettere/, 'rimessi') + '.');
+  }
   setProduce(patch) {
     this.setState(s => {
       const p = { ...s.produce, ...patch };
@@ -4392,6 +4409,10 @@ class Component extends DCLogic {
           qty: m.qty,
           note: m.note || '',
           who: String(m.by_email || '').split('@')[0],
+          undone: !!m.undone_at,
+          canUndo: !m.undone_at,
+          rowStyle: m.undone_at ? 'text-decoration:line-through;opacity:.55;' : '',
+          undo: () => this.undoMove(m),
         };
       }),
       selectedDiscount: this.state.selectedOrderCode ? (this.discountOf(this.state.selectedOrderCode) || '') : '',
