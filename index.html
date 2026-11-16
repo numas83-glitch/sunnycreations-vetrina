@@ -692,8 +692,9 @@
             <div class="no-print-on-order" style="{{ blankMsgStyle }}">{{ blankMsg }}</div>
           </sc-if>
           <sc-for list="{{ blankGroups }}" as="bg" hint-placeholder-count="2">
-            <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
-              <div class="card-title">{{ bg.name }}</div>
+            <div class="card no-print-on-order" style="margin-bottom:var(--space-2);">
+              <button type="button" aria-expanded="{{ bg.open }}" onClick="{{ bg.toggle }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">{{ bg.name }}</span><span class="text-muted" style="font-size:12px;white-space:nowrap;">{{ bg.summary }} {{ bg.arrow }}</span></button>
+              <sc-if value="{{ bg.open }}" hint-placeholder-val="{{ false }}">
               <table class="table">
                 <thead><tr><th>Taglia</th><th>Vergini</th><th>Carica</th><th>Scarta</th></tr></thead>
                 <tbody>
@@ -707,9 +708,10 @@
                   </sc-for>
                 </tbody>
               </table>
+              </sc-if>
             </div>
           </sc-for>
-          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);margin-top:var(--space-3);">
             <div class="card-title">Nuovo capo vergine</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input class="input" type="text" style="max-width:220px;" placeholder="es. Maglia bianca" value="{{ newBlankName }}" onChange="{{ onNewBlankName }}">
@@ -779,7 +781,8 @@
           </sc-if>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
-              <div class="card-title"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</div>
+              <button type="button" aria-expanded="{{ g.open }}" onClick="{{ g.toggle }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</span><span style="font-size:12px;white-space:nowrap;{{ g.summaryStyle }}">{{ g.summary }} {{ g.arrow }}</span></button>
+              <sc-if value="{{ g.open }}" hint-placeholder-val="{{ false }}">
               <sc-if value="{{ g.unlimited }}" hint-placeholder-val="{{ false }}">
                 <div class="text-muted" style="font-size:12px;">Nessuna giacenza impostata — sempre disponibile. Scrivi un numero per iniziare a tracciarlo.</div>
               </sc-if>
@@ -806,6 +809,7 @@
                   </sc-for>
                 </tbody>
               </table>
+              </sc-if>
             </div>
           </sc-for>
           <h3 class="no-print-on-order">Registro movimenti</h3>
@@ -1598,6 +1602,7 @@ class Component extends DCLogic {
     blankMsg: '', blankMsgOk: true,
     newBlankName: '', newBlankSizes: '',
     produce: { product: '', size: '', blank: '', blankSize: '', qty: '' },
+    openGroups: {},      // schede aperte nel Magazzino: { 'b::nome vergine' | 'p::id articolo': true } — chiuse di base
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
     adminPassInput: '',
@@ -3307,6 +3312,7 @@ class Component extends DCLogic {
       if (!m.error && Array.isArray(m.data)) this.setState({ moves: m.data });
     } catch (e) {}
   }
+  toggleGroup(key) { this.setState(s => ({ openGroups: { ...s.openGroups, [key]: !s.openGroups[key] } })); }
   blankNames() { return [...new Set(this.state.blanks.map(b => b.name))]; }
   blankSizesOf(name) { return this.state.blanks.filter(b => b.name === name).map(b => b.size); }
   setBlankIn(key, v) { this.setState(s => ({ blankIn: { ...s.blankIn, [key]: v } })); }
@@ -4253,6 +4259,16 @@ class Component extends DCLogic {
         return {
           name: p.name,
           number: p.sortOrder ? p.sortOrder + '.' : '',
+          open: !!this.state.openGroups['p::' + p.id],
+          arrow: this.state.openGroups['p::' + p.id] ? '▾' : '▸',
+          toggle: () => this.toggleGroup('p::' + p.id),
+          ...(() => {
+            if (!known) return { summary: 'sempre disponibile', summaryStyle: 'color:color-mix(in srgb, var(--color-text) 55%, transparent);' };
+            const q = sizes.map(z => this.stockOf(p.id, z));
+            const disp = q.reduce((a, x) => a + Math.max(0, x), 0), owed = q.reduce((a, x) => a + Math.max(0, -x), 0);
+            return { summary: disp + ' disponibili' + (owed ? ' · ' + owed + ' da produrre per ordini' : ''),
+              summaryStyle: owed || !disp ? 'color:var(--color-brand-red);' : 'color:color-mix(in srgb, var(--color-text) 55%, transparent);' };
+          })(),
           variantName: this.variantLabel(p.id),
           unlimited: !known,
           bulkValue: this.state.bulkStock[p.id] === undefined ? '' : this.state.bulkStock[p.id],
@@ -4282,6 +4298,11 @@ class Component extends DCLogic {
       blankMsgStyle: (this.state.blankMsgOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);') + 'font-size:13px;margin-bottom:var(--space-3);',
       blankGroups: this.blankNames().map(name => ({
         name,
+        open: !!this.state.openGroups['b::' + name],
+        arrow: this.state.openGroups['b::' + name] ? '▾' : '▸',
+        toggle: () => this.toggleGroup('b::' + name),
+        summary: (() => { const r = this.state.blanks.filter(b => b.name === name); const t = r.reduce((a, b) => a + b.qty, 0);
+          return t + ' pezzi' + (r.length > 1 ? ' · ' + r.length + ' taglie' : ''); })(),
         rows: this.state.blanks.filter(b => b.name === name).map(b => {
           const ck = `c::${name}::${b.size}`, sk = `s::vergine::${name}::${b.size}`;
           return {
