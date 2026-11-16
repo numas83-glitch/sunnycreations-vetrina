@@ -717,10 +717,16 @@
               <button type="button" class="btn btn-secondary" onClick="{{ createBlank }}">Crea</button>
             </div>
           </div>
+          <sc-if value="{{ noBlanks }}" hint-placeholder-val="{{ false }}">
+            <div class="card no-print-on-order" style="margin-bottom:var(--space-3);border-color:#8a6d00;">
+              <div class="card-title">Nessun capo vergine</div>
+              <div class="card-body">Il magazzino dei vergini è vuoto. Crea qui sopra il primo capo (es. «T-shirt sintetica bianca uomo», taglie XS, S, M, L, XL, XXL) e caricane i pezzi con <strong>Carica</strong>: poi in <strong>Produci</strong> lo sceglierai nel menù «dal vergine».</div>
+            </div>
+          </sc-if>
           <sc-if value="{{ hasBlanks }}" hint-placeholder-val="{{ true }}">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-6);">
               <div class="card-title">Produci</div>
-              <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Toglie i pezzi dai vergini e li aggiunge all'articolo in vendita, in un colpo solo.</div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Scegli l'articolo che hai fatto, poi «dal vergine» il capo da cui è uscito: i pezzi passano dai vergini all'articolo in vendita, in un colpo solo.</div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select class="input" style="max-width:240px;" value="{{ produceProduct }}" onChange="{{ onProduceProduct }}">
                   <sc-for list="{{ produceProducts }}" as="pp" hint-placeholder-count="3"><option value="{{ pp.id }}">{{ pp.label }}</option></sc-for>
@@ -4292,6 +4298,7 @@ class Component extends DCLogic {
         }),
       })),
       hasBlanks: this.state.blanks.length > 0,
+      noBlanks: this.state.blanks.length === 0,
       newBlankName: this.state.newBlankName,
       onNewBlankName: (e) => this.setState({ newBlankName: e.target.value }),
       newBlankSizes: this.state.newBlankSizes,
