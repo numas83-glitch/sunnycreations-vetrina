@@ -1416,7 +1416,8 @@
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Ricavo totale</span><strong>€ {{ adminRevenueLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Sconti riservati</span><strong>− € {{ discountTotalLabel }}</strong></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Costi materiali + altri</span><strong>€ {{ totalCostLabel }}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0 4px;border-top:1px solid var(--color-divider);"><span>Ricavo netto</span><strong>€ {{ netRevenueLabel }}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Costi materiali + altri</span><strong>− € {{ totalCostLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:4px;border-top:1px solid var(--color-divider);font-size:18px;"><span>A copertura evento / beneficenza</span><strong style="color:var(--color-brand-green);">€ {{ surplusLabel }}</strong></div>
         </div>
         </div>
@@ -4333,6 +4334,7 @@ class Component extends DCLogic {
       onSelectedDiscount: (e) => this.setDiscount(this.state.selectedOrderCode, e.target.value),
       selectedNetLabel: (() => { const o = this.state.orders.find(x => x.code === this.state.selectedOrderCode); return o ? this.money(this.netTotal(o)) : ''; })(),
       discountTotalLabel: this.money(this.discountTotal()),
+      netRevenueLabel: this.money(this.adminRevenue() - this.discountTotal()),
       adminOrderCount: this.activeOrders().length,
       printOrderDetail: () => this.printOrderDetail(),
       printProduction: () => this.printOrderDetail(),
