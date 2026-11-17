@@ -1163,6 +1163,7 @@
               <div><strong>4. La persona prenota.</strong> Dal suo link sceglie articoli, taglie e quantità. Il link vale {{ inviteDays }} giorni ed è legato alla sua email: girato a un altro non funziona.</div>
               <div><strong>5. Riceve il preventivo</strong> con prezzi, totale, listino e come pagare — e a te arriva una copia con i suoi recapiti. Se cambia idea, dalla mail può riaprire l'ordine e correggere le quantità. Se una mail non è partita, da <em>Dettagli</em> la rimandi con <em>Rimanda preventivo</em>.</div>
               <div><strong>6. Dichiara il pagamento</strong> premendo <em>Ho pagato</em> nella mail. Tu lo confermi qui quando vedi i soldi arrivare.</div>
+              <div><strong>7. Produci e consegni.</strong> Quando l'ordine è fatto spunti <em>Pronto</em> nella scheda Ordini: se vuoi, parte una mail che avvisa il cliente e, se non ha ancora pagato, gli ricorda come farlo.</div>
             </div>
           </div>
 
@@ -1173,15 +1174,30 @@
           <h4>Ordini e pagamenti</h4>
           <p>Ogni ordine passa per tre stati: <strong>da pagare</strong> (grigio), <strong>pagamento dichiarato</strong> (giallo, l'ha detto il cliente) e <strong>pagato</strong> (verde, l'hai confermato tu). Giallo non vuol dire incassato: vuol dire che qualcuno sostiene di aver pagato.</p>
           <p><em>Dettagli</em> apre la scheda di preparazione, che si stampa e si porta al banco. <em>Annulla</em> toglie l'ordine dai conti e <strong>rimette le quantità a magazzino</strong>.</p>
+          <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
+          <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
-          <h4>Magazzino</h4>
-          <p>Le giacenze sono <strong>per taglia</strong>: la M e la XL hanno numeri diversi. Un articolo senza nessun numero impostato è considerato illimitato — è così che parte tutto finché non scrivi le quantità.</p>
-          <p>Il campo <strong>"+"</strong> accanto a ogni riga <em>aggiunge</em> le unità appena prodotte senza sovrascrivere quelle che ci sono già. Se invece scrivi il numero nella colonna a sinistra, quello sostituisce.</p>
-          <p>Sopra la tabella c'è <strong>"Tutte insieme"</strong>: scrivi una quantità e con <em>Imposta</em> la applichi a ogni taglia o colore del prodotto in un colpo, con <em>Aggiungi</em> la sommi a quelle esistenti. Serve quando arriva una fornitura uguale per tutte le misure.</p>
-          <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa.</p>
+          <h4>Magazzino: capi vergini e giacenze</h4>
+          <p>Il magazzino ha due piani. I <strong>capi vergini</strong> sono il materiale da personalizzare: la T-shirt sintetica bianca uomo, la cotone bambino, la tazza bianca… con le loro taglie. Le <strong>giacenze</strong> sono gli articoli finiti in vendita (il "Legendary Girevik" taglia L). Lo stesso capo vergine può diventare tanti articoli diversi.</p>
+          <p><strong>Capi vergini.</strong> Con <em>Nuovo capo vergine</em> scrivi il nome e le taglie separate da virgola (vuoto = taglia unica). Ogni capo è una scheda chiusa: toccala per aprirla. Dentro, per ogni taglia, <em>Carica</em> aggiunge i pezzi arrivati e <em>Scarta</em> toglie quelli rovinati (ti chiede il motivo, facoltativo). In fondo alla scheda: <em>Rinomina</em>, <em>Aggiungi taglia</em>, <em>Elimina capo</em>; <em>Togli</em> su una riga toglie solo quella taglia.</p>
+          <p><strong>Produci.</strong> Quando hai stampato dei pezzi, nella scheda <em>Produci</em> scegli l'<em>Articolo</em> che hai fatto e la taglia, poi <em>dal vergine</em> il capo da cui è uscito, i pezzi, e premi <em>Produci</em>: i pezzi escono dai vergini ed entrano nella giacenza dell'articolo in un colpo solo. Accanto a ogni menu c'è un campo <em>cerca</em>: scrivi una parte del nome (o il numero dell'articolo) e il menu mostra solo quelli; se ne resta uno, viene scelto da solo. La taglia del vergine si mette da sola uguale a quella dell'articolo, se c'è. Se i vergini non bastano, la produzione viene rifiutata e non si muove niente.</p>
+          <p><strong>Giacenze.</strong> Sono <strong>per taglia</strong> (o colore, modello…). Un articolo senza nessun numero impostato è considerato illimitato. Ogni articolo è una scheda chiusa con un riassunto: <em>N disponibili</em>, in rosso se è esaurito o se ha pezzi da produrre. Dentro, il campo <strong>"+"</strong> con <em>Aggiungi</em> somma i pezzi pronti; se invece scrivi il numero nella colonna a sinistra, quello <em>sostituisce</em>. <strong>"Tutte insieme"</strong> applica (<em>Imposta</em>) o somma (<em>Aggiungi</em>) la stessa quantità a tutte le taglie. <em>Scarta</em> toglie i pezzi finiti difettosi.</p>
+          <div class="card" style="border-left:4px solid var(--color-brand-red);padding:var(--space-4);margin:var(--space-3) 0;">
+            <strong>Numero negativo = pezzi già ordinati da produrre.</strong> Se una taglia segna −3, tre pezzi sono stati ordinati e non ci sono ancora. Quando li fai, caricali con <em>Aggiungi</em> o con <em>Produci</em>, <strong>non riscrivere il numero</strong>: −3 + 5 pezzi fatti = 2 disponibili, e gli ordini si scalano da soli. Finché è negativo, nessuno può ordinarne altri.
+          </div>
+          <p>Quando arriva un ordine le quantità scendono da sole. Se due persone ordinano l'ultimo pezzo nello stesso momento, il secondo ordine viene rifiutato: non si vende due volte la stessa cosa. Se un salvataggio non riesce (connessione, sessione scaduta) compare un avviso rosso e i numeri tornano a quelli veri del server.</p>
+          <p><strong>Cercare.</strong> In cima al Magazzino il campo <em>Cerca articolo o capo vergine…</em> filtra insieme vergini e giacenze: più parole in qualsiasi ordine, maiuscole e accenti non contano. Accanto, <em>Da produrre</em> mostra solo gli articoli con numeri negativi (la lista di lavoro) ed <em>Esauriti</em> quelli a zero; <em>Azzera filtri</em> rimette tutto. Valgono insieme alle schede Collezione e Categoria.</p>
+          <p><strong>Registro movimenti e Annulla.</strong> In fondo c'è il registro degli ultimi 50 movimenti: carichi, produzioni, scarti, con chi li ha fatti. Se hai sbagliato (per esempio hai prodotto sulla maglia fluo invece che sulla bianca), premi <em>Annulla</em> su quella riga: i pezzi tornano dove erano e la riga resta barrata con scritto <em>annullato</em>. Poi rifai la produzione giusta. Una produzione non si annulla se quei pezzi servono già a coprire ordini ricevuti.</p>
 
           <h4>Prodotti e Magazzino: schede per collezione e categoria</h4>
           <p>Quando gli articoli sono tanti, sopra l'elenco compaiono due file di schede: <strong>Collezione</strong> (WKSF 2026, Natale 2026…) e <strong>Categoria</strong> (Abbigliamento, Accessori, Idee regalo…). Si combinano: "WKSF 2026" + "Abbigliamento" mostra solo le magliette di quell'evento. Le stesse schede filtrano anche il Magazzino, e la scelta resta finché non la cambi.</p>
+
+          <h4>Contabilità</h4>
+          <p>Nella scheda <em>Contabilità</em> scrivi il <strong>costo materiale per unità</strong> di ogni articolo (vale per tutti gli eventi) e gli <strong>altri costi</strong> dell'evento scelto in alto. Si salvano da soli appena esci dal campo. Il conto si legge dall'alto in basso:</p>
+          <div class="card" style="padding:var(--space-4);margin:var(--space-3) 0;">
+            <strong>Ricavo totale</strong> (gli ordini a prezzo pieno)<br>− <strong>Sconti riservati</strong><br>= <strong>Ricavo netto</strong><br>− <strong>Costi materiali + altri</strong><br>= <strong>quello che resta all'evento</strong>
+          </div>
+          <p>Con <em>Tutti gli eventi</em> gli altri costi sono la somma di tutti e non si modificano: per cambiarli scegli un evento nel menu in alto.</p>
 
           <h4>Versione inglese dei testi</h4>
           <p>Chi apre il sito in inglese vede i <strong>nomi, le categorie e le descrizioni degli articoli in inglese</strong> se li hai compilati; dove mancano resta l'italiano. Nel modulo dell'articolo c'è il riquadro <em>Versione inglese</em> con il pulsante <strong>Traduci</strong>, che compila i tre campi partendo dall'italiano (li puoi correggere prima di salvare); in cima all'elenco, <em>Traduci gli articoli senza inglese</em> li fa tutti in un colpo. Lo stesso <em>Traduci</em> sta accanto ai campi inglesi delle Impostazioni (titolo e presentazione della vetrina, istruzioni di pagamento). La traduzione la fa un'intelligenza artificiale (Gemini di Google, piano gratuito), attraverso una funzione del server che risponde solo a chi è entrato qui: serve una chiave Gemini impostata una volta sola. Rileggi sempre il risultato prima di salvare.</p>
@@ -1217,10 +1233,17 @@
             <strong>Conserva il codice in chiaro</strong> che compare sotto il QR al momento dell'attivazione, in un posto che non sia il telefono stesso. Se cambi o perdi il telefono, è l'unica cosa che ti rimette dentro senza aiuto esterno.
           </div>
 
+          <h4>Altri amministratori e password</h4>
+          <p>Ogni amministratore entra con la sua email e la sua password. In <em>Impostazioni → Sicurezza</em> ognuno cambia <strong>la propria</strong> password (almeno 8 caratteri); quella degli altri non cambia.</p>
+
+          <h4>Dal telefono</h4>
+          <p>L'area admin funziona anche dal telefono: le tabelle diventano schede e i pulsanti sono più grandi. Puoi metterla sulla schermata Home come un'app. <strong>iPhone</strong>: apri <em>vetrina.sunnycreations.it/#admin</em> in Safari → Condividi → <em>Aggiungi alla schermata Home</em>. <strong>Android</strong>: stesso indirizzo in Chrome → menu → <em>Installa app</em>.</p>
+          <p><strong>Notifiche.</strong> In <em>Impostazioni → Notifiche su questo dispositivo</em> attivi un avviso a ogni nuovo ordine e a ogni nuova richiesta. Si accende su ogni telefono o computer separatamente, e le mail continuano ad arrivare. L'avviso mostra solo il codice e il totale, non il nome del cliente. Su iPhone funziona solo dall'icona sulla schermata Home.</p>
+
           <h4>Gli indirizzi</h4>
           <p><strong>vetrina.sunnycreations.it</strong> — la pagina pubblica, quella da dare in giro.<br>
           <strong>preordini.sunnycreations.it</strong> — dove si prenota, solo con invito.<br>
-          <strong>preordini.sunnycreations.it/#admin</strong> — questa pagina. Tienila fra i preferiti: dal menù non c'è, di proposito.</p>
+          <strong>preordini.sunnycreations.it/#admin</strong> oppure <strong>vetrina.sunnycreations.it/#admin</strong> — questa pagina. Tienila fra i preferiti: dal menù non c'è, di proposito.</p>
         </div>
       </sc-if>
 
