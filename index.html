@@ -747,8 +747,10 @@
             <div class="card no-print-on-order" style="margin-bottom:var(--space-6);">
               <div class="card-title">Produci</div>
               <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Scegli l'articolo che hai fatto, poi «dal vergine» il capo da cui è uscito: i pezzi passano dai vergini all'articolo in vendita, in un colpo solo.</div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <select class="input" style="max-width:240px;" value="{{ produceProduct }}" onChange="{{ onProduceProduct }}">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <span class="text-muted" style="font-size:12px;min-width:72px;">Articolo</span>
+                <input class="input" type="search" style="max-width:170px;" placeholder="cerca articolo…" aria-label="Cerca articolo da produrre" value="{{ produceProductQuery }}" onChange="{{ onProduceProductQuery }}">
+                <select class="input" style="max-width:240px;" aria-label="Articolo da produrre" value="{{ produceProduct }}" onChange="{{ onProduceProduct }}">
                   <sc-for list="{{ produceProducts }}" as="pp" hint-placeholder-count="3"><option value="{{ pp.id }}">{{ pp.label }}</option></sc-for>
                 </select>
                 <sc-if value="{{ produceHasSizes }}" hint-placeholder-val="{{ true }}">
@@ -756,13 +758,19 @@
                     <sc-for list="{{ produceSizes }}" as="ps" hint-placeholder-count="3"><option value="{{ ps.id }}">{{ ps.label }}</option></sc-for>
                   </select>
                 </sc-if>
-                <span class="text-muted" style="font-size:12px;">dal vergine</span>
-                <select class="input" style="max-width:200px;" value="{{ produceBlank }}" onChange="{{ onProduceBlank }}">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <span class="text-muted" style="font-size:12px;min-width:72px;">dal vergine</span>
+                <input class="input" type="search" style="max-width:170px;" placeholder="cerca vergine…" aria-label="Cerca capo vergine" value="{{ produceBlankQuery }}" onChange="{{ onProduceBlankQuery }}">
+                <select class="input" style="max-width:240px;" aria-label="Capo vergine" value="{{ produceBlank }}" onChange="{{ onProduceBlank }}">
                   <sc-for list="{{ produceBlanks }}" as="pb" hint-placeholder-count="2"><option value="{{ pb.id }}">{{ pb.label }}</option></sc-for>
                 </select>
                 <select class="input" style="max-width:110px;" value="{{ produceBlankSize }}" onChange="{{ onProduceBlankSize }}">
                   <sc-for list="{{ produceBlankSizes }}" as="pbs" hint-placeholder-count="3"><option value="{{ pbs.id }}">{{ pbs.label }}</option></sc-for>
                 </select>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span class="text-muted" style="font-size:12px;min-width:72px;">Pezzi</span>
                 <input class="input" type="number" min="1" step="1" style="max-width:90px;" placeholder="pezzi" value="{{ produceQty }}" onChange="{{ onProduceQty }}">
                 <button type="button" class="btn btn-primary" onClick="{{ doProduce }}">Produci</button>
               </div>
@@ -1628,6 +1636,7 @@ class Component extends DCLogic {
     newBlankName: '', newBlankSizes: '',
     stockSearch: '', stockOnly: '*',   // ricerca e filtro del Magazzino: '*' tutti, 'owed' da produrre, 'out' esauriti
     produce: { product: '', size: '', blank: '', blankSize: '', qty: '' },
+    produceProductQuery: '', produceBlankQuery: '',   // ricerca nei menu di «Produci»
     openGroups: {},      // schede aperte nel Magazzino: { 'b::nome vergine' | 'p::id articolo': true } — chiuse di base
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
     adminEmail: '',
@@ -3341,10 +3350,10 @@ class Component extends DCLogic {
   toggleGroup(key) { this.setState(s => ({ openGroups: { ...s.openGroups, [key]: !s.openGroups[key] } })); }
   blankNames() { return [...new Set(this.state.blanks.map(b => b.name))]; }
   // Ricerca del Magazzino: ogni parola scritta deve comparire (maiuscole e accenti non contano).
-  stockMatches(text) {
+  stockMatches(text, query = this.state.stockSearch) {
     const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const t = norm(text);
-    return norm(this.state.stockSearch).split(/\s+/).filter(Boolean).every(w => t.includes(w));
+    return norm(query).split(/\s+/).filter(Boolean).every(w => t.includes(w));
   }
   stockFilteredCatalog() {
     const only = this.state.stockOnly;
@@ -3440,6 +3449,16 @@ class Component extends DCLogic {
     }[m.kind] || 'annullare il movimento';
     if (!window.confirm(`Annullare questo movimento?\n\nVuol dire ${what}.`)) return;
     await this.stockRpc('undo_move', { p_id: m.id }, 'Movimento annullato: ' + what.replace(/^togliere/, 'tolti').replace(/^rimettere/, 'rimessi') + '.');
+  }
+  produceProductList(q = this.state.produceProductQuery) {
+    return this.sortCatalog(this.getCatalog()).filter(p => this.stockMatches([p.sortOrder, p.name, p.collection, p.kicker].join(' '), q));
+  }
+  produceBlankList(q = this.state.produceBlankQuery) { return this.blankNames().filter(n => this.stockMatches(n, q)); }
+  // Se la ricerca lascia una sola voce la seleziona subito: niente menu da aprire.
+  setProduceQuery(which, q) {
+    this.setState(which === 'product' ? { produceProductQuery: q } : { produceBlankQuery: q });
+    const hits = which === 'product' ? this.produceProductList(q).map(p => p.id) : this.produceBlankList(q);
+    if (q.trim() && hits.length === 1 && hits[0] !== this.state.produce[which]) this.setProduce({ [which]: hits[0] });
   }
   setProduce(patch) {
     this.setState(s => {
@@ -4428,14 +4447,25 @@ class Component extends DCLogic {
       onNewBlankSizes: (e) => this.setState({ newBlankSizes: e.target.value }),
       createBlank: () => this.createBlank(),
       produceProduct: this.state.produce.product,
-      produceProducts: [{ id: '', label: 'Articolo…' }].concat(this.getCatalog().map(p => ({ id: p.id, label: p.name }))),
+      produceProductQuery: this.state.produceProductQuery,
+      onProduceProductQuery: (e) => this.setProduceQuery('product', e.target.value),
+      produceBlankQuery: this.state.produceBlankQuery,
+      onProduceBlankQuery: (e) => this.setProduceQuery('blank', e.target.value),
+      // la voce già scelta resta nel menu anche se la ricerca non la trova
+      produceProducts: (() => { const list = this.produceProductList(), cur = this.getCatalog().find(x => x.id === this.state.produce.product);
+        if (cur && !list.includes(cur)) list.unshift(cur);
+        const n = this.state.produceProductQuery.trim() ? list.length + ' trovati…' : 'Articolo…';
+        return [{ id: '', label: n }].concat(list.map(p => ({ id: p.id, label: (p.sortOrder ? p.sortOrder + '. ' : '') + p.name }))); })(),
       onProduceProduct: (e) => this.setProduce({ product: e.target.value }),
       produceHasSizes: (() => { const p = this.getCatalog().find(x => x.id === this.state.produce.product); return !!(p && p.sizes && p.sizes.length); })(),
       produceSize: this.state.produce.size,
       produceSizes: (() => { const p = this.getCatalog().find(x => x.id === this.state.produce.product); return (p && p.sizes || []).map(x => ({ id: x, label: x })); })(),
       onProduceSize: (e) => this.setProduce({ size: e.target.value }),
       produceBlank: this.state.produce.blank,
-      produceBlanks: [{ id: '', label: 'Capo vergine…' }].concat(this.blankNames().map(n => ({ id: n, label: n }))),
+      produceBlanks: (() => { const list = this.produceBlankList(), cur = this.state.produce.blank;
+        if (cur && !list.includes(cur)) list.unshift(cur);
+        const n = this.state.produceBlankQuery.trim() ? list.length + ' trovati…' : 'Capo vergine…';
+        return [{ id: '', label: n }].concat(list.map(x => ({ id: x, label: x }))); })(),
       onProduceBlank: (e) => this.setProduce({ blank: e.target.value }),
       produceBlankSize: this.state.produce.blankSize,
       produceBlankSizes: this.state.blanks.filter(b => b.name === this.state.produce.blank).map(b => ({ id: b.size, label: (b.size || 'Unica') + ' (' + b.qty + ')' })),
