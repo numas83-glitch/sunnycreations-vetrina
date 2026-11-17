@@ -686,6 +686,18 @@
 
       <sc-if value="{{ isTabMagazzino }}" hint-placeholder-val="{{ false }}">
         <div>
+          <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:var(--space-4);">
+            <input class="input" type="search" style="flex:1 1 220px;max-width:360px;" placeholder="Cerca articolo o capo vergine…" aria-label="Cerca nel magazzino" value="{{ stockSearch }}" onChange="{{ onStockSearch }}">
+            <div class="seg">
+              <sc-for list="{{ stockOnlyTabs }}" as="so" hint-placeholder-count="3">
+                <button type="button" class="seg-opt" style="{{ so.style }}" onClick="{{ so.select }}">{{ so.label }}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ stockFiltering }}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="btn btn-ghost" onClick="{{ clearStockSearch }}">Azzera filtri</button>
+            </sc-if>
+            <span class="text-muted" style="font-size:12px;">{{ stockCountLabel }}</span>
+          </div>
           <h3 class="no-print-on-order" style="margin-top:0;">Capi vergini</h3>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Il materiale da personalizzare (es. «Maglia bianca», taglia XL). Lo stesso capo può diventare articoli diversi: con <strong>Produci</strong> i pezzi passano dai vergini all'articolo in vendita. <strong>Scarta</strong> toglie i pezzi difettosi, qui o nelle giacenze più sotto. Ogni movimento finisce nel registro in fondo.</p>
           <sc-if value="{{ blankMsg }}" hint-placeholder-val="{{ false }}">
@@ -784,6 +796,9 @@
                 </div>
               </sc-if>
             </div>
+          </sc-if>
+          <sc-if value="{{ noStockResults }}" hint-placeholder-val="{{ false }}">
+            <div class="card no-print-on-order text-muted">Nessun articolo corrisponde alla ricerca.</div>
           </sc-if>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
@@ -1611,6 +1626,7 @@ class Component extends DCLogic {
     blankIn: {},         // campi "Carica"/"Scarta": { 'c::nome::taglia' | 's::vergine|finito::chiave::taglia': '3' }
     blankMsg: '', blankMsgOk: true,
     newBlankName: '', newBlankSizes: '',
+    stockSearch: '', stockOnly: '*',   // ricerca e filtro del Magazzino: '*' tutti, 'owed' da produrre, 'out' esauriti
     produce: { product: '', size: '', blank: '', blankSize: '', qty: '' },
     openGroups: {},      // schede aperte nel Magazzino: { 'b::nome vergine' | 'p::id articolo': true } — chiuse di base
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
@@ -3324,6 +3340,27 @@ class Component extends DCLogic {
   }
   toggleGroup(key) { this.setState(s => ({ openGroups: { ...s.openGroups, [key]: !s.openGroups[key] } })); }
   blankNames() { return [...new Set(this.state.blanks.map(b => b.name))]; }
+  // Ricerca del Magazzino: ogni parola scritta deve comparire (maiuscole e accenti non contano).
+  stockMatches(text) {
+    const norm = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const t = norm(text);
+    return norm(this.state.stockSearch).split(/\s+/).filter(Boolean).every(w => t.includes(w));
+  }
+  stockFilteredCatalog() {
+    const only = this.state.stockOnly;
+    return this.filteredAdminCatalog().filter(p => {
+      if (!this.stockMatches([p.sortOrder, p.name, p.collection, p.kicker].join(' '))) return false;
+      if (only === '*') return true;
+      if (!this.state.stock[p.id]) return false;   // senza giacenze = sempre disponibile
+      const q = (p.sizes && p.sizes.length ? p.sizes : ['']).map(z => this.stockOf(p.id, z));
+      return only === 'owed' ? q.some(x => x < 0) : q.some(x => x <= 0);
+    });
+  }
+  stockFilteredBlanks() {
+    const only = this.state.stockOnly;
+    return this.blankNames().filter(n => this.stockMatches(n) &&
+      (only === '*' || (only === 'out' && this.state.blanks.some(b => b.name === n && b.qty <= 0))));
+  }
   blankSizesOf(name) { return this.state.blanks.filter(b => b.name === name).map(b => b.size); }
   setBlankIn(key, v) { this.setState(s => ({ blankIn: { ...s.blankIn, [key]: v } })); }
   blankInQty(key) { return Math.floor(Number(this.state.blankIn[key]) || 0); }
@@ -4302,7 +4339,19 @@ class Component extends DCLogic {
       summaryCollected: this.money(this.amountCollected()),
       summaryLowStock: this.lowStockCount(),
       stockMsg: this.state.stockMsg || '',
-      stockGroups: this.filteredAdminCatalog().map(p => {
+      stockSearch: this.state.stockSearch,
+      onStockSearch: (e) => this.setState({ stockSearch: e.target.value }),
+      clearStockSearch: () => this.setState({ stockSearch: '', stockOnly: '*' }),
+      stockFiltering: !!this.state.stockSearch || this.state.stockOnly !== '*',
+      stockOnlyTabs: [['*', 'Tutti'], ['owed', 'Da produrre'], ['out', 'Esauriti']].map(([key, label]) => ({
+        label, select: () => this.setState({ stockOnly: key }),
+        style: this.state.stockOnly === key
+          ? { background: 'var(--color-accent)', color: 'var(--color-bg)' }
+          : { background: 'transparent', color: 'var(--color-text)' } })),
+      stockCountLabel: (() => { const a = this.stockFilteredCatalog().length, b = this.stockFilteredBlanks().length;
+        return a + ' articoli · ' + b + ' vergini' + (this.state.stockSearch || this.state.stockOnly !== '*' ? ' trovati' : ''); })(),
+      noStockResults: !this.stockFilteredCatalog().length && this.getCatalog().length > 0,
+      stockGroups: this.stockFilteredCatalog().map(p => {
         const sizes = p.sizes && p.sizes.length ? p.sizes : [''];
         const known = !!this.state.stock[p.id];
         return {
@@ -4345,7 +4394,7 @@ class Component extends DCLogic {
       adminRevenueLabel: this.money(this.adminRevenue()),
       blankMsg: this.state.blankMsg || '',
       blankMsgStyle: (this.state.blankMsgOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);') + 'font-size:13px;margin-bottom:var(--space-3);',
-      blankGroups: this.blankNames().map(name => ({
+      blankGroups: this.stockFilteredBlanks().map(name => ({
         name,
         open: !!this.state.openGroups['b::' + name],
         arrow: this.state.openGroups['b::' + name] ? '▾' : '▸',
