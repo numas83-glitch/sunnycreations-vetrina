@@ -754,7 +754,7 @@
                   <sc-for list="{{ produceProducts }}" as="pp" hint-placeholder-count="3"><option value="{{ pp.id }}">{{ pp.label }}</option></sc-for>
                 </select>
                 <sc-if value="{{ produceHasSizes }}" hint-placeholder-val="{{ true }}">
-                  <select class="input" style="max-width:110px;" value="{{ produceSize }}" onChange="{{ onProduceSize }}">
+                  <select class="input" style="max-width:110px;" key="taglia-art-{{ produceProduct }}" aria-label="Taglia dell'articolo" value="{{ produceSize }}" onChange="{{ onProduceSize }}">
                     <sc-for list="{{ produceSizes }}" as="ps" hint-placeholder-count="3"><option value="{{ ps.id }}">{{ ps.label }}</option></sc-for>
                   </select>
                 </sc-if>
@@ -765,7 +765,7 @@
                 <select class="input" style="max-width:240px;" aria-label="Capo vergine" value="{{ produceBlank }}" onChange="{{ onProduceBlank }}">
                   <sc-for list="{{ produceBlanks }}" as="pb" hint-placeholder-count="2"><option value="{{ pb.id }}">{{ pb.label }}</option></sc-for>
                 </select>
-                <select class="input" style="max-width:110px;" value="{{ produceBlankSize }}" onChange="{{ onProduceBlankSize }}">
+                <select class="input" style="max-width:110px;" key="taglia-verg-{{ produceBlank }}" aria-label="Taglia del vergine" value="{{ produceBlankSize }}" onChange="{{ onProduceBlankSize }}">
                   <sc-for list="{{ produceBlankSizes }}" as="pbs" hint-placeholder-count="3"><option value="{{ pbs.id }}">{{ pbs.label }}</option></sc-for>
                 </select>
               </div>
@@ -2487,7 +2487,10 @@ class Component extends DCLogic {
     // a un articolo si aggiungono colori dopo, o se ne toglie uno. Vale solo
     // una variante che esiste davvero, altrimenti la prima — mai la chiave
     // vuota, che nel magazzino non c'è e farebbe risultare "Esaurito".
-    const size = sizes ? (sizes.indexOf(cur.size) >= 0 ? cur.size : sizes[0]) : undefined;
+    // Senza scelta valida parte dalla prima variante disponibile: se la prima è
+    // esaurita la scheda non deve dire "Esaurito" quando altre ci sono.
+    const size = sizes ? (sizes.indexOf(cur.size) >= 0 ? cur.size
+      : (sizes.find(z => this.availableOf(id, z) > 0) || sizes[0])) : undefined;
     return { ...cur, size };
   }
   getPrice(id) { const v = this.state.prices[id]; return typeof v === 'number' && !isNaN(v) ? v : this.getProduct(id).price; }
@@ -3952,8 +3955,13 @@ class Component extends DCLogic {
     return `${p ? p.name : m[1]}${m[2] ? ' ' + t.sizeWord + ' ' + m[2] : ''} ${t.noLongerAvailable}`;
   }
 
-  availabilityLabel(id, size) {
-    const a = this.availableOf(id, size);
+  // Vetrina: disponibilità dell'articolo intero (somma delle varianti), così un
+  // colore o una taglia esaurita non fa sembrare esaurito tutto l'articolo.
+  productAvailable(p) {
+    const sizes = p.sizes && p.sizes.length ? p.sizes : [''];
+    return sizes.reduce((sum, z) => sum + Math.max(0, this.availableOf(p.id, z)), 0);
+  }
+  availabilityLabel(id, size, a = this.availableOf(id, size)) {
     const t = this.t();
     if (a === Infinity) return '';
     if (a <= 0) return t.soldOut;
@@ -3961,8 +3969,7 @@ class Component extends DCLogic {
     if (a === 2) return t.lastTwo;
     return `${t.available} ${a}`;
   }
-  availabilityStyle(id, size) {
-    const a = this.availableOf(id, size);
+  availabilityStyle(id, size, a = this.availableOf(id, size)) {
     if (a === Infinity) return 'display:none;';
     if (a <= 2) return 'color:var(--color-brand-red);';
     return 'color:color-mix(in srgb, var(--color-text) 55%, transparent);';
@@ -3970,6 +3977,7 @@ class Component extends DCLogic {
 
   renderVals() {
     const view = this.state.view;
+    const showcaseOnly = !(this.state.mode === 'preordini' && !!this.state.invite);
     const production = this.productionSummary();
     const cartEntries = this.cartEntries();
     const lastOrder = this.state.lastOrder;
@@ -4078,7 +4086,7 @@ class Component extends DCLogic {
       inviteCardText: this.state.inviteExpired ? this.t().inviteExpiredText : this.t().inviteNeededText,
       inviteCardButton: this.state.inviteExpired ? this.t().inviteNewRequest : this.t().inviteGoVetrina,
       inviteCardHref: 'https://vetrina.sunnycreations.it/' + (this.state.inviteExpired ? '#richiesta' : ''),
-      showcaseOnly: !(this.state.mode === 'preordini' && !!this.state.invite),
+      showcaseOnly,
       inquiryOpen: !this.state.inquirySent,
       hasInvite: !!this.state.invite,
       vetrinaUrl: 'https://vetrina.sunnycreations.it/',
@@ -4181,8 +4189,8 @@ class Component extends DCLogic {
           sizesText: (p.sizes && p.sizes.length) ? p.sizes.join(' · ') : '',
           variantName: this.variantLabel(p.id),
           hasSizes: !!(p.sizes && p.sizes.length),
-          availabilityLabel: this.availabilityLabel(p.id, sel.size),
-          availabilityStyle: this.availabilityStyle(p.id, sel.size),
+          availabilityLabel: showcaseOnly ? this.availabilityLabel(p.id, null, this.productAvailable(p)) : this.availabilityLabel(p.id, sel.size),
+          availabilityStyle: showcaseOnly ? this.availabilityStyle(p.id, null, this.productAvailable(p)) : this.availabilityStyle(p.id, sel.size),
           cannotAdd: this.availableToAdd(p.id, sel.size) <= 0,
           cannotIncrease: sel.qty >= this.availableToAdd(p.id, sel.size),
         };
