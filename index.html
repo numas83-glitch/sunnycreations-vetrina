@@ -3583,7 +3583,8 @@ class Component extends DCLogic {
       const p = cat.find(x => x.id === l.product), qty = Math.floor(Number(l.qty) || 0);
       if (!p || qty <= 0) return null;
       const size = p.sizes && p.sizes.length ? l.size : null, price = this.unitPrice(p.id, size);
-      return { id: p.id, name: p.name, size, qty, price, lineTotal: Math.round(price * qty * 100) / 100 };
+      return { id: p.id, name: p.name, nameEn: p.nameEn || '', size, qty, price, lineTotal: Math.round(price * qty * 100) / 100,
+        sizeLabel: size ? `${this.variantLabel(p.id)} ${size}${p.priceUnit ? ' ' + p.priceUnit : ''}` : '' };   // come gli ordini online
     });
     if (!items.length || items.some(x => !x)) { this.setState({ counterMsg: 'Scegli articolo e pezzi.', counterMsgOk: false }); return; }
     const { total, net, discount } = this.counterSaleTotals(lines, this.state.counter.incasso);
