@@ -599,6 +599,11 @@
         <div class="card no-print-on-order" style="margin-bottom:var(--space-5);">
           <div class="card-title">Vendita al banco</div>
           <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Per quello che vendi in loco: i pezzi escono dal magazzino e l'incasso entra nell'evento, già pagato e consegnato.</div>
+          <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+            <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanBancoText }}" onChange="{{ onScanBanco }}">
+            <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraBanco }}">📷</button>
+            <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanBancoMsg }}</span>
+          </div>
           <input class="input" type="search" style="max-width:220px;margin-bottom:6px;" placeholder="cerca articolo…" aria-label="Cerca articolo venduto al banco" value="{{ counterQuery }}" onChange="{{ onCounterQuery }}">
           <sc-for list="{{ counterLines }}" as="l" hint-placeholder-count="1">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
@@ -738,6 +743,11 @@
             </sc-if>
             <span class="text-muted" style="font-size:12px;">{{ stockCountLabel }}</span>
           </div>
+          <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+            <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanMagazzinoText }}" onChange="{{ onScanMagazzino }}">
+            <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraMagazzino }}">📷</button>
+            <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanMagazzinoMsg }}</span>
+          </div>
           <h3 class="no-print-on-order" style="margin-top:0;">Capi vergini</h3>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Il materiale da personalizzare (es. «Maglia bianca», taglia XL). Lo stesso capo può diventare articoli diversi: con <strong>Produci</strong> i pezzi passano dai vergini all'articolo in vendita. <strong>Scarta</strong> toglie i pezzi difettosi, qui o nelle giacenze più sotto. Ogni movimento finisce nel registro in fondo.</p>
           <sc-if value="{{ blankMsg }}" hint-placeholder-val="{{ false }}">
@@ -848,6 +858,36 @@
           <sc-if value="{{ noStockResults }}" hint-placeholder-val="{{ false }}">
             <div class="card no-print-on-order text-muted">Nessun articolo corrisponde alla ricerca.</div>
           </sc-if>
+          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+            <button type="button" aria-expanded="{{ labelsOpen }}" onClick="{{ toggleLabels }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">Stampa etichette QR</span><span style="font-size:12px;white-space:nowrap;">{{ labelSummary }} {{ labelsArrow }}</span></button>
+            <sc-if value="{{ labelsOpen }}" hint-placeholder-val="{{ false }}">
+              <div class="text-muted" style="font-size:12px;margin:6px 0;">Fogli {{ labelFormatName }}. Gli articoli sono quelli filtrati dalla ricerca qui sopra. La prima volta stampa su carta normale e sovrapponila al foglio di etichette controluce: se non combacia, sposta di qualche millimetro.</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsFromStock }}">Come la giacenza</button>
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsClear }}">Azzera</button>
+                <label class="text-muted" style="font-size:12px;" for="label-start">Inizia dall'etichetta</label>
+                <input id="label-start" class="input" type="number" min="1" max="{{ labelPerSheet }}" step="1" inputmode="numeric" style="max-width:70px;" value="{{ labelStart }}" onChange="{{ onLabelStart }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dx">Sposta → mm</label>
+                <input id="label-dx" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDx }}" onChange="{{ onLabelDx }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dy">↓ mm</label>
+                <input id="label-dy" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDy }}" onChange="{{ onLabelDy }}">
+              </div>
+              <table class="table stack">
+                <thead><tr><th>Articolo</th><th>Variante</th><th>Giacenza</th><th>Copie</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ labelRows }}" as="lr" hint-placeholder-count="4">
+                    <tr><td data-label="Articolo">{{ lr.name }}</td><td data-label="Variante">{{ lr.size }}</td><td data-label="Giacenza">{{ lr.stock }}</td>
+                      <td data-label="Copie"><input class="input" type="number" min="0" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Copie" value="{{ lr.copies }}" onChange="{{ lr.onCopies }}"></td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
+                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
+                <span style="font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ labelMsg }}</span>
+              </div>
+            </sc-if>
+          </div>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
               <button type="button" aria-expanded="{{ g.open }}" onClick="{{ g.toggle }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</span><span style="font-size:12px;white-space:nowrap;{{ g.summaryStyle }}">{{ g.summary }} {{ g.arrow }}</span></button>
@@ -1217,6 +1257,7 @@
           <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
           <p><strong>Colonna Consegnato.</strong> Quando il cliente ritira l'ordine spunta <em>Consegnato</em>: è solo un promemoria, il magazzino non si muove (i pezzi sono già stati tolti quando l'ordine è arrivato). Togliendo la spunta torna «da consegnare».</p>
           <p><strong>Vendite al banco.</strong> In cima alla scheda Ordini c'è <em>Vendita al banco</em>, per quello che vendi in loco dal telefono o dal tablet: scegli articolo, taglia o colore (tra parentesi i pezzi a magazzino) e pezzi, aggiungi altre righe con <em>+ riga</em>, poi premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
+          <p><strong>Codici QR ed etichette.</strong> Ogni articolo, per ogni taglia o colore, ha il suo codice (tipo <em>SC4K9Q2XA</em>): nasce da solo e non cambia se modifichi nome o prezzo. In Magazzino apri <em>Stampa etichette QR</em>: scrivi le copie per ogni variante (o premi <em>Come la giacenza</em>), scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR.</p>
           <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
           <h4>Magazzino: capi vergini e giacenze</h4>
@@ -1705,6 +1746,11 @@ class Component extends DCLogic {
     counter: { lines: [{ product: '', size: '', qty: '1' }], incasso: '' },   // vendita al banco
     counterBusy: false, counterMsg: '', counterMsgOk: true, counterQuery: '',
     orderSource: 'tutti',   // filtro Ordini: tutti | online | banco
+    scanText: { banco: '', magazzino: '' }, scanMsg: { banco: '', magazzino: '' },   // campi «Scansiona»
+    labelCopies: {},     // etichette da stampare: { 'id|taglia': copie }
+    labelMsg: '',
+    labelCfg: (() => { const d = { format: 'l7159', dx: 0, dy: 0, startAt: 1 };
+      try { const v = JSON.parse(localStorage.getItem('sunnycreations_label_cfg') || '{}'); return { ...d, format: v.format || d.format, dx: Number(v.dx) || 0, dy: Number(v.dy) || 0 }; } catch (e) { return d; } })(),
     produceProductQuery: '', produceBlankQuery: '',   // ricerca nei menu di «Produci»
     openGroups: {},      // schede aperte nel Magazzino: { 'b::nome vergine' | 'p::id articolo': true } — chiuse di base
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
@@ -3652,7 +3698,13 @@ class Component extends DCLogic {
     this.setState({ orders, selectedOrderCode: null });
   }
 
+  // resti di una stampa etichette rimasta a metà (afterprint mai arrivato)
+  clearLabelSheet() {
+    document.querySelectorAll('#label-sheet, #label-sheet-style').forEach(el => el.remove());
+    document.body.classList.remove('printing-labels');
+  }
   printOrderDetail() {
+    this.clearLabelSheet();
     document.body.classList.add('printing-order');
     window.print();
     setTimeout(() => document.body.classList.remove('printing-order'), 500);
@@ -4055,6 +4107,221 @@ class Component extends DCLogic {
     const p = this.getProduct(id);
     if (p && this.isEn() && p.variantLabelEn) return p.variantLabelEn;
     return (p && p.variantLabel) ? p.variantLabel : this.t().size;
+  }
+
+  // ── Codici QR ─────────────────────────────────────────────────────────
+  // Il codice si ricava da id+taglia: niente da salvare. Solo [0-9A-Z] perché i
+  // lettori Bluetooth «scrivono» da tastiera e i simboli escono sbagliati su quella italiana.
+  LABEL_FORMATS = { l7159: { name: 'A4 3×8 · 70×37 mm (L7159)', cols: 3, rows: 8, w: 70, h: 37, left: 0, top: 4.5, gapX: 0, gapY: 0 } };
+  scanCode(id, size) {
+    const str = id + '|' + (size || '');
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return 'SC' + h.toString(36).toUpperCase().padStart(7, '0');
+  }
+  scanVariants() {
+    return this.getCatalog().flatMap(p => (p.sizes && p.sizes.length ? p.sizes : ['']).map(size => ({ id: p.id, size, name: p.name, code: this.scanCode(p.id, size) })));
+  }
+  scanNorm(code) { return code.slice(2).replace(/O/g, '0').replace(/I/g, '1'); }   // chi lo scrive a mano confonde O/0 e I/1
+  scanClean(text) { return String(text || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); }
+  // gli ultimi 9 caratteri: se nel campo era rimasto un pezzo di lettura vecchia, conta l'ultima
+  resolveScan(text) {
+    const t = this.scanClean(text).slice(-9);
+    if (!/^SC[0-9A-Z]{7}$/.test(t)) return null;
+    const v = this.scanVariants().find(x => this.scanNorm(x.code) === this.scanNorm(t));
+    return v ? { id: v.id, size: v.size } : null;
+  }
+  scanCollisions() {
+    const seen = {}, out = [];
+    this.scanVariants().forEach(v => {
+      const label = v.name + (v.size ? ' ' + v.size : '');
+      const n = this.scanNorm(v.code);
+      if (seen[n]) out.push([seen[n], label]); else seen[n] = label;
+    });
+    return out;
+  }
+  counterAddScan(lines, id, size) {
+    const i = lines.findIndex(l => l.product === id && (l.size || '') === size);
+    if (i >= 0) return lines.map((l, j) => j === i ? { ...l, qty: String(Math.max(0, Math.floor(Number(l.qty) || 0)) + 1) } : l);
+    const n = { product: id, size, qty: '1' }, e = lines.findIndex(l => !l.product);
+    return e >= 0 ? lines.map((l, j) => j === e ? n : l) : lines.concat([n]);
+  }
+  onScanText(where, text) {
+    const hit = this.resolveScan(text);
+    if (!hit) {
+      const clean = this.scanClean(text);
+      this.setState(s => ({ scanText: { ...s.scanText, [where]: text },
+        scanMsg: { ...s.scanMsg, [where]: clean.length >= 9 ? 'Codice sconosciuto: ' + clean.slice(-9) + '. Scegli dal menu o ristampa l’etichetta.' : '' } }));
+      return;
+    }
+    const p = this.getCatalog().find(x => x.id === hit.id), label = p.name + (hit.size ? ' ' + hit.size : '');
+    if (where === 'banco') {
+      this.setState(s => ({ counter: { ...s.counter, lines: this.counterAddScan(s.counter.lines, hit.id, hit.size) },
+        scanText: { ...s.scanText, banco: '' }, scanMsg: { ...s.scanMsg, banco: '+1 ' + label } }));
+    } else {
+      // via i filtri che lo nasconderebbero: «Aperto» deve vedersi
+      this.setState(s => ({ openGroups: { ...s.openGroups, ['p::' + hit.id]: true }, stockSearch: p.name, stockOnly: '*', adminCollection: '*', adminCategory: '*',
+        scanText: { ...s.scanText, magazzino: '' }, scanMsg: { ...s.scanMsg, magazzino: 'Aperto: ' + label } }));
+      this.setProduce({ product: hit.id, size: hit.size });
+    }
+  }
+  // Librerie lette prima di usarle (21/11/2026): nessuna chiamata di rete, lavorano solo in memoria.
+  QR_LIBS = {
+    jsqr: ['https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js', 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx'],
+    qrcode: ['https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k'],
+  };
+  loadScriptOnce([url, integrity]) {
+    this._scripts = this._scripts || {};
+    if (!this._scripts[url]) this._scripts[url] = new Promise((ok, ko) => {
+      const el = document.createElement('script');
+      el.src = url; el.integrity = integrity; el.crossOrigin = 'anonymous';
+      el.onload = ok; el.onerror = () => { delete this._scripts[url]; el.remove(); ko(new Error('script non caricato')); };
+      document.head.appendChild(el);
+    });
+    return this._scripts[url];
+  }
+  // Riquadro fotocamera fatto a mano, fuori da React: i fotogrammi restano nella pagina.
+  async openCamera(where) {
+    const say = m => this.setState(s => ({ scanMsg: { ...s.scanMsg, [where]: m } }));
+    const noCam = 'Fotocamera non disponibile o permesso negato: usa il lettore o scrivi il codice.';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return say(noCam);
+    let detect;
+    try {
+      if ('BarcodeDetector' in window && (await window.BarcodeDetector.getSupportedFormats()).includes('qr_code')) {
+        const bd = new window.BarcodeDetector({ formats: ['qr_code'] });
+        detect = async v => { const r = await bd.detect(v); return r.length ? r[0].rawValue : null; };
+      } else {
+        await this.loadScriptOnce(this.QR_LIBS.jsqr);
+        const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+        detect = async v => {
+          const w = v.videoWidth, h = v.videoHeight;
+          if (!w) return null;
+          const k = Math.min(1, 640 / Math.max(w, h));
+          cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+          cx.drawImage(v, 0, 0, cv.width, cv.height);
+          const r = window.jsQR(cx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, { inversionAttempts: 'dontInvert' });
+          return r ? r.data : null;
+        };
+      }
+    } catch (e) { return say('Lettore della fotocamera non caricato: controlla la connessione e riprova.'); }
+    const box = document.createElement('div');
+    box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Scansiona con la fotocamera');
+    box.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;';
+    box.innerHTML = '<div style="position:relative;width:min(92vw,420px);aspect-ratio:1;"><video playsinline muted style="width:100%;height:100%;object-fit:cover;border-radius:12px;background:#000;"></video>'
+      + '<div style="position:absolute;inset:18%;border:3px solid #fff;border-radius:12px;"></div></div>'
+      + '<div aria-live="polite" style="color:#fff;font-size:15px;text-align:center;">Inquadra il QR dell’etichetta</div>'
+      + '<button type="button" class="btn btn-secondary" style="min-height:48px;min-width:160px;">Chiudi</button>';
+    document.body.appendChild(box);
+    const video = box.querySelector('video'), note = box.querySelector('[aria-live]'), btn = box.querySelector('button');
+    let stream = null, timer = null, done = false;
+    const close = () => { if (done) return; done = true; clearTimeout(timer); if (stream) stream.getTracks().forEach(t => t.stop()); box.remove(); };
+    btn.onclick = close; btn.focus();
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      if (done) { stream.getTracks().forEach(t => t.stop()); return; }
+      video.srcObject = stream;
+      await video.play();
+    } catch (e) { close(); return say(noCam); }
+    const tick = async () => {
+      if (done) return;
+      let txt = null;
+      try { txt = await detect(video); } catch (e) {}
+      if (done) return;
+      if (txt && this.resolveScan(txt)) {
+        try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+        close(); this.onScanText(where, txt); return;
+      }
+      if (txt) note.textContent = 'Questo QR non è di un articolo: inquadra un’etichetta SunnyCreations';
+      timer = setTimeout(tick, 200);
+    };
+    tick();
+  }
+  setLabelCfg(patch) {
+    this.setState(s => {
+      const labelCfg = { ...s.labelCfg, ...patch };
+      try { localStorage.setItem('sunnycreations_label_cfg', JSON.stringify({ format: labelCfg.format, dx: Number(labelCfg.dx) || 0, dy: Number(labelCfg.dy) || 0 })); } catch (e) {}
+      return { labelCfg };
+    });
+  }
+  async printLabels() {
+    const say = m => this.setState({ labelMsg: m });
+    const clash = this.scanCollisions();
+    if (clash.length) return say('Due varianti avrebbero lo stesso codice: ' + clash.map(c => c.join(' e ')).join('; ') + '. Il codice nasce da articolo e taglia: togli queste due dalla stampa e segnala il caso, va cambiato il calcolo.');
+    const items = this.labelItems();
+    if (!items.length) return say('Scrivi quante copie stampare (o premi «Come la giacenza»).');
+    try { if (typeof window.qrcode === 'undefined') await this.loadScriptOnce(this.QR_LIBS.qrcode); }
+    catch (e) { return say('Generatore dei QR non caricato: controlla la connessione e riprova.'); }
+    const cfg = this.state.labelCfg, fmt = this.LABEL_FORMATS[cfg.format] || this.LABEL_FORMATS.l7159;
+    const dx = Number(cfg.dx) || 0, dy = Number(cfg.dy) || 0;
+    const pages = this.labelPages(fmt, items.length, Number(cfg.startAt) || 1);
+    const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    const svgs = {};
+    const svg = code => svgs[code] || (svgs[code] = (() => { const q = window.qrcode(0, 'M'); q.addData(code); q.make(); return q.createSvgTag({ cellSize: 1, margin: 2, scalable: true }); })());
+    let k = 0;
+    const html = pages.map(pg => '<section class="lp">' + pg.map(pos => {
+      const it = items[k++];
+      return '<div class="lb" style="left:' + (pos.x + dx) + 'mm;top:' + (pos.y + dy) + 'mm;width:' + fmt.w + 'mm;height:' + fmt.h + 'mm;">'
+        + '<div class="lq">' + svg(it.code) + '<div class="lc">' + it.code + '</div></div>'
+        + '<div class="lt"><div class="ln">' + esc(it.name) + '</div>' + (it.sizeLabel ? '<div class="ls">' + esc(it.sizeLabel) + '</div>' : '')
+        + '<div class="lpz">€ ' + this.money(it.price) + '</div></div></div>';
+    }).join('') + '</section>').join('');
+    this.clearLabelSheet();
+    const st = document.createElement('style');
+    st.id = 'label-sheet-style';
+    // @page solo durante questa stampa, così la stampa dell'ordine tiene i suoi margini
+    st.textContent = '@page{size:A4;margin:0}'
+      + '#label-sheet{display:none}'
+      + '@media print{body.printing-labels{margin:0!important;padding:0!important;background:#fff!important}'
+      + 'body.printing-labels>*:not(#label-sheet){display:none!important}body.printing-labels #label-sheet{display:block}}'
+      + '#label-sheet .lp{position:relative;width:210mm;height:296mm;overflow:hidden;break-after:page;page-break-after:always}'
+      + '#label-sheet .lp:last-child{break-after:auto;page-break-after:auto}'
+      + '#label-sheet .lb{position:absolute;box-sizing:border-box;padding:2.5mm;display:flex;gap:2.5mm;align-items:center;font-family:Helvetica,Arial,sans-serif;color:#000}'
+      + '#label-sheet .lq{width:24mm;flex:none;text-align:center}#label-sheet .lq svg{width:24mm;height:24mm;display:block}'
+      + '#label-sheet .lc{font:7pt/1.2 Menlo,Consolas,monospace;letter-spacing:.04em}'
+      + '#label-sheet .lt{min-width:0;flex:1}'
+      + '#label-sheet .ln{font-weight:700;font-size:9.5pt;line-height:1.2;max-height:3.6em;overflow:hidden}'
+      + '#label-sheet .ls{font-size:8.5pt;margin-top:1mm}#label-sheet .lpz{font-weight:700;font-size:12pt;margin-top:1.5mm}';
+    const sheet = document.createElement('div');
+    sheet.id = 'label-sheet'; sheet.innerHTML = html;
+    document.head.appendChild(st); document.body.appendChild(sheet);
+    document.body.classList.add('printing-labels');
+    const clean = () => { document.body.classList.remove('printing-labels'); sheet.remove(); st.remove(); };
+    window.addEventListener('afterprint', clean, { once: true });
+    say('');
+    window.print();
+  }
+  // posizioni in mm, pagina per pagina; startAt (1…cols×rows) vale solo per il primo foglio
+  labelPages(fmt, n, startAt) {
+    const per = fmt.cols * fmt.rows, r = v => Math.round(v * 100) / 100;
+    let slot = (startAt >= 1 && startAt <= per ? Math.floor(startAt) : 1) - 1, cur = null;
+    const pages = [];
+    for (let k = 0; k < n; k++) {
+      if (!cur || slot >= per) { if (cur) slot = 0; cur = []; pages.push(cur); }
+      const col = slot % fmt.cols, row = Math.floor(slot / fmt.cols);
+      cur.push({ x: r(fmt.left + col * (fmt.w + fmt.gapX)), y: r(fmt.top + row * (fmt.h + fmt.gapY)) });
+      slot++;
+    }
+    return pages;
+  }
+  labelsFromStock() {
+    const out = {};
+    this.stockFilteredCatalog().forEach(p => {
+      if (!this.state.stock[p.id]) return;
+      (p.sizes && p.sizes.length ? p.sizes : ['']).forEach(z => { const q = this.stockOf(p.id, z); if (q > 0) out[p.id + '|' + z] = q; });
+    });
+    return out;
+  }
+  labelItems() {
+    const out = [];
+    Object.entries(this.state.labelCopies).forEach(([key, n]) => {
+      const cut = key.indexOf('|'), id = key.slice(0, cut), size = key.slice(cut + 1);
+      const p = this.getCatalog().find(x => x.id === id), k = Math.max(0, Math.floor(Number(n) || 0));
+      if (!p) return;
+      const item = { code: this.scanCode(id, size), name: p.name, size, sizeLabel: size ? this.variantLabel(id) + ' ' + size + (p.priceUnit ? ' ' + p.priceUnit : '') : '',
+        price: this.unitPrice(id, size || null) };
+      for (let i = 0; i < k; i++) out.push(item);
+    });
+    return out;
   }
 
   previousItemsFor(code) {
@@ -4656,6 +4923,31 @@ class Component extends DCLogic {
       })),
       counterQuery: this.state.counterQuery,
       onCounterQuery: (e) => this.setState({ counterQuery: e.target.value }),
+      ...(() => {
+        const cfg = this.state.labelCfg, fmt = this.LABEL_FORMATS[cfg.format] || this.LABEL_FORMATS.l7159, n = this.labelItems().length;
+        const sheets = n ? this.labelPages(fmt, n, Number(cfg.startAt) || 1).length : 0;
+        return {
+          labelsOpen: !!this.state.openGroups.labels, labelsArrow: this.state.openGroups.labels ? '▾' : '▸',
+          toggleLabels: () => this.toggleGroup('labels'),
+          labelSummary: n ? n + ' da stampare' : '', labelFormatName: fmt.name, labelPerSheet: fmt.cols * fmt.rows,
+          labelTotal: n ? n + (n === 1 ? ' etichetta' : ' etichette') + ' su ' + sheets + (sheets === 1 ? ' foglio' : ' fogli') : 'Nessuna etichetta scelta',
+          labelStart: String(cfg.startAt), labelDx: String(cfg.dx), labelDy: String(cfg.dy),
+          onLabelStart: (e) => this.setLabelCfg({ startAt: e.target.value }),
+          onLabelDx: (e) => this.setLabelCfg({ dx: e.target.value }), onLabelDy: (e) => this.setLabelCfg({ dy: e.target.value }),
+          labelsFromStock: () => this.setState({ labelCopies: this.labelsFromStock(), labelMsg: '' }),
+          labelsClear: () => this.setState({ labelCopies: {}, labelMsg: '' }),
+          printLabels: () => this.printLabels(), labelMsg: this.state.labelMsg,
+          labelRows: this.stockFilteredCatalog().flatMap(p => (p.sizes && p.sizes.length ? p.sizes : ['']).map(z => {
+            const key = p.id + '|' + z, v = this.state.labelCopies[key];
+            return { name: p.name, size: z || '—', stock: this.state.stock[p.id] ? String(this.stockOf(p.id, z)) : 'sempre',
+              copies: v == null ? '' : String(v), onCopies: (e) => this.setState(s => ({ labelCopies: { ...s.labelCopies, [key]: e.target.value }, labelMsg: '' })) };
+          })),
+        };
+      })(),
+      scanBancoText: this.state.scanText.banco, scanBancoMsg: this.state.scanMsg.banco,
+      onScanBanco: (e) => this.onScanText('banco', e.target.value), cameraBanco: () => this.openCamera('banco'),
+      scanMagazzinoText: this.state.scanText.magazzino, scanMagazzinoMsg: this.state.scanMsg.magazzino,
+      onScanMagazzino: (e) => this.onScanText('magazzino', e.target.value), cameraMagazzino: () => this.openCamera('magazzino'),
       counterLines: this.state.counter.lines.map((l, i) => {
         const prod = this.getCatalog().find(x => x.id === l.product), list = this.produceProductList(this.state.counterQuery);
         if (prod && !list.includes(prod)) list.unshift(prod);
