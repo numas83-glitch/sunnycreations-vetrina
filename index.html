@@ -748,41 +748,11 @@
             </sc-if>
             <span class="text-muted" style="font-size:12px;">{{ stockCountLabel }}</span>
           </div>
-          <h3 class="sec no-print-on-order" style="margin-top:8px;">Etichette QR <small>scansiona per aprire un articolo · stampa i fogli di etichette</small></h3>
+          <h3 class="sec no-print-on-order" style="margin-top:8px;">Scansiona <small>apri un articolo dal QR · le etichette si stampano nella scheda <strong>Etichette</strong></small></h3>
           <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
             <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanMagazzinoText }}" onChange="{{ onScanMagazzino }}">
             <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraMagazzino }}">📷</button>
             <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanMagazzinoMsg }}</span>
-          </div>
-          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
-            <button type="button" aria-expanded="{{ labelsOpen }}" onClick="{{ toggleLabels }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">Stampa etichette</span><span style="font-size:12px;white-space:nowrap;">{{ labelSummary }} {{ labelsArrow }}</span></button>
-            <sc-if value="{{ labelsOpen }}" hint-placeholder-val="{{ false }}">
-              <div class="text-muted" style="font-size:12px;margin:6px 0;">Fogli {{ labelFormatName }}. Gli articoli sono quelli filtrati dalla ricerca qui sopra. La prima volta stampa su carta normale e sovrapponila al foglio di etichette controluce: se non combacia, sposta di qualche millimetro.</div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-                <button type="button" class="btn btn-ghost" onClick="{{ labelsFromStock }}">Come la giacenza</button>
-                <button type="button" class="btn btn-ghost" onClick="{{ labelsClear }}">Azzera</button>
-                <label class="text-muted" style="font-size:12px;" for="label-start">Inizia dall'etichetta</label>
-                <input id="label-start" class="input" type="number" min="1" max="{{ labelPerSheet }}" step="1" inputmode="numeric" style="max-width:70px;" value="{{ labelStart }}" onChange="{{ onLabelStart }}">
-                <label class="text-muted" style="font-size:12px;" for="label-dx">Sposta → mm</label>
-                <input id="label-dx" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDx }}" onChange="{{ onLabelDx }}">
-                <label class="text-muted" style="font-size:12px;" for="label-dy">↓ mm</label>
-                <input id="label-dy" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDy }}" onChange="{{ onLabelDy }}">
-              </div>
-              <table class="table stack">
-                <thead><tr><th>Articolo</th><th>Variante</th><th>Giacenza</th><th>Copie</th></tr></thead>
-                <tbody>
-                  <sc-for list="{{ labelRows }}" as="lr" hint-placeholder-count="4">
-                    <tr><td data-label="Articolo">{{ lr.name }}</td><td data-label="Variante">{{ lr.size }}</td><td data-label="Giacenza">{{ lr.stock }}</td>
-                      <td data-label="Copie"><input class="input" type="number" min="0" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Copie" value="{{ lr.copies }}" onChange="{{ lr.onCopies }}"></td></tr>
-                  </sc-for>
-                </tbody>
-              </table>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
-                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
-                <span style="font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ labelMsg }}</span>
-              </div>
-            </sc-if>
           </div>
           <h3 class="sec no-print-on-order">Capi vergini</h3>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Il materiale da personalizzare (es. «Maglia bianca», taglia XL). Lo stesso capo può diventare articoli diversi: con <strong>Produci</strong> i pezzi passano dai vergini all'articolo in vendita. <strong>Scarta</strong> toglie i pezzi difettosi, qui o nelle giacenze più sotto. Ogni movimento finisce nel registro in fondo.</p>
@@ -945,6 +915,49 @@
               </tbody>
             </table>
           </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabEtichette }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h3 class="sec first">Etichette QR <small>codici degli articoli · stampa i fogli di etichette</small></h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:var(--space-3);">
+            <input class="input" type="search" style="flex:1 1 220px;max-width:360px;" placeholder="Cerca articolo…" aria-label="Cerca articolo" value="{{ stockSearch }}" onChange="{{ onStockSearch }}">
+            <sc-if value="{{ stockFiltering }}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="btn btn-ghost" onClick="{{ clearStockSearch }}">Azzera filtri</button>
+            </sc-if>
+          </div>
+          <div class="card">
+              <div class="text-muted" style="font-size:12px;margin:6px 0;">Fogli {{ labelFormatName }}. Scrivi quante copie ti servono per ogni variante (o premi <em>Come la giacenza</em>) e poi <strong>Stampa</strong>: nell'anteprima di stampa vedi i QR. Il codice di ogni variante è nella colonna <em>Codice</em>. La prima volta stampa su carta normale e sovrapponila al foglio di etichette controluce: se non combacia, sposta di qualche millimetro.</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsFromStock }}">Come la giacenza</button>
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsClear }}">Azzera</button>
+                <label class="text-muted" style="font-size:12px;" for="label-start">Inizia dall'etichetta</label>
+                <input id="label-start" class="input" type="number" min="1" max="{{ labelPerSheet }}" step="1" inputmode="numeric" style="max-width:70px;" value="{{ labelStart }}" onChange="{{ onLabelStart }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dx">Sposta → mm</label>
+                <input id="label-dx" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDx }}" onChange="{{ onLabelDx }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dy">↓ mm</label>
+                <input id="label-dy" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDy }}" onChange="{{ onLabelDy }}">
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
+                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
+              </div>
+              <table class="table stack">
+                <thead><tr><th>Articolo</th><th>Variante</th><th>Codice</th><th>Giacenza</th><th>Copie</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ labelRows }}" as="lr" hint-placeholder-count="4">
+                    <tr><td data-label="Articolo">{{ lr.name }}</td><td data-label="Variante">{{ lr.size }}</td><td data-label="Codice" style="font-family:ui-monospace,Menlo,monospace;">{{ lr.code }}</td><td data-label="Giacenza">{{ lr.stock }}</td>
+                      <td data-label="Copie"><input class="input" type="number" min="0" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Copie" value="{{ lr.copies }}" onChange="{{ lr.onCopies }}"></td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
+                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
+                <span style="font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ labelMsg }}</span>
+              </div>
+          </div>
         </div>
       </sc-if>
 
@@ -1263,7 +1276,7 @@
           <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
           <p><strong>Colonna Consegnato.</strong> Quando il cliente ritira l'ordine spunta <em>Consegnato</em>: è solo un promemoria, il magazzino non si muove (i pezzi sono già stati tolti quando l'ordine è arrivato). Togliendo la spunta torna «da consegnare».</p>
           <p><strong>Vendite al banco.</strong> In cima alla scheda Ordini c'è <em>Vendita al banco</em>, per quello che vendi in loco dal telefono o dal tablet: scegli articolo, taglia o colore (tra parentesi i pezzi a magazzino) e pezzi, aggiungi altre righe con <em>+ riga</em>, poi premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
-          <p><strong>Codici QR ed etichette.</strong> Ogni taglia o colore di ogni articolo ha il suo numero progressivo (sull'etichetta <em>SC01001</em>, <em>SC01002</em>…). Li dà il database da solo: quando crei o duplichi un articolo, o gli aggiungi una taglia, prende il numero dopo l'ultimo. Un numero non cambia se modifichi nome o prezzo e non viene mai ridato a un altro articolo, nemmeno se cancelli quello vecchio: le etichette stampate restano sempre giuste. In Magazzino, nella prima sezione <em>Etichette QR</em>, apri <em>Stampa etichette</em>: scrivi le copie per ogni variante (o premi <em>Come la giacenza</em>), scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR (bastano anche le 5 cifre).</p>
+          <p><strong>Codici QR ed etichette.</strong> Ogni taglia o colore di ogni articolo ha il suo numero progressivo (sull'etichetta <em>SC01001</em>, <em>SC01002</em>…). Li dà il database da solo: quando crei o duplichi un articolo, o gli aggiungi una taglia, prende il numero dopo l'ultimo. Un numero non cambia se modifichi nome o prezzo e non viene mai ridato a un altro articolo, nemmeno se cancelli quello vecchio: le etichette stampate restano sempre giuste. Nella scheda <strong>Etichette</strong> (in alto, fra Magazzino e Produzione) vedi il codice di ogni variante nella colonna <em>Codice</em>; scrivi le copie per ogni variante (o premi <em>Come la giacenza</em>), scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>: i QR li vedi nell'anteprima di stampa. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR (bastano anche le 5 cifre).</p>
           <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
           <h4>Magazzino: capi vergini e giacenze</h4>
@@ -4694,6 +4707,7 @@ class Component extends DCLogic {
         { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
         { id: 'ordini', label: 'Ordini' },
         { id: 'magazzino', label: 'Magazzino' },
+        { id: 'etichette', label: 'Etichette' },
         { id: 'produzione', label: 'Produzione' },
         { id: 'prodotti', label: 'Prodotti' },
         { id: 'contabilita', label: 'Contabilità' },
@@ -4714,6 +4728,7 @@ class Component extends DCLogic {
       })(),
       isTabRichieste: this.state.adminTab === 'richieste',
       isTabMagazzino: this.state.adminTab === 'magazzino',
+      isTabEtichette: this.state.adminTab === 'etichette',
       isTabProduzione: this.state.adminTab === 'produzione',
       isTabProdotti: this.state.adminTab === 'prodotti',
       isTabContabilita: this.state.adminTab === 'contabilita',
@@ -4925,9 +4940,7 @@ class Component extends DCLogic {
         const cfg = this.state.labelCfg, fmt = this.LABEL_FORMATS[cfg.format] || this.LABEL_FORMATS.l7159, n = this.labelItems().length;
         const sheets = n ? this.labelPages(fmt, n, Number(cfg.startAt) || 1).length : 0;
         return {
-          labelsOpen: !!this.state.openGroups.labels, labelsArrow: this.state.openGroups.labels ? '▾' : '▸',
-          toggleLabels: () => this.toggleGroup('labels'),
-          labelSummary: n ? n + ' da stampare' : '', labelFormatName: fmt.name, labelPerSheet: fmt.cols * fmt.rows,
+          labelFormatName: fmt.name, labelPerSheet: fmt.cols * fmt.rows,
           labelTotal: n ? n + (n === 1 ? ' etichetta' : ' etichette') + ' su ' + sheets + (sheets === 1 ? ' foglio' : ' fogli') : 'Nessuna etichetta scelta',
           labelStart: String(cfg.startAt), labelDx: String(cfg.dx), labelDy: String(cfg.dy),
           onLabelStart: (e) => this.setLabelCfg({ startAt: e.target.value }),
@@ -4937,7 +4950,7 @@ class Component extends DCLogic {
           printLabels: () => this.printLabels(), labelMsg: this.state.labelMsg,
           labelRows: this.stockFilteredCatalog().flatMap(p => (p.sizes && p.sizes.length ? p.sizes : ['']).map(z => {
             const key = p.id + '|' + z, v = this.state.labelCopies[key];
-            return { name: p.name, size: z || '—', stock: this.state.stock[p.id] ? String(this.stockOf(p.id, z)) : 'sempre',
+            return { name: p.name, size: z || '—', code: this.scanCode(p.id, z) || '—', stock: this.state.stock[p.id] ? String(this.stockOf(p.id, z)) : 'sempre',
               copies: v == null ? '' : String(v), onCopies: (e) => this.setState(s => ({ labelCopies: { ...s.labelCopies, [key]: e.target.value }, labelMsg: '' })) };
           })),
         };
