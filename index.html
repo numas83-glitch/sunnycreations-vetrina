@@ -596,14 +596,51 @@
           </sc-for>
         </div>
         <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Il browser da cui sei entrato in admin non conta, nemmeno quando apre la vetrina.</p>
+        <div class="card no-print-on-order" style="margin-bottom:var(--space-5);">
+          <div class="card-title">Vendita al banco</div>
+          <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Per quello che vendi in loco: i pezzi escono dal magazzino e l'incasso entra nell'evento, già pagato e consegnato.</div>
+          <input class="input" type="search" style="max-width:220px;margin-bottom:6px;" placeholder="cerca articolo…" aria-label="Cerca articolo venduto al banco" value="{{ counterQuery }}" onChange="{{ onCounterQuery }}">
+          <sc-for list="{{ counterLines }}" as="l" hint-placeholder-count="1">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+              <select class="input" style="max-width:260px;" aria-label="Articolo venduto" value="{{ l.product }}" onChange="{{ l.onProduct }}">
+                <sc-for list="{{ l.products }}" as="lp" hint-placeholder-count="3"><option value="{{ lp.id }}">{{ lp.label }}</option></sc-for>
+              </select>
+              <sc-if value="{{ l.hasSizes }}" hint-placeholder-val="{{ true }}">
+                <select class="input" style="max-width:120px;" key="{{ l.sizeKey }}" aria-label="Taglia o colore" value="{{ l.size }}" onChange="{{ l.onSize }}">
+                  <sc-for list="{{ l.sizes }}" as="ls" hint-placeholder-count="3"><option value="{{ ls.id }}">{{ ls.label }}</option></sc-for>
+                </select>
+              </sc-if>
+              <input class="input" type="number" min="1" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Pezzi" value="{{ l.qty }}" onChange="{{ l.onQty }}">
+              <button type="button" class="btn btn-ghost" aria-label="Togli riga" onClick="{{ l.remove }}">✕</button>
+            </div>
+          </sc-for>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;">
+            <button type="button" class="btn btn-ghost" onClick="{{ addCounterLine }}">+ riga</button>
+            <label class="text-muted" style="font-size:12px;" for="counter-incasso">Incasso €</label>
+            <input id="counter-incasso" class="input" type="text" inputmode="decimal" style="max-width:110px;" placeholder="{{ counterListino }}" value="{{ counterIncasso }}" onChange="{{ onCounterIncasso }}">
+            <span class="text-muted" style="font-size:12px;">vuoto = listino € {{ counterListino }}</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" style="min-height:48px;min-width:140px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCash }}">Contanti</button>
+            <button type="button" class="btn btn-primary" style="min-height:48px;min-width:140px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCard }}">Elettronico</button>
+          </div>
+          <sc-if value="{{ counterMsg }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;margin-top:6px;{{ counterMsgStyle }}" role="status">{{ counterMsg }}</div>
+          </sc-if>
+        </div>
         <h3 class="no-print-on-order" style="margin-top:0;">Ordini</h3>
+        <div class="no-print-on-order seg" style="margin-bottom:var(--space-2);">
+          <sc-for list="{{ orderSources }}" as="f" hint-placeholder-count="3">
+            <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
         <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
           <sc-for list="{{ orderFilters }}" as="f" hint-placeholder-count="4">
             <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
           </sc-for>
         </div>
         <table class="table stack no-print-on-order">
-          <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Pronto</th><th>Evento</th><th></th></tr></thead>
+          <thead><tr><th>Codice</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Pronto</th><th>Consegnato</th><th>Evento</th><th></th></tr></thead>
           <tbody>
             <sc-for list="{{ adminOrders }}" as="o" hint-placeholder-count="3">
               <tr>
@@ -617,6 +654,9 @@
                   <sc-if value="{{ o.canMailReady }}" hint-placeholder-val="{{ false }}">
                     <button type="button" class="btn btn-ghost" style="font-size:12px;padding:2px 6px;" onClick="{{ o.mailReady }}">Manda avviso</button>
                   </sc-if>
+                </td>
+                <td data-label="Consegnato">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" aria-label="Consegnato" checked="{{ o.isDelivered }}" onChange="{{ o.toggleDelivered }}" style="width:17px;height:17px;accent-color:var(--color-brand-green);"> <span style="font-size:12px;">{{ o.deliveredLabel }}</span></label>
                 </td>
                 <td>
                   <sc-if value="{{ hasSeveralEvents }}" hint-placeholder-val="{{ true }}">
@@ -1175,6 +1215,8 @@
           <p>Ogni ordine passa per tre stati: <strong>da pagare</strong> (grigio), <strong>pagamento dichiarato</strong> (giallo, l'ha detto il cliente) e <strong>pagato</strong> (verde, l'hai confermato tu). Giallo non vuol dire incassato: vuol dire che qualcuno sostiene di aver pagato.</p>
           <p><em>Dettagli</em> apre la scheda di preparazione, che si stampa e si porta al banco. <em>Annulla</em> toglie l'ordine dai conti e <strong>rimette le quantità a magazzino</strong>.</p>
           <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
+          <p><strong>Colonna Consegnato.</strong> Quando il cliente ritira l'ordine spunta <em>Consegnato</em>: è solo un promemoria, il magazzino non si muove (i pezzi sono già stati tolti quando l'ordine è arrivato). Togliendo la spunta torna «da consegnare».</p>
+          <p><strong>Vendite al banco.</strong> In cima alla scheda Ordini c'è <em>Vendita al banco</em>, per quello che vendi in loco dal telefono o dal tablet: scegli articolo, taglia o colore (tra parentesi i pezzi a magazzino) e pezzi, aggiungi altre righe con <em>+ riga</em>, poi premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
           <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
           <h4>Magazzino: capi vergini e giacenze</h4>
@@ -1483,6 +1525,7 @@
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Ricavo totale</span><strong>€ {{ adminRevenueLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Sconti riservati</span><strong>− € {{ discountTotalLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding:6px 0 4px;border-top:1px solid var(--color-divider);"><span>Ricavo netto</span><strong>€ {{ netRevenueLabel }}</strong></div>
+          <div class="text-muted" style="display:flex;justify-content:space-between;padding:2px 0 4px;font-size:13px;"><span>Già incassato: contanti € {{ collectedCashLabel }} · elettronico € {{ collectedCardLabel }}</span></div>
           <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Costi materiali + altri</span><strong>− € {{ totalCostLabel }}</strong></div>
           <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:4px;border-top:1px solid var(--color-divider);font-size:18px;"><span>A copertura evento / beneficenza</span><strong style="color:var(--color-brand-green);">€ {{ surplusLabel }}</strong></div>
         </div>
@@ -1659,6 +1702,9 @@ class Component extends DCLogic {
     newBlankName: '', newBlankSizes: '',
     stockSearch: '', stockOnly: '*',   // ricerca e filtro del Magazzino: '*' tutti, 'owed' da produrre, 'out' esauriti
     produce: { product: '', size: '', blank: '', blankSize: '', qty: '' },
+    counter: { lines: [{ product: '', size: '', qty: '1' }], incasso: '' },   // vendita al banco
+    counterBusy: false, counterMsg: '', counterMsgOk: true, counterQuery: '',
+    orderSource: 'tutti',   // filtro Ordini: tutti | online | banco
     produceProductQuery: '', produceBlankQuery: '',   // ricerca nei menu di «Produci»
     openGroups: {},      // schede aperte nel Magazzino: { 'b::nome vergine' | 'p::id articolo': true } — chiuse di base
     bulkStock: {},      // quantità da applicare a tutte le varianti di un prodotto      // { 'id::size': '3' } — contenuto dei campi "+"
@@ -2169,6 +2215,8 @@ class Component extends DCLogic {
             paidAt: o.paid_at || null,
             readyAt: o.ready_at || null,
             readyMailedAt: o.ready_mailed_at || null,
+            deliveredAt: o.delivered_at || null,
+            source: o.source || 'online',
             lang: o.lang || 'it',
           })) });
       }
@@ -3313,6 +3361,15 @@ class Component extends DCLogic {
   // ── Ordine pronto e avviso al cliente ─────────────────────────────────
   // La spunta si salva sempre; la mail parte solo se l'admin conferma
   // (a volte la consegna è a mano e l'avviso non serve).
+  // Consegnato: solo un segno, i pezzi sono già stati scalati all'ordine.
+  async setDelivered(code, on) {
+    const deliveredAt = on ? new Date().toISOString() : null;
+    try {
+      const { error } = await window.__sb.from('orders').update({ delivered_at: deliveredAt }).eq('code', code);
+      if (error) return this.orderSaveFailed(error);
+    } catch (e) { return this.orderSaveFailed(e); }
+    this.setState(s => ({ orders: s.orders.map(o => o.code === code ? { ...o, deliveredAt } : o) }));
+  }
   async setReady(code, on) {
     const readyAt = on ? new Date().toISOString() : null;
     try {
@@ -3322,6 +3379,7 @@ class Component extends DCLogic {
     this.setState(s => ({ orders: s.orders.map(o => o.code === code ? { ...o, readyAt } : o) }));
     if (!on) return;
     const o = this.state.orders.find(x => x.code === code) || {};
+    if (o.source === 'banco') return;   // al banco non c'è nessuno da avvisare
     const c = o.customer || {};
     const unpaid = (o.paymentStatus || 'pending') === 'pending';
     if (!window.confirm(`Ordine ${code} pronto.\n\nMandare la mail a ${c.name || ''} ${c.surname || ''} (${c.email || ''}) per avvisare che è pronto` +
@@ -3497,6 +3555,63 @@ class Component extends DCLogic {
       if ('product' in patch || 'size' in patch || 'blank' in patch) p.blankSize = bs.includes(p.size) ? p.size : (bs[0] || '');
       return { produce: p };
     });
+  }
+  // ── Vendita al banco ──────────────────────────────────────────────────
+  setCounterLine(i, patch) {
+    this.setState(s => {
+      const lines = s.counter.lines.map((l, j) => {
+        if (j !== i) return l;
+        const n = { ...l, ...patch }, prod = this.getCatalog().find(x => x.id === n.product);
+        const sizes = prod && prod.sizes && prod.sizes.length ? prod.sizes : [''];
+        if (!sizes.includes(n.size)) n.size = sizes[0];
+        return n;
+      });
+      return { counter: { ...s.counter, lines } };
+    });
+  }
+  addCounterLine() { this.setState(s => ({ counter: { ...s.counter, lines: s.counter.lines.concat([{ product: '', size: '', qty: '1' }]) } })); }
+  removeCounterLine(i) {
+    this.setState(s => {
+      const lines = s.counter.lines.filter((l, j) => j !== i);
+      return { counter: { ...s.counter, lines: lines.length ? lines : [{ product: '', size: '', qty: '1' }] } };
+    });
+  }
+  async doCounterSale(method) {
+    if (this.state.counterBusy) return;   // doppio tocco: una vendita sola
+    const cat = this.getCatalog(), lines = this.state.counter.lines.filter(l => l.product);   // righe vuote ignorate
+    const items = lines.map(l => {
+      const p = cat.find(x => x.id === l.product), qty = Math.floor(Number(l.qty) || 0);
+      if (!p || qty <= 0) return null;
+      const size = p.sizes && p.sizes.length ? l.size : null, price = this.unitPrice(p.id, size);
+      return { id: p.id, name: p.name, size, qty, price, lineTotal: Math.round(price * qty * 100) / 100 };
+    });
+    if (!items.length || items.some(x => !x)) { this.setState({ counterMsg: 'Scegli articolo e pezzi.', counterMsgOk: false }); return; }
+    const { total, net, discount } = this.counterSaleTotals(lines, this.state.counter.incasso);
+    if (net == null) { this.setState({ counterMsg: 'Incasso non valido: scrivi solo la cifra, es. 12,50.', counterMsgOk: false }); return; }
+    // Il codice resta lo stesso finché la vendita non va a buon fine: se la rete
+    // cade dopo il salvataggio, riprovare non registra una seconda vendita.
+    const ev = this.state.adminEvent, code = this.state.counter.code || this.generateCode();
+    this.setState(s => ({ counterBusy: true, counterMsg: '', counter: { ...s.counter, code } }));
+    try {
+      const { error } = await window.__sb.rpc('counter_sale', { p_code: code, p_items: items, p_total: total, p_method: method,
+        p_event: ev && ev !== 'tutti' && ev !== 'in-corso' ? ev : null });
+      if (error) throw error;
+      const discountOk = discount > 0 ? (await this.saveSettingNow('discount:' + code, String(discount))) !== false : true;
+      await Promise.all([this.loadStockFromDb(), this.loadOrdersFromDb()]);
+      this.setState({ counter: { lines: [{ product: '', size: '', qty: '1' }], incasso: '' }, counterQuery: '',
+        counterMsg: discountOk ? `Registrata: € ${this.money(net)} ${method === 'contanti' ? 'in contanti' : 'elettronico'}.`
+          : `Vendita registrata a € ${this.money(total)}, ma lo sconto NON salvato: riscrivilo nei Dettagli dell'ordine ${code}.`,
+        counterMsgOk: discountOk });
+    } catch (e) {
+      const m = String((e && e.message) || e);
+      const why = /stock_insufficiente/.test(m) ? this.shortageMessage(e) + ' — se il pezzo c\'è, correggi la giacenza con Aggiungi nel Magazzino'
+        : (/non_autorizzato|JWT/i.test(m) ? 'sessione scaduta, esci e rientra' : m);
+      this.setState({ counterMsgOk: false, counterMsg: /fetch|network|load failed/i.test(m)
+        ? 'Connessione persa: esito incerto. Ripremi lo stesso pulsante quando torna la rete (non si registra due volte), o guarda la lista Banco.'
+        : 'Vendita NON registrata: ' + why + '.' });
+    } finally {
+      this.setState({ counterBusy: false });
+    }
   }
   async doProduce() {
     const p = this.state.produce, q = Math.floor(Number(p.qty) || 0);
@@ -3786,7 +3901,8 @@ class Component extends DCLogic {
   // senza id si agganciano per nome.
   productionSummary() {
     const filter = this.state.productionFilter || 'tutti';
-    const orders = this.activeOrders().filter(o =>
+    // le vendite al banco erano già pezzi fatti: non vanno prodotte
+    const orders = this.activeOrders().filter(o => o.source !== 'banco').filter(o =>
       filter === 'tutti' ? true : (filter === 'pagati' ? o.paymentStatus === 'paid' : o.paymentStatus !== 'paid'));
     const cat = this.getCatalog();
     // Posizione nel catalogo per id: il catalogo di riserva viene ricreato a
@@ -3844,6 +3960,28 @@ class Component extends DCLogic {
   }
   amountCollected() {
     return this.activeOrders().filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + this.netTotal(o), 0);
+  }
+  // Incasso netto dei pagati, diviso per metodo: solo 'contanti' è cassa,
+  // PayPal, bonifico ed elettronico del banco vanno insieme.
+  collectedByMethod() {
+    const out = { contanti: 0, elettronico: 0 };
+    this.activeOrders().filter(o => o.paymentStatus === 'paid')
+      .forEach(o => { out[o.paymentMethod === 'contanti' ? 'contanti' : 'elettronico'] += this.netTotal(o); });
+    return out;
+  }
+  // Vendita al banco: totale di listino e incasso reale (tra 0 e il listino,
+  // vuoto = listino); la differenza diventa lo sconto riservato. Prezzo come
+  // online (unitPrice: prezzi a peso e correzioni). net null = incasso illeggibile.
+  counterSaleTotals(lines, incasso) {
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const total = r2(lines.reduce((s, l) => {
+      const id = l.id || l.product, p = this.getCatalog().find(x => x.id === id);
+      return s + (p ? this.unitPrice(id, p.sizes && p.sizes.length ? l.size : null) : 0) * Math.max(0, Math.floor(Number(l.qty) || 0));
+    }, 0));
+    const raw = String(incasso == null ? '' : incasso).trim().replace(',', '.');
+    if (raw !== '' && !/^\d+(\.\d{1,2})?$/.test(raw)) return { total, net: null, discount: 0 };
+    const net = raw === '' ? total : r2(Math.min(total, Number(raw)));
+    return { total, net, discount: r2(total - net) };
   }
   lowStockCount() {
     let n = 0;
@@ -4258,9 +4396,11 @@ class Component extends DCLogic {
       })),
       adminOrders: this.activeOrders()
         .filter(o => this.state.orderFilter === 'tutti' || (o.paymentStatus || 'pending') === this.state.orderFilter)
+        .filter(o => this.state.orderSource === 'tutti' || (o.source || 'online') === this.state.orderSource)
         .slice().reverse()
         .map(o => ({
           ...o,
+          customer: o.source === 'banco' ? { name: 'Vendita al banco · ' + (o.paymentMethod === 'contanti' ? 'contanti' : 'elettronico'), surname: '' } : (o.customer || {}),
           totalLabel: this.money(o.total),
           dateLabel: new Date(o.date).toLocaleString('it-IT'),
           statusLabel: this.paymentLabel(o),
@@ -4277,9 +4417,12 @@ class Component extends DCLogic {
           discountNote: 'incasso ' + this.money(this.netTotal(o)),
           isReady: !!o.readyAt,
           readyLabel: o.readyAt ? (o.readyMailedAt ? 'avvisato ' + new Date(o.readyMailedAt).toLocaleDateString('it-IT') : 'pronto') : '',
-          canMailReady: !!o.readyAt && !o.readyMailedAt,
+          canMailReady: !!o.readyAt && !o.readyMailedAt && o.source !== 'banco',   // al banco non c'è nessuno da avvisare
           toggleReady: (e) => this.setReady(o.code, !!e.target.checked),
           mailReady: () => this.sendReadyMail(o.code),
+          isDelivered: !!o.deliveredAt,
+          deliveredLabel: o.deliveredAt ? 'consegnato ' + new Date(o.deliveredAt).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) : '',
+          toggleDelivered: (e) => this.setDelivered(o.code, !!e.target.checked),
         })),
       adminTabs: [
         { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
@@ -4504,6 +4647,39 @@ class Component extends DCLogic {
       produceQty: this.state.produce.qty,
       onProduceQty: (e) => this.setProduce({ qty: e.target.value }),
       doProduce: () => this.doProduce(),
+      collectedCashLabel: this.money(this.collectedByMethod().contanti),
+      collectedCardLabel: this.money(this.collectedByMethod().elettronico),
+      orderSources: [{ id: 'tutti', label: 'Tutti' }, { id: 'online', label: 'Online' }, { id: 'banco', label: 'Banco' }].map(f => ({
+        label: f.label, select: () => this.setState({ orderSource: f.id }),
+        style: this.state.orderSource === f.id ? { background: 'var(--color-accent)', color: 'var(--color-bg)' } : { background: 'transparent', color: 'var(--color-text)' },
+      })),
+      counterQuery: this.state.counterQuery,
+      onCounterQuery: (e) => this.setState({ counterQuery: e.target.value }),
+      counterLines: this.state.counter.lines.map((l, i) => {
+        const prod = this.getCatalog().find(x => x.id === l.product), list = this.produceProductList(this.state.counterQuery);
+        if (prod && !list.includes(prod)) list.unshift(prod);
+        return {
+          product: l.product, size: l.size, qty: l.qty,
+          sizeKey: 'banco-taglia-' + i + '-' + l.product,
+          products: [{ id: '', label: this.state.counterQuery.trim() ? list.length + ' trovati…' : 'Articolo…' }]
+            .concat(list.map(p => ({ id: p.id, label: (p.sortOrder ? p.sortOrder + '. ' : '') + p.name + ' — € ' + this.money(p.price) }))),
+          hasSizes: !!(prod && prod.sizes && prod.sizes.length),
+          sizes: (prod && prod.sizes || []).map(x => ({ id: x, label: x + (this.stockOf(prod.id, x) !== Infinity ? ' (' + this.stockOf(prod.id, x) + ')' : '') })),
+          onProduct: (e) => this.setCounterLine(i, { product: e.target.value }),
+          onSize: (e) => this.setCounterLine(i, { size: e.target.value }),
+          onQty: (e) => this.setCounterLine(i, { qty: e.target.value }),
+          remove: () => this.removeCounterLine(i),
+        };
+      }),
+      addCounterLine: () => this.addCounterLine(),
+      counterIncasso: this.state.counter.incasso,
+      onCounterIncasso: (e) => this.setState(s => ({ counter: { ...s.counter, incasso: e.target.value } })),
+      counterListino: this.money(this.counterSaleTotals(this.state.counter.lines, '').total),
+      counterBusy: this.state.counterBusy,
+      counterMsg: this.state.counterMsg,
+      counterMsgStyle: this.state.counterMsgOk ? 'color:var(--color-brand-green);' : 'color:var(--color-brand-red);',
+      sellCash: () => this.doCounterSale('contanti'),
+      sellCard: () => this.doCounterSale('elettronico'),
       hasMoves: this.state.moves.length > 0,
       noMoves: this.state.moves.length === 0,
       moveRows: this.state.moves.map(m => {
