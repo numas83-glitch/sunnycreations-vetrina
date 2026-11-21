@@ -40,6 +40,11 @@
     }
     a { color: var(--color-accent); }
     a:hover { color: var(--color-brand-red); }
+    /* Sezioni dell'admin: una fascia col titolo, per capire a colpo d'occhio dove inizia ognuna */
+    .sec { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 40px 0 12px; padding: 10px 14px;
+      border-radius: 12px; border-left: 5px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 7%, #fff); font-size: 19px; }
+    .sec.first { margin-top: 0; }
+    .sec small { font-size: 12px; font-weight: 400; color: color-mix(in srgb, var(--color-accent) 70%, #fff); }
     @media print {
       body.printing-order .no-print-on-order { display: none !important; }
     }
@@ -596,8 +601,8 @@
           </sc-for>
         </div>
         <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Il browser da cui sei entrato in admin non conta, nemmeno quando apre la vetrina.</p>
+        <h3 class="sec first no-print-on-order">Vendita al banco <small>quello che vendi in loco</small></h3>
         <div class="card no-print-on-order" style="margin-bottom:var(--space-5);">
-          <div class="card-title">Vendita al banco</div>
           <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Per quello che vendi in loco: i pezzi escono dal magazzino e l'incasso entra nell'evento, già pagato e consegnato.</div>
           <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
             <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanBancoText }}" onChange="{{ onScanBanco }}">
@@ -633,7 +638,7 @@
             <div style="font-size:13px;margin-top:6px;{{ counterMsgStyle }}" role="status">{{ counterMsg }}</div>
           </sc-if>
         </div>
-        <h3 class="no-print-on-order" style="margin-top:0;">Ordini</h3>
+        <h3 class="sec no-print-on-order">Ordini</h3>
         <div class="no-print-on-order seg" style="margin-bottom:var(--space-2);">
           <sc-for list="{{ orderSources }}" as="f" hint-placeholder-count="3">
             <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
@@ -743,12 +748,43 @@
             </sc-if>
             <span class="text-muted" style="font-size:12px;">{{ stockCountLabel }}</span>
           </div>
+          <h3 class="sec no-print-on-order" style="margin-top:8px;">Etichette QR <small>scansiona per aprire un articolo · stampa i fogli di etichette</small></h3>
           <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
             <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanMagazzinoText }}" onChange="{{ onScanMagazzino }}">
             <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraMagazzino }}">📷</button>
             <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanMagazzinoMsg }}</span>
           </div>
-          <h3 class="no-print-on-order" style="margin-top:0;">Capi vergini</h3>
+          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
+            <button type="button" aria-expanded="{{ labelsOpen }}" onClick="{{ toggleLabels }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">Stampa etichette</span><span style="font-size:12px;white-space:nowrap;">{{ labelSummary }} {{ labelsArrow }}</span></button>
+            <sc-if value="{{ labelsOpen }}" hint-placeholder-val="{{ false }}">
+              <div class="text-muted" style="font-size:12px;margin:6px 0;">Fogli {{ labelFormatName }}. Gli articoli sono quelli filtrati dalla ricerca qui sopra. La prima volta stampa su carta normale e sovrapponila al foglio di etichette controluce: se non combacia, sposta di qualche millimetro.</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsFromStock }}">Come la giacenza</button>
+                <button type="button" class="btn btn-ghost" onClick="{{ labelsClear }}">Azzera</button>
+                <label class="text-muted" style="font-size:12px;" for="label-start">Inizia dall'etichetta</label>
+                <input id="label-start" class="input" type="number" min="1" max="{{ labelPerSheet }}" step="1" inputmode="numeric" style="max-width:70px;" value="{{ labelStart }}" onChange="{{ onLabelStart }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dx">Sposta → mm</label>
+                <input id="label-dx" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDx }}" onChange="{{ onLabelDx }}">
+                <label class="text-muted" style="font-size:12px;" for="label-dy">↓ mm</label>
+                <input id="label-dy" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDy }}" onChange="{{ onLabelDy }}">
+              </div>
+              <table class="table stack">
+                <thead><tr><th>Articolo</th><th>Variante</th><th>Giacenza</th><th>Copie</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ labelRows }}" as="lr" hint-placeholder-count="4">
+                    <tr><td data-label="Articolo">{{ lr.name }}</td><td data-label="Variante">{{ lr.size }}</td><td data-label="Giacenza">{{ lr.stock }}</td>
+                      <td data-label="Copie"><input class="input" type="number" min="0" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Copie" value="{{ lr.copies }}" onChange="{{ lr.onCopies }}"></td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
+                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
+                <span style="font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ labelMsg }}</span>
+              </div>
+            </sc-if>
+          </div>
+          <h3 class="sec no-print-on-order">Capi vergini</h3>
           <p class="no-print-on-order text-muted" style="margin-top:-6px;">Il materiale da personalizzare (es. «Maglia bianca», taglia XL). Lo stesso capo può diventare articoli diversi: con <strong>Produci</strong> i pezzi passano dai vergini all'articolo in vendita. <strong>Scarta</strong> toglie i pezzi difettosi, qui o nelle giacenze più sotto. Ogni movimento finisce nel registro in fondo.</p>
           <sc-if value="{{ blankMsg }}" hint-placeholder-val="{{ false }}">
             <div class="no-print-on-order" style="{{ blankMsgStyle }}">{{ blankMsg }}</div>
@@ -794,8 +830,8 @@
             </div>
           </sc-if>
           <sc-if value="{{ hasBlanks }}" hint-placeholder-val="{{ true }}">
+            <h3 class="sec no-print-on-order">Produci <small>dai vergini all'articolo in vendita</small></h3>
             <div class="card no-print-on-order" style="margin-bottom:var(--space-6);">
-              <div class="card-title">Produci</div>
               <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Scegli l'articolo che hai fatto, poi «dal vergine» il capo da cui è uscito: i pezzi passano dai vergini all'articolo in vendita, in un colpo solo.</div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
                 <span class="text-muted" style="font-size:12px;min-width:72px;">Articolo</span>
@@ -826,7 +862,7 @@
               </div>
             </div>
           </sc-if>
-          <h3 class="no-print-on-order">Giacenze</h3>
+          <h3 class="sec no-print-on-order">Giacenze <small>articoli in vendita</small></h3>
           <sc-if value="{{ stockMsg }}" hint-placeholder-val="{{ false }}">
             <div class="no-print-on-order" style="color:var(--color-brand-red);font-size:13px;margin-bottom:var(--space-3);">{{ stockMsg }}</div>
           </sc-if>
@@ -858,36 +894,6 @@
           <sc-if value="{{ noStockResults }}" hint-placeholder-val="{{ false }}">
             <div class="card no-print-on-order text-muted">Nessun articolo corrisponde alla ricerca.</div>
           </sc-if>
-          <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
-            <button type="button" aria-expanded="{{ labelsOpen }}" onClick="{{ toggleLabels }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;">Stampa etichette QR</span><span style="font-size:12px;white-space:nowrap;">{{ labelSummary }} {{ labelsArrow }}</span></button>
-            <sc-if value="{{ labelsOpen }}" hint-placeholder-val="{{ false }}">
-              <div class="text-muted" style="font-size:12px;margin:6px 0;">Fogli {{ labelFormatName }}. Gli articoli sono quelli filtrati dalla ricerca qui sopra. La prima volta stampa su carta normale e sovrapponila al foglio di etichette controluce: se non combacia, sposta di qualche millimetro.</div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-                <button type="button" class="btn btn-ghost" onClick="{{ labelsFromStock }}">Come la giacenza</button>
-                <button type="button" class="btn btn-ghost" onClick="{{ labelsClear }}">Azzera</button>
-                <label class="text-muted" style="font-size:12px;" for="label-start">Inizia dall'etichetta</label>
-                <input id="label-start" class="input" type="number" min="1" max="{{ labelPerSheet }}" step="1" inputmode="numeric" style="max-width:70px;" value="{{ labelStart }}" onChange="{{ onLabelStart }}">
-                <label class="text-muted" style="font-size:12px;" for="label-dx">Sposta → mm</label>
-                <input id="label-dx" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDx }}" onChange="{{ onLabelDx }}">
-                <label class="text-muted" style="font-size:12px;" for="label-dy">↓ mm</label>
-                <input id="label-dy" class="input" type="number" step="0.5" inputmode="decimal" style="max-width:70px;" value="{{ labelDy }}" onChange="{{ onLabelDy }}">
-              </div>
-              <table class="table stack">
-                <thead><tr><th>Articolo</th><th>Variante</th><th>Giacenza</th><th>Copie</th></tr></thead>
-                <tbody>
-                  <sc-for list="{{ labelRows }}" as="lr" hint-placeholder-count="4">
-                    <tr><td data-label="Articolo">{{ lr.name }}</td><td data-label="Variante">{{ lr.size }}</td><td data-label="Giacenza">{{ lr.stock }}</td>
-                      <td data-label="Copie"><input class="input" type="number" min="0" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Copie" value="{{ lr.copies }}" onChange="{{ lr.onCopies }}"></td></tr>
-                  </sc-for>
-                </tbody>
-              </table>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-                <button type="button" class="btn btn-primary" onClick="{{ printLabels }}">Stampa</button>
-                <span class="text-muted" style="font-size:12px;">{{ labelTotal }}</span>
-                <span style="font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ labelMsg }}</span>
-              </div>
-            </sc-if>
-          </div>
           <sc-for list="{{ stockGroups }}" as="g" hint-placeholder-count="3">
             <div class="card no-print-on-order" style="margin-bottom:var(--space-3);">
               <button type="button" aria-expanded="{{ g.open }}" onClick="{{ g.toggle }}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;"><span class="card-title" style="margin:0;"><span class="text-muted" style="font-weight:400;">{{ g.number }}</span> {{ g.name }}</span><span style="font-size:12px;white-space:nowrap;{{ g.summaryStyle }}">{{ g.summary }} {{ g.arrow }}</span></button>
@@ -921,7 +927,7 @@
               </sc-if>
             </div>
           </sc-for>
-          <h3 class="no-print-on-order">Registro movimenti</h3>
+          <h3 class="sec no-print-on-order">Registro movimenti</h3>
           <sc-if value="{{ noMoves }}" hint-placeholder-val="{{ false }}">
             <p class="text-muted no-print-on-order">Ancora nessun movimento: compaiono qui carichi, produzioni e scarti (gli ultimi 50).</p>
           </sc-if>
@@ -946,7 +952,7 @@
         <div>
           <div class="no-print-on-order" style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-3);flex-wrap:wrap;">
             <div style="max-width:620px;">
-              <h3 style="margin-top:0;">Riepilogo produzione</h3>
+              <h3 class="sec first">Riepilogo produzione</h3>
               <p class="text-muted" style="margin-top:-6px;">Quanti pezzi sono stati ordinati per ogni articolo e taglia, negli ordini attivi dell'evento scelto in alto. È la lista per comprare il materiale e per produrre: si stampa così com'è, senza il resto della pagina.</p>
             </div>
             <button type="button" class="btn btn-secondary" onClick="{{ printProduction }}">
@@ -1257,7 +1263,7 @@
           <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
           <p><strong>Colonna Consegnato.</strong> Quando il cliente ritira l'ordine spunta <em>Consegnato</em>: è solo un promemoria, il magazzino non si muove (i pezzi sono già stati tolti quando l'ordine è arrivato). Togliendo la spunta torna «da consegnare».</p>
           <p><strong>Vendite al banco.</strong> In cima alla scheda Ordini c'è <em>Vendita al banco</em>, per quello che vendi in loco dal telefono o dal tablet: scegli articolo, taglia o colore (tra parentesi i pezzi a magazzino) e pezzi, aggiungi altre righe con <em>+ riga</em>, poi premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
-          <p><strong>Codici QR ed etichette.</strong> Ogni articolo, per ogni taglia o colore, ha il suo codice (tipo <em>SC4K9Q2XA</em>): nasce da solo e non cambia se modifichi nome o prezzo. In Magazzino apri <em>Stampa etichette QR</em>: scrivi le copie per ogni variante (o premi <em>Come la giacenza</em>), scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR.</p>
+          <p><strong>Codici QR ed etichette.</strong> Ogni taglia o colore di ogni articolo ha il suo numero progressivo (sull'etichetta <em>SC01001</em>, <em>SC01002</em>…). Li dà il database da solo: quando crei o duplichi un articolo, o gli aggiungi una taglia, prende il numero dopo l'ultimo. Un numero non cambia se modifichi nome o prezzo e non viene mai ridato a un altro articolo, nemmeno se cancelli quello vecchio: le etichette stampate restano sempre giuste. In Magazzino, nella prima sezione <em>Etichette QR</em>, apri <em>Stampa etichette</em>: scrivi le copie per ogni variante (o premi <em>Come la giacenza</em>), scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR (bastano anche le 5 cifre).</p>
           <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
           <h4>Magazzino: capi vergini e giacenze</h4>
@@ -2383,7 +2389,7 @@ class Component extends DCLogic {
   }
   async loadCatalogFromDb() {
     try {
-      const base = 'id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label, price_unit';
+      const base = 'id, name, kicker, description, photo, price, sizes, active, sort_order, collection, variant_label, price_unit, label_codes';
       const query = (cols) => window.__sb.from('products').select(cols)
         .order('sort_order', { ascending: true }).order('name', { ascending: true });
       let en = true, ph = true;
@@ -2418,6 +2424,7 @@ class Component extends DCLogic {
           descEn: (r.description_en || '').trim(),
           kickerEn: (r.kicker_en || '').trim(),
           variantLabelEn: (r.variant_label_en || '').trim(),
+          labelCodes: r.label_codes && typeof r.label_codes === 'object' ? r.label_codes : {},
         }))),
       });
     } catch (e) {}
@@ -4110,35 +4117,25 @@ class Component extends DCLogic {
   }
 
   // ── Codici QR ─────────────────────────────────────────────────────────
-  // Il codice si ricava da id+taglia: niente da salvare. Solo [0-9A-Z] perché i
-  // lettori Bluetooth «scrivono» da tastiera e i simboli escono sbagliati su quella italiana.
+  // Un numero progressivo per taglia/colore, dato dal database (products.label_codes, trigger
+  // fill_label_codes): mai riusato. Sull'etichetta «SC» + 5 cifre, lunghezza fissa così il lettore
+  // Bluetooth, che scrive un carattere alla volta, non si ferma su un numero più corto.
   LABEL_FORMATS = { l7159: { name: 'A4 3×8 · 70×37 mm (L7159)', cols: 3, rows: 8, w: 70, h: 37, left: 0, top: 4.5, gapX: 0, gapY: 0 } };
   scanCode(id, size) {
-    const str = id + '|' + (size || '');
-    let h = 0x811c9dc5;
-    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-    return 'SC' + h.toString(36).toUpperCase().padStart(7, '0');
+    const p = this.getCatalog().find(x => x.id === id), n = p && p.labelCodes ? Number(p.labelCodes[size || '']) : 0;
+    return n > 0 ? 'SC' + String(n).padStart(5, '0') : null;
   }
   scanVariants() {
     return this.getCatalog().flatMap(p => (p.sizes && p.sizes.length ? p.sizes : ['']).map(size => ({ id: p.id, size, name: p.name, code: this.scanCode(p.id, size) })));
   }
-  scanNorm(code) { return code.slice(2).replace(/O/g, '0').replace(/I/g, '1'); }   // chi lo scrive a mano confonde O/0 e I/1
-  scanClean(text) { return String(text || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); }
-  // gli ultimi 9 caratteri: se nel campo era rimasto un pezzo di lettura vecchia, conta l'ultima
+  // chi lo scrive a mano confonde O/0 e I/L/1: fuori da «SC» contano solo le cifre
+  scanClean(text) { return String(text || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1'); }
+  // conta la fine del campo: se c'era un pezzo di lettura vecchia, vale l'ultima
   resolveScan(text) {
-    const t = this.scanClean(text).slice(-9);
-    if (!/^SC[0-9A-Z]{7}$/.test(t)) return null;
-    const v = this.scanVariants().find(x => this.scanNorm(x.code) === this.scanNorm(t));
+    const m = this.scanClean(text).match(/(?:SC)?(\d{5})$/);
+    if (!m) return null;
+    const v = this.scanVariants().find(x => x.code === 'SC' + m[1]);
     return v ? { id: v.id, size: v.size } : null;
-  }
-  scanCollisions() {
-    const seen = {}, out = [];
-    this.scanVariants().forEach(v => {
-      const label = v.name + (v.size ? ' ' + v.size : '');
-      const n = this.scanNorm(v.code);
-      if (seen[n]) out.push([seen[n], label]); else seen[n] = label;
-    });
-    return out;
   }
   counterAddScan(lines, id, size) {
     const i = lines.findIndex(l => l.product === id && (l.size || '') === size);
@@ -4151,7 +4148,7 @@ class Component extends DCLogic {
     if (!hit) {
       const clean = this.scanClean(text);
       this.setState(s => ({ scanText: { ...s.scanText, [where]: text },
-        scanMsg: { ...s.scanMsg, [where]: clean.length >= 9 ? 'Codice sconosciuto: ' + clean.slice(-9) + '. Scegli dal menu o ristampa l’etichetta.' : '' } }));
+        scanMsg: { ...s.scanMsg, [where]: clean.length >= 7 ? 'Codice sconosciuto: ' + clean.slice(-7) + '. Scegli dal menu o ristampa l’etichetta.' : '' } }));
       return;
     }
     const p = this.getCatalog().find(x => x.id === hit.id), label = p.name + (hit.size ? ' ' + hit.size : '');
@@ -4245,8 +4242,9 @@ class Component extends DCLogic {
   }
   async printLabels() {
     const say = m => this.setState({ labelMsg: m });
-    const clash = this.scanCollisions();
-    if (clash.length) return say('Due varianti avrebbero lo stesso codice: ' + clash.map(c => c.join(' e ')).join('; ') + '. Il codice nasce da articolo e taglia: togli queste due dalla stampa e segnala il caso, va cambiato il calcolo.');
+    const noCode = Object.entries(this.state.labelCopies).filter(([key, n]) => Number(n) > 0).map(([key]) => key.split('|'))
+      .filter(([id, size]) => this.getProduct(id) && !this.scanCode(id, size)).map(([id, size]) => this.getProduct(id).name + (size ? ' ' + size : ''));
+    if (noCode.length) return say('Senza numero: ' + noCode.join(', ') + '. Ricarica la pagina (il numero lo dà il database quando salvi l’articolo).');
     const items = this.labelItems();
     if (!items.length) return say('Scrivi quante copie stampare (o premi «Come la giacenza»).');
     try { if (typeof window.qrcode === 'undefined') await this.loadScriptOnce(this.QR_LIBS.qrcode); }
