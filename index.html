@@ -44,10 +44,18 @@
     .sec { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 40px 0 12px; padding: 10px 14px;
       border-radius: 12px; border-left: 5px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 7%, #fff); font-size: 19px; }
     .sec.first { margin-top: 0; }
-    .counter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 420px; overflow-y: auto; margin-bottom: 6px; }
+    .counter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px; }
     .counter-tile { display: flex; flex-direction: column; gap: 2px; padding: 6px; border: 1px solid color-mix(in srgb, var(--color-accent) 20%, #fff); border-radius: 12px;
       background: #fff; font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 64px; }
     .counter-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; max-width: 100%; }
+    .till { position: sticky; bottom: 0; z-index: 5; background: #fff; border-radius: 16px 16px 0 0; padding: 6px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -6px 18px rgba(0,0,0,.12); margin: 0 -4px; }
+    .till-lines { max-height: 20vh; overflow-y: auto; }
+    .till-line { display: flex; align-items: center; gap: 6px; padding: 2px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+    .till-line .tl-name { flex: 1; min-width: 0; }
+    .till-line .tl-btn { min-width: 36px; min-height: 36px; padding: 0; font-size: 18px; }
+    .till-line .tl-qty { min-width: 24px; text-align: center; }
+    .till-line .tl-tot { min-width: 64px; text-align: right; font-size: 13px; }
     .counter-tile .ct-name { font-size: 12px; font-weight: 600; line-height: 1.2; }
     .counter-tile .ct-price { font-size: 12px; color: color-mix(in srgb, var(--color-accent) 70%, #fff); }
     .sec small { font-size: 12px; font-weight: 400; color: color-mix(in srgb, var(--color-accent) 70%, #fff); }
@@ -607,69 +615,8 @@
           </sc-for>
         </div>
         <p class="no-print-on-order text-muted" style="margin:-4px 0 var(--space-4);font-size:12px;">Visite: una per apertura della pagina e per sessione del browser, senza cookie né indirizzi. Il browser da cui sei entrato in admin non conta, nemmeno quando apre la vetrina.</p>
-        <h3 class="sec first no-print-on-order">Vendita al banco <small>quello che vendi in loco</small></h3>
-        <div class="card no-print-on-order" style="margin-bottom:var(--space-5);">
-          <div class="text-muted" style="font-size:12px;margin-bottom:6px;">Per quello che vendi in loco: i pezzi escono dal magazzino e l'incasso entra nell'evento, già pagato e consegnato.</div>
-          <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-            <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanBancoText }}" onChange="{{ onScanBanco }}">
-            <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraBanco }}">📷</button>
-            <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanBancoMsg }}</span>
-          </div>
-          <input class="input" type="search" style="max-width:220px;margin-bottom:6px;" placeholder="cerca articolo…" aria-label="Cerca articolo venduto al banco" value="{{ counterQuery }}" onChange="{{ onCounterQuery }}">
-          <sc-if value="{{ hasSeveralCollections }}" hint-placeholder-val="{{ true }}">
-            <div class="seg" style="margin-bottom:6px;">
-              <sc-for list="{{ adminCollectionTabs }}" as="ct" hint-placeholder-count="3">
-                <button type="button" class="seg-opt" style="{{ ct.style }}" onClick="{{ ct.select }}">{{ ct.label }}</button>
-              </sc-for>
-            </div>
-          </sc-if>
-          <div class="counter-grid">
-            <sc-for list="{{ counterGrid }}" as="g" hint-placeholder-count="4">
-              <button type="button" class="counter-tile" style="{{ g.style }}" onClick="{{ g.tap }}">
-                <sc-if value="{{ g.hasPhoto }}" hint-placeholder-val="{{ true }}"><img src="{{ g.photo }}" alt="" loading="lazy"></sc-if>
-                <span class="ct-name">{{ g.name }}</span><span class="ct-price">{{ g.price }}</span>
-              </button>
-            </sc-for>
-          </div>
-          <sc-if value="{{ counterPickOpen }}" hint-placeholder-val="{{ false }}">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;padding:8px;border-radius:12px;background:color-mix(in srgb, var(--color-accent) 7%, #fff);">
-              <strong style="font-size:13px;">{{ counterPickName }}:</strong>
-              <sc-for list="{{ counterPickSizes }}" as="z" hint-placeholder-count="3">
-                <button type="button" class="btn btn-secondary" style="min-height:44px;min-width:56px;" onClick="{{ z.tap }}">{{ z.label }}</button>
-              </sc-for>
-              <button type="button" class="btn btn-ghost" aria-label="Chiudi scelta taglia" onClick="{{ closeCounterPick }}">✕</button>
-            </div>
-          </sc-if>
-          <div class="text-muted" style="font-size:12px;margin:6px 0;">Righe della vendita (tocca un articolo qui sopra, scansiona, o scegli dal menu):</div>
-          <sc-for list="{{ counterLines }}" as="l" hint-placeholder-count="1">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-              <select class="input" style="max-width:260px;" aria-label="Articolo venduto" value="{{ l.product }}" onChange="{{ l.onProduct }}">
-                <sc-for list="{{ l.products }}" as="lp" hint-placeholder-count="3"><option value="{{ lp.id }}">{{ lp.label }}</option></sc-for>
-              </select>
-              <sc-if value="{{ l.hasSizes }}" hint-placeholder-val="{{ true }}">
-                <select class="input" style="max-width:120px;" key="{{ l.sizeKey }}" aria-label="Taglia o colore" value="{{ l.size }}" onChange="{{ l.onSize }}">
-                  <sc-for list="{{ l.sizes }}" as="ls" hint-placeholder-count="3"><option value="{{ ls.id }}">{{ ls.label }}</option></sc-for>
-                </select>
-              </sc-if>
-              <input class="input" type="number" min="1" step="1" inputmode="numeric" style="max-width:80px;" aria-label="Pezzi" value="{{ l.qty }}" onChange="{{ l.onQty }}">
-              <button type="button" class="btn btn-ghost" aria-label="Togli riga" onClick="{{ l.remove }}">✕</button>
-            </div>
-          </sc-for>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;">
-            <button type="button" class="btn btn-ghost" onClick="{{ addCounterLine }}">+ riga</button>
-            <label class="text-muted" style="font-size:12px;" for="counter-incasso">Incasso €</label>
-            <input id="counter-incasso" class="input" type="text" inputmode="decimal" style="max-width:110px;" placeholder="{{ counterListino }}" value="{{ counterIncasso }}" onChange="{{ onCounterIncasso }}">
-            <span class="text-muted" style="font-size:12px;">vuoto = listino € {{ counterListino }}</span>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" style="min-height:48px;min-width:140px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCash }}">Contanti</button>
-            <button type="button" class="btn btn-primary" style="min-height:48px;min-width:140px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCard }}">Elettronico</button>
-          </div>
-          <sc-if value="{{ counterMsg }}" hint-placeholder-val="{{ false }}">
-            <div style="font-size:13px;margin-top:6px;{{ counterMsgStyle }}" role="status">{{ counterMsg }}</div>
-          </sc-if>
-        </div>
-        <h3 class="sec no-print-on-order">Ordini</h3>
+        <p class="no-print-on-order text-muted" style="font-size:12px;margin:0 0 8px;">Le vendite in loco si fanno nella scheda <strong>Banco</strong>; qui compaiono come ordini «Banco».</p>
+        <h3 class="sec first no-print-on-order">Ordini</h3>
         <div class="no-print-on-order seg" style="margin-bottom:var(--space-2);">
           <sc-for list="{{ orderSources }}" as="f" hint-placeholder-count="3">
             <button type="button" class="seg-opt" style="{{ f.style }}" onClick="{{ f.select }}">{{ f.label }}</button>
@@ -947,6 +894,72 @@
               </tbody>
             </table>
           </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTabBanco }}" hint-placeholder-val="{{ false }}">
+        <div class="no-print-on-order">
+          <h3 class="sec first">Vendita al banco <small>tocca gli articoli venduti, poi Contanti o Elettronico</small></h3>
+          <div class="no-print-on-order" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+            <input class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="max-width:220px;" placeholder="Scansiona (lettore o 📷)" aria-label="Scansiona il codice dell'etichetta" value="{{ scanBancoText }}" onChange="{{ onScanBanco }}">
+            <button type="button" class="btn btn-secondary" aria-label="Scansiona con la fotocamera" onClick="{{ cameraBanco }}">📷</button>
+            <span class="text-muted" style="font-size:12px;" aria-live="polite">{{ scanBancoMsg }}</span>
+          </div>
+          <input class="input" type="search" style="max-width:220px;margin-bottom:6px;" placeholder="cerca articolo…" aria-label="Cerca articolo venduto al banco" value="{{ counterQuery }}" onChange="{{ onCounterQuery }}">
+          <sc-if value="{{ hasSeveralCollections }}" hint-placeholder-val="{{ true }}">
+            <div class="seg" style="margin-bottom:6px;">
+              <sc-for list="{{ adminCollectionTabs }}" as="ct" hint-placeholder-count="3">
+                <button type="button" class="seg-opt" style="{{ ct.style }}" onClick="{{ ct.select }}">{{ ct.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div class="counter-grid">
+            <sc-for list="{{ counterGrid }}" as="g" hint-placeholder-count="4">
+              <button type="button" class="counter-tile" style="{{ g.style }}" onClick="{{ g.tap }}">
+                <sc-if value="{{ g.hasPhoto }}" hint-placeholder-val="{{ true }}"><img src="{{ g.photo }}" alt="" loading="lazy"></sc-if>
+                <span class="ct-name">{{ g.name }}</span><span class="ct-price">{{ g.price }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div class="till">
+          <sc-if value="{{ counterPickOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 6px;padding:6px;border-radius:12px;background:color-mix(in srgb, var(--color-accent) 7%, #fff);">
+              <strong style="font-size:13px;">{{ counterPickName }}:</strong>
+              <sc-for list="{{ counterPickSizes }}" as="z" hint-placeholder-count="3">
+                <button type="button" class="btn btn-secondary" style="min-height:38px;min-width:50px;padding:0 10px;" onClick="{{ z.tap }}">{{ z.label }}</button>
+              </sc-for>
+              <button type="button" class="btn btn-ghost" aria-label="Chiudi scelta taglia" onClick="{{ closeCounterPick }}">✕</button>
+            </div>
+          </sc-if>
+            <sc-if value="{{ counterCartEmpty }}" hint-placeholder-val="{{ false }}">
+              <div class="text-muted" style="font-size:13px;">Nessun articolo: tocca un riquadro qui sopra o scansiona.</div>
+            </sc-if>
+            <div class="till-lines">
+              <sc-for list="{{ counterCart }}" as="cl" hint-placeholder-count="2">
+                <div class="till-line">
+                  <span class="tl-name">{{ cl.label }}</span>
+                  <button type="button" class="btn btn-ghost tl-btn" aria-label="Un pezzo in meno" onClick="{{ cl.minus }}">−</button>
+                  <strong class="tl-qty">{{ cl.qty }}</strong>
+                  <button type="button" class="btn btn-ghost tl-btn" aria-label="Un pezzo in più" onClick="{{ cl.plus }}">+</button>
+                  <span class="tl-tot">€ {{ cl.total }}</span>
+                  <button type="button" class="btn btn-ghost tl-btn" aria-label="Togli riga" onClick="{{ cl.remove }}">✕</button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0;">
+              <strong style="font-size:16px;">Totale € {{ counterListino }}</strong>
+              <label class="text-muted" style="font-size:12px;" for="counter-incasso">Incasso €</label>
+              <input id="counter-incasso" class="input" type="text" inputmode="decimal" style="max-width:110px;" placeholder="{{ counterListino }}" value="{{ counterIncasso }}" onChange="{{ onCounterIncasso }}">
+              
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" style="min-height:46px;flex:1 1 120px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCash }}">Contanti</button>
+            <button type="button" class="btn btn-primary" style="min-height:46px;flex:1 1 120px;font-size:16px;" disabled="{{ counterBusy }}" onClick="{{ sellCard }}">Elettronico</button>
+          </div>
+          <sc-if value="{{ counterMsg }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;margin-top:6px;{{ counterMsgStyle }}" role="status">{{ counterMsg }}</div>
+          </sc-if>
+          </div>
         </div>
       </sc-if>
 
@@ -1316,7 +1329,7 @@
           <p><em>Dettagli</em> apre la scheda di preparazione, che si stampa e si porta al banco. <em>Annulla</em> toglie l'ordine dai conti e <strong>rimette le quantità a magazzino</strong>.</p>
           <p><strong>Colonna Pronto.</strong> Quando hai finito un ordine spunta la casella <em>Pronto</em>. Ti viene chiesto se mandare la mail al cliente: <em>OK</em> la manda, <em>Annulla</em> segna l'ordine come pronto senza scrivere a nessuno (per esempio se lo consegni a mano). La mail parte nella lingua in cui il cliente ha ordinato (italiano o inglese), dice che l'ordine è pronto e, <strong>se non risulta pagato</strong>, ripete come pagare con il pulsante <em>Ho pagato</em>; se ha già pagato o dichiarato il pagamento, lo ringrazia e basta. Sotto la casella leggi <em>pronto</em> oppure <em>avvisato gg/mm</em>; se non l'hai mandata subito, il pulsante <em>Manda avviso</em> la manda dopo. Togliendo la spunta l'ordine torna in lavorazione.</p>
           <p><strong>Colonna Consegnato.</strong> Quando il cliente ritira l'ordine spunta <em>Consegnato</em>: è solo un promemoria, il magazzino non si muove (i pezzi sono già stati tolti quando l'ordine è arrivato). Togliendo la spunta torna «da consegnare».</p>
-          <p><strong>Vendite al banco.</strong> In cima alla scheda Ordini c'è <em>Vendita al banco</em>, per quello che vendi in loco dal telefono o dal tablet: tocca l'articolo nella <strong>griglia</strong> (filtrabile per collezione e con la ricerca), poi la taglia o il colore (accanto vedi quanti ne restano); ogni tocco è un pezzo in più. In alternativa scegli articolo, taglia o colore (tra parentesi i pezzi a magazzino) e pezzi, aggiungi altre righe con <em>+ riga</em>, poi premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
+          <p><strong>Vendite al banco.</strong> Nella scheda <strong>Banco</strong> fai le vendite al banco, per quello che vendi in loco dal telefono o dal tablet: tocca l'articolo nella <strong>griglia</strong> (filtrabile per collezione e con la ricerca), poi la taglia o il colore (accanto vedi quanti ne restano); ogni tocco è un pezzo in più. In basso resta sempre in vista la cassa: righe con − e + per i pezzi, totale, incasso e i pulsanti. Quando hai tutto, premi <strong>Contanti</strong> o <strong>Elettronico</strong>. I pezzi escono dal magazzino e la vendita entra negli ordini dell'evento scelto in alto (o di quello aperto), già pagata e consegnata, con la scritta «Vendita al banco». Se fai un prezzo diverso, scrivi la cifra in <em>Incasso €</em>: la differenza diventa uno sconto riservato. Se il magazzino segna meno pezzi di quelli che vendi la vendita viene rifiutata: correggi prima la giacenza con <em>Aggiungi</em>. Una vendita sbagliata si annulla come un ordine e i pezzi tornano a magazzino. Le vendite al banco non entrano nella scheda Produzione (erano pezzi già fatti) e non mandano mail. <strong>Serve internet</strong>: senza rete la vendita non viene registrata e le righe restano lì per riprovare. In Contabilità l'incasso è diviso in contanti ed elettronico; gli ordini online pagati con PayPal o bonifico contano come elettronico, e anche un ordine online che ti pagano in contanti e segni <em>Pagato</em> finisce lì.</p>
           <p><strong>Codici QR ed etichette.</strong> Ogni taglia o colore di ogni articolo ha il suo numero progressivo (sull'etichetta <em>SC01001</em>, <em>SC01002</em>…). Li dà il database da solo: quando crei o duplichi un articolo, o gli aggiungi una taglia, prende il numero dopo l'ultimo. Un numero non cambia se modifichi nome o prezzo e non viene mai ridato a un altro articolo, nemmeno se cancelli quello vecchio: le etichette stampate restano sempre giuste. Nella scheda <strong>Etichette</strong> (in alto, fra Magazzino e Produzione) vedi il codice di ogni variante nella colonna <em>Codice</em>; scegli la collezione, spunta le varianti (o <em>Seleziona tutte</em>: una copia ciascuna) oppure scrivi le copie o premi <em>Come la giacenza</em>, scegli da quale etichetta partire se il foglio è già usato a metà, e premi <strong>Stampa</strong>: i QR li vedi nell'anteprima di stampa. I fogli sono A4 da 24 etichette 70×37 mm (tipo L7159); per un altro formato basta dire le misure. Nella finestra di stampa scegli <strong>scala 100%</strong> (o «Dimensioni effettive») e togli <em>Intestazioni e piè di pagina</em>. La prima volta stampa su carta normale, sovrapponi il foglio alle etichette controluce e, se non combacia, correggi con <em>Sposta → mm</em> e <em>↓ mm</em> (anche negativi): il telefono o il computer se li ricorda.<br>Per scansionare usa il campo <em>Scansiona</em> in <em>Vendita al banco</em> (aggiunge la riga, o un pezzo in più se c'è già) o in Magazzino (apre l'articolo e lo prepara in <em>Produci</em>). Un lettore di codici Bluetooth si collega al telefono come una tastiera: tocca il campo e spara. Con <strong>📷</strong> usi la fotocamera: la prima volta il telefono chiede il permesso. Le immagini non escono dal telefono. Se un'etichetta è rovinata puoi scrivere a mano il codice stampato sotto il QR (bastano anche le 5 cifre).</p>
           <p><strong>Sconto riservato.</strong> Nella scheda <em>Dettagli</em> c'è il campo <em>Sconto riservato (€)</em>: lo usi quando a qualcuno fai un prezzo più basso di quello dell'ordine (per esempio chi paga a mano). <strong>Il cliente non lo vede mai</strong>: né nella pagina dell'ordine, né nelle mail, né nella scheda stampata. Serve solo ai tuoi conti: nella colonna Totale compare <em>incasso X</em>, e i riquadri <em>Da incassare</em> e <em>Incassato</em> e la Contabilità usano la cifra scontata.</p>
 
@@ -4218,7 +4231,7 @@ class Component extends DCLogic {
     if (!hit) {
       const clean = this.scanClean(text);
       this.setState(s => ({ scanText: { ...s.scanText, [where]: text },
-        scanMsg: { ...s.scanMsg, [where]: clean.length >= 7 ? 'Codice sconosciuto: ' + clean.slice(-7) + '. Scegli dal menu o ristampa l’etichetta.' : '' } }));
+        scanMsg: { ...s.scanMsg, [where]: clean.length >= 7 ? 'Codice sconosciuto: ' + clean.slice(-7) + '. Tocca l’articolo nella griglia o ristampa l’etichetta.' : '' } }));
       return;
     }
     const p = this.getCatalog().find(x => x.id === hit.id), label = p.name + (hit.size ? ' ' + hit.size : '');
@@ -4764,6 +4777,7 @@ class Component extends DCLogic {
       adminTabs: [
         { id: 'richieste', label: 'Richieste' + (this.state.inquiries.filter(q => q.status === 'new').length ? ' (' + this.state.inquiries.filter(q => q.status === 'new').length + ')' : '') },
         { id: 'ordini', label: 'Ordini' },
+        { id: 'banco', label: 'Banco' },
         { id: 'magazzino', label: 'Magazzino' },
         { id: 'etichette', label: 'Etichette' },
         { id: 'produzione', label: 'Produzione' },
@@ -4787,6 +4801,7 @@ class Component extends DCLogic {
       isTabRichieste: this.state.adminTab === 'richieste',
       isTabMagazzino: this.state.adminTab === 'magazzino',
       isTabEtichette: this.state.adminTab === 'etichette',
+      isTabBanco: this.state.adminTab === 'banco',
       isTabProduzione: this.state.adminTab === 'produzione',
       isTabProdotti: this.state.adminTab === 'prodotti',
       isTabContabilita: this.state.adminTab === 'contabilita',
@@ -5002,6 +5017,14 @@ class Component extends DCLogic {
       counterPickSizes: ((this.getProduct(this.state.counterPick) || {}).sizes || []).map(z => ({ size: z,
         label: z + (this.state.stock[this.state.counterPick] ? ' · ' + this.stockOf(this.state.counterPick, z) : ''), tap: () => this.counterTap(this.state.counterPick, z) })),
       closeCounterPick: () => this.setState({ counterPick: '' }),
+      counterCart: this.state.counter.lines.map((l, i) => ({ l, i, p: this.getProduct(l.product) })).filter(x => x.p).map(({ l, i, p }) => {
+        const q = Math.max(0, Math.floor(Number(l.qty) || 0)), size = p.sizes && p.sizes.length ? l.size : null;
+        return { label: p.name + (size ? ' ' + size : ''), qty: String(q), total: this.money(this.unitPrice(p.id, size) * q),
+          plus: () => this.setCounterLine(i, { qty: String(q + 1) }),
+          minus: () => q > 1 ? this.setCounterLine(i, { qty: String(q - 1) }) : this.removeCounterLine(i),
+          remove: () => this.removeCounterLine(i) };
+      }),
+      counterCartEmpty: !this.state.counter.lines.some(l => this.getProduct(l.product)),
       onCounterQuery: (e) => this.setState({ counterQuery: e.target.value }),
       ...(() => {
         const cfg = this.state.labelCfg, fmt = this.LABEL_FORMATS[cfg.format] || this.LABEL_FORMATS.l7159, n = this.labelItems().length;
@@ -5033,23 +5056,6 @@ class Component extends DCLogic {
       onScanBanco: (e) => this.onScanText('banco', e.target.value), cameraBanco: () => this.openCamera('banco'),
       scanMagazzinoText: this.state.scanText.magazzino, scanMagazzinoMsg: this.state.scanMsg.magazzino,
       onScanMagazzino: (e) => this.onScanText('magazzino', e.target.value), cameraMagazzino: () => this.openCamera('magazzino'),
-      counterLines: this.state.counter.lines.map((l, i) => {
-        const prod = this.getCatalog().find(x => x.id === l.product), list = this.produceProductList(this.state.counterQuery);
-        if (prod && !list.includes(prod)) list.unshift(prod);
-        return {
-          product: l.product, size: l.size, qty: l.qty,
-          sizeKey: 'banco-taglia-' + i + '-' + l.product,
-          products: [{ id: '', label: this.state.counterQuery.trim() ? list.length + ' trovati…' : 'Articolo…' }]
-            .concat(list.map(p => ({ id: p.id, label: (p.sortOrder ? p.sortOrder + '. ' : '') + p.name + ' — € ' + this.money(p.price) }))),
-          hasSizes: !!(prod && prod.sizes && prod.sizes.length),
-          sizes: (prod && prod.sizes || []).map(x => ({ id: x, label: x + (this.stockOf(prod.id, x) !== Infinity ? ' (' + this.stockOf(prod.id, x) + ')' : '') })),
-          onProduct: (e) => this.setCounterLine(i, { product: e.target.value }),
-          onSize: (e) => this.setCounterLine(i, { size: e.target.value }),
-          onQty: (e) => this.setCounterLine(i, { qty: e.target.value }),
-          remove: () => this.removeCounterLine(i),
-        };
-      }),
-      addCounterLine: () => this.addCounterLine(),
       counterIncasso: this.state.counter.incasso,
       onCounterIncasso: (e) => this.setState(s => ({ counter: { ...s.counter, incasso: e.target.value } })),
       counterListino: this.money(this.counterSaleTotals(this.state.counter.lines, '').total),
