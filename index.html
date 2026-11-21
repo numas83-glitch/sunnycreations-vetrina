@@ -700,6 +700,7 @@
                   Stampa questo ordine
                 </button>
                 <button type="button" class="btn btn-ghost" onClick="{{ closeOrderDetail }}">Chiudi</button>
+                <sc-if value="{{ printMsg }}" hint-placeholder-val="{{ false }}"><span style="flex-basis:100%;text-align:right;font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ printMsg }}</span></sc-if>
               </div>
             </div>
             <sc-if value="{{ resendMsg }}" hint-placeholder-val="{{ false }}">
@@ -972,6 +973,7 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
               Stampa riepilogo
             </button>
+            <sc-if value="{{ printMsg }}" hint-placeholder-val="{{ false }}"><span style="flex-basis:100%;font-size:12px;color:var(--color-brand-red);" aria-live="polite">{{ printMsg }}</span></sc-if>
           </div>
           <div class="no-print-on-order seg" style="margin-bottom:var(--space-3);">
             <sc-for list="{{ productionFilters }}" as="f" hint-placeholder-count="3">
@@ -1340,6 +1342,7 @@
 
           <h4>Dal telefono</h4>
           <p>L'area admin funziona anche dal telefono: le tabelle diventano schede e i pulsanti sono più grandi. Puoi metterla sulla schermata Home come un'app. <strong>iPhone</strong>: apri <em>vetrina.sunnycreations.it/#admin</em> in Safari → Condividi → <em>Aggiungi alla schermata Home</em>. <strong>Android</strong>: stesso indirizzo in Chrome → menu → <em>Installa app</em>.</p>
+          <p><strong>Stampare da iPhone.</strong> Dall'icona sulla schermata Home l'iPhone non apre la stampa (è un limite di iOS): per stampare un ordine, il riepilogo o le etichette apri <em>vetrina.sunnycreations.it/#admin</em> in <strong>Safari</strong>. L'app te lo ricorda con un avviso accanto al pulsante. Su Android e sul computer si stampa da qualunque parte.</p>
           <p><strong>Notifiche.</strong> In <em>Impostazioni → Notifiche su questo dispositivo</em> attivi un avviso a ogni nuovo ordine e a ogni nuova richiesta. Si accende su ogni telefono o computer separatamente, e le mail continuano ad arrivare. L'avviso mostra solo il codice e il totale, non il nome del cliente. Su iPhone funziona solo dall'icona sulla schermata Home.</p>
 
           <h4>Gli indirizzi</h4>
@@ -1742,6 +1745,7 @@ class Component extends DCLogic {
     translateSettingsMsg: '',
     adminUnlocked: false,
     adminTab: 'ordini',
+    printMsg: '',
     settings: {},
     settingsBusy: false,
     settingsMsg: '',
@@ -3723,11 +3727,16 @@ class Component extends DCLogic {
     document.querySelectorAll('#label-sheet, #label-sheet-style').forEach(el => el.remove());
     document.body.classList.remove('printing-labels');
   }
+  // L'app dall'icona «Sunny Admin» su iPhone/iPad (display standalone): iOS lì ignora window.print() in silenzio.
+  IOS_APP_PRINT_MSG = 'Dall\'app «Sunny Admin» l\'iPhone non apre la stampa. Apri vetrina.sunnycreations.it/#admin in Safari e stampa da lì (Condividi → Stampa se non si apre da solo).';
+  iosAppNoPrint() { return !!(window.navigator && window.navigator.standalone === true); }
   printOrderDetail() {
+    if (this.iosAppNoPrint()) return this.setState({ printMsg: this.IOS_APP_PRINT_MSG });
     this.clearLabelSheet();
     document.body.classList.add('printing-order');
+    // la classe agisce solo in @media print: resta finché la stampa non è finita (su iPhone print() non aspetta)
+    window.addEventListener('afterprint', () => document.body.classList.remove('printing-order'), { once: true });
     window.print();
-    setTimeout(() => document.body.classList.remove('printing-order'), 500);
   }
 
   cartEntries() {
@@ -4255,6 +4264,7 @@ class Component extends DCLogic {
   }
   async printLabels() {
     const say = m => this.setState({ labelMsg: m });
+    if (this.iosAppNoPrint()) return say(this.IOS_APP_PRINT_MSG);
     const noCode = Object.entries(this.state.labelCopies).filter(([key, n]) => Number(n) > 0).map(([key]) => key.split('|'))
       .filter(([id, size]) => this.getProduct(id) && !this.scanCode(id, size)).map(([id, size]) => this.getProduct(id).name + (size ? ' ' + size : ''));
     if (noCode.length) return say('Senza numero: ' + noCode.join(', ') + '. Ricarica la pagina (il numero lo dà il database quando salvi l’articolo).');
@@ -5012,6 +5022,7 @@ class Component extends DCLogic {
       netRevenueLabel: this.money(this.adminRevenue() - this.discountTotal()),
       adminOrderCount: this.activeOrders().length,
       printOrderDetail: () => this.printOrderDetail(),
+      printMsg: this.state.printMsg,
       printProduction: () => this.printOrderDetail(),
       resendQuote: () => this.resendQuote(this.state.selectedOrderCode),
       resendBusy: this.state.resendBusy,
